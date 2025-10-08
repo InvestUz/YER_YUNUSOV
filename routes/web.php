@@ -50,6 +50,8 @@ Route::middleware('auth')->group(function () {
     Route::prefix('monitoring')->name('monitoring.')->group(function () {
         Route::get('/', [MonitoringController::class, 'index'])->name('index');
         Route::get('/report1', [MonitoringController::class, 'report1'])->name('report1');
+        // ADD THIS NEW ROUTE FOR DETAILS PAGE
+        Route::get('/report1/details', [MonitoringController::class, 'report1Details'])->name('report1.details');
         Route::get('/report2', [MonitoringController::class, 'report2'])->name('report2');
         Route::get('/report3', [MonitoringController::class, 'report3'])->name('report3');
     });
