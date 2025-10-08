@@ -36,10 +36,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Lots Management
-    Route::resource('lots', LotController::class);
+    // Export route must be before resource routes to avoid conflicts
+    Route::get('/lots/export', [LotController::class, 'export'])->name('lots.export');
 
+    // AJAX route for mahallas
     Route::get('/mahallas/by-tuman', [LotController::class, 'getMahallas'])->name('mahallas.by-tuman');
 
+    // Resource routes
+    Route::resource('lots', LotController::class);
 
     // Monitoring Reports
     Route::prefix('monitoring')->name('monitoring.')->group(function () {
