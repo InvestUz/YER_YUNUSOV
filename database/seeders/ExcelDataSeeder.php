@@ -40,7 +40,7 @@ class ExcelDataSeeder extends Seeder
         $this->createUsers();
 
         // Import from Excel
-        $excelPath = 'C:\Users\inves\OneDrive\Ishchi stol\YER_YUNUSOV\public\Аукционда_сотилган_ерлар_06_10_2025+baza_ROYXAT (2).xlsx';
+        $excelPath = public_path('Аукционда_сотилган_ерлар_06_10_2025+baza_ROYXAT (2).xlsx');
 
         if (!file_exists($excelPath)) {
             $this->command->error("Excel file not found: {$excelPath}");
