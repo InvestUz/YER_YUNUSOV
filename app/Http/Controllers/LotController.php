@@ -46,11 +46,11 @@ class LotController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('lot_number', 'like', "%{$search}%")
-                  ->orWhere('address', 'like', "%{$search}%")
-                  ->orWhere('winner_name', 'like', "%{$search}%")
-                  ->orWhere('unique_number', 'like', "%{$search}%");
+                    ->orWhere('address', 'like', "%{$search}%")
+                    ->orWhere('winner_name', 'like', "%{$search}%")
+                    ->orWhere('unique_number', 'like', "%{$search}%");
             });
         }
 
@@ -73,7 +73,7 @@ class LotController extends Controller
 
         // 4. Конструксия фильтры (Construction/Reconstruction Types)
         if ($request->filled('construction_types') && is_array($request->construction_types)) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 foreach ($request->construction_types as $type) {
                     switch ($type) {
                         case 'konservatsiya':
@@ -104,7 +104,7 @@ class LotController extends Controller
 
         // 5. Қурилишга рухсат берилган объект тури (Object Type Filter)
         if ($request->filled('object_types') && is_array($request->object_types)) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 foreach ($request->object_types as $type) {
                     switch ($type) {
                         case 'avtoturargoh':
@@ -115,7 +115,7 @@ class LotController extends Controller
                             break;
                         case 'kop_qavatli':
                             $q->orWhere('object_type', 'like', '%ko\'p qavatli%')
-                              ->orWhere('object_type', 'like', '%turar joy%');
+                                ->orWhere('object_type', 'like', '%turar joy%');
                             break;
                         case 'logistika':
                             $q->orWhere('object_type', 'like', '%logistika%');
@@ -125,7 +125,7 @@ class LotController extends Controller
                             break;
                         case 'savdo':
                             $q->orWhere('object_type', 'like', '%savdo%')
-                              ->orWhere('object_type', 'like', '%maishiy%');
+                                ->orWhere('object_type', 'like', '%maishiy%');
                             break;
                     }
                 }
@@ -134,7 +134,7 @@ class LotController extends Controller
 
         // 6. Тўлов тури Extended (Payment Type Extended)
         if ($request->filled('payment_types_extended') && is_array($request->payment_types_extended)) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 foreach ($request->payment_types_extended as $type) {
                     switch ($type) {
                         case 'auction_tanlash':
@@ -181,7 +181,7 @@ class LotController extends Controller
                     $query->where('contract_signed', false);
                 } elseif ($status === 'with_date') {
                     $query->where('contract_signed', true)
-                          ->whereNotNull('contract_date');
+                        ->whereNotNull('contract_date');
                 }
             }
         }
@@ -227,12 +227,12 @@ class LotController extends Controller
         // Custom sorting logic
         if ($sortField === 'tuman_name') {
             $query->join('tumans', 'lots.tuman_id', '=', 'tumans.id')
-                  ->orderBy('tumans.name_uz', $sortDirection)
-                  ->select('lots.*');
+                ->orderBy('tumans.name_uz', $sortDirection)
+                ->select('lots.*');
         } elseif ($sortField === 'mahalla_name') {
             $query->leftJoin('mahallas', 'lots.mahalla_id', '=', 'mahallas.id')
-                  ->orderBy('mahallas.name_uz', $sortDirection)
-                  ->select('lots.*');
+                ->orderBy('mahallas.name_uz', $sortDirection)
+                ->select('lots.*');
         } else {
             $query->orderBy($sortField, $sortDirection);
         }
@@ -420,40 +420,111 @@ class LotController extends Controller
     /**
      * Display the specified resource.
      */
+    /**
+     * Display the specified resource.
+     */
     public function show(Lot $lot)
     {
         $user = Auth::user();
+
 
         // Check access
         if ($user->role === 'district_user' && $lot->tuman_id !== $user->tuman_id) {
             abort(403, 'Рухсат йўқ');
         }
 
-        $lot->load(['tuman', 'mahalla', 'paymentSchedules']);
-
+        // Load relationships
+        $lot->load(['tuman', 'mahalla', 'paymentSchedules', 'distributions']);
         // Calculate payment statistics
         $paymentStats = [
-            'total_amount' => $lot->sold_price,
-            'initial_payment' => $lot->initial_payment ?? 0,
+            'total_amount' => $lot->sold_price ?? 0,
+            'paid_amount' => $lot->paid_amount ?? 0,
+            'transferred_amount' => $lot->transferred_amount ?? 0,
             'remaining_amount' => 0,
-            'paid_amount' => 0,
+            'payment_progress' => 0,
             'overdue_amount' => 0,
         ];
 
-        if ($lot->payment_type === 'muddatli' && $lot->contract_signed) {
-            $schedules = $lot->paymentSchedules;
-            $paymentStats['remaining_amount'] = $lot->sold_price - $lot->initial_payment;
-            $paymentStats['paid_amount'] = $schedules->sum('actual_amount');
+        // Calculate remaining amount and progress
+        $totalPaid = $paymentStats['paid_amount'] + $paymentStats['transferred_amount'];
+        $paymentStats['remaining_amount'] = $paymentStats['total_amount'] - $totalPaid;
 
-            $overdueSchedules = $schedules->where('payment_date', '<=', now())
-                ->where('status', '!=', 'paid');
-            $paymentStats['overdue_amount'] = $overdueSchedules->sum('planned_amount')
-                - $overdueSchedules->sum('actual_amount');
+
+        if ($paymentStats['total_amount'] > 0) {
+            $paymentStats['payment_progress'] = ($totalPaid / $paymentStats['total_amount']) * 100;
         }
 
-        return view('lots.show', compact('lot', 'paymentStats'));
-    }
+        // Calculate installment payment statistics
+        if ($lot->payment_type === 'muddatli' && $lot->contract_signed && $lot->paymentSchedules->count() > 0) {
+            $schedules = $lot->paymentSchedules;
 
+            $paymentStats['scheduled_total'] = $schedules->sum('planned_amount');
+            $paymentStats['scheduled_paid'] = $schedules->sum('actual_amount');
+            $paymentStats['scheduled_remaining'] = $paymentStats['scheduled_total'] - $paymentStats['scheduled_paid'];
+
+            // Calculate overdue payments
+            $overdueSchedules = $schedules->where('payment_date', '<=', now())
+                ->filter(function ($schedule) {
+                    return $schedule->actual_amount < $schedule->planned_amount;
+                });
+
+            $paymentStats['overdue_amount'] = $overdueSchedules->sum(function ($schedule) {
+                return $schedule->planned_amount - $schedule->actual_amount;
+            });
+
+            $paymentStats['overdue_count'] = $overdueSchedules->count();
+        }
+
+        // Calculate distribution statistics
+        $distributionStats = [
+            'local_budget' => 0,
+            'development_fund' => 0,
+            'new_uzbekistan' => 0,
+            'district_authority' => 0,
+            'total_distributed' => 0,
+        ];
+
+        if ($lot->distributions->count() > 0) {
+            foreach ($lot->distributions as $dist) {
+                $distributionStats[$dist->category] = $dist->allocated_amount;
+                $distributionStats['total_distributed'] += $dist->allocated_amount;
+            }
+        }
+
+        // Calculate financial metrics
+        $financialMetrics = [
+            'price_increase' => 0,
+            'price_increase_percent' => 0,
+            'price_per_hectare' => 0,
+            'net_income' => 0,
+        ];
+
+        if ($lot->initial_price > 0 && $lot->sold_price > 0) {
+            $financialMetrics['price_increase'] = $lot->sold_price - $lot->initial_price;
+            $financialMetrics['price_increase_percent'] = (($lot->sold_price - $lot->initial_price) / $lot->initial_price) * 100;
+        }
+
+        if ($lot->land_area > 0 && $lot->sold_price > 0) {
+            $financialMetrics['price_per_hectare'] = $lot->sold_price / $lot->land_area;
+        }
+
+        // Net income = Davaktiv amount (final after all deductions)
+        $financialMetrics['net_income'] = $lot->davaktiv_amount ?? 0;
+
+        // Auction countdown (if auction hasn't happened yet)
+        $auctionCountdown = null;
+        if ($lot->auction_date && $lot->auction_date > now()) {
+            $auctionCountdown = now()->diff($lot->auction_date);
+        }
+
+        return view('lots.show', compact(
+            'lot',
+            'paymentStats',
+            'distributionStats',
+            'financialMetrics',
+            'auctionCountdown'
+        ));
+    }
     /**
      * Show the form for editing the specified resource.
      */

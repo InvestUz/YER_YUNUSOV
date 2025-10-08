@@ -64,3 +64,10 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+
+composer require symfony/dom-crawler symfony/css-selector
+
+composer require guzzlehttp/guzzle symfony/dom-crawler symfony/css-selector --ignore-platform-reqs
+
+composer require chrome-php/chrome --ignore-platform-reqs

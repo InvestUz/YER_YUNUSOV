@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LotController;
 use App\Http\Controllers\MonitoringController;
+use App\Http\Controllers\ParserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -53,3 +54,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/report3', [MonitoringController::class, 'report3'])->name('report3');
     });
 });
+
+
+//testparserstart
+Route::get('/parser', [ParserController::class, 'index'])->name('parser.index');
+Route::get('/parser/parse-lots', [ParserController::class, 'parseLots'])->name('parser.parse');
+Route::get('/parser/parse-single', [ParserController::class, 'parseSingleLot'])->name('parser.single');
