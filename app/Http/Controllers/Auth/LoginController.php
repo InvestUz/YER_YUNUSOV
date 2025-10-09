@@ -13,7 +13,7 @@ class LoginController extends Controller
     public function showLoginForm()
     {
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            return redirect()->route('monitoring.index');
         }
         return view('auth.login');
     }
@@ -44,7 +44,7 @@ class LoginController extends Controller
                 ])->withInput();
             }
 
-            return redirect()->intended(route('dashboard'))->with('success', 'Welcome back, ' . $user->name);
+            return redirect()->intended(route('monitoring.index'))->with('success', 'Welcome back, ' . $user->name);
         }
 
         return back()->withErrors([
