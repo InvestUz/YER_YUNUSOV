@@ -376,7 +376,7 @@
                     <tr class="total-row">
                         <td class="sticky-col-number">№</td>
                         <td class="sticky-col-district">ЖАМИ:</td>
-                        <td class="count-cell">
+                        <td class="count-cell" onclick="openDetails('sold', 'all', 0)">
                             <a href="javascript:void(0)">{{ $data['totals']['count'] }}</a>
                         </td>
                         <td>{{ number_format($data['totals']['area'], 2) }}</td>
@@ -385,7 +385,7 @@
                             {{ number_format($data['totals']['sold_price'], 1) }}</td>
                         <td class="section-divider amount-cell">
                             {{ number_format($data['totals']['auction_fee'], 1) }}</td>
-                        <td class="count-cell">
+                        <td class="count-cell" onclick="openDetails('discount', 'all', 0)">
                             <a href="javascript:void(0)">{{ $data['totals']['discount_count'] }}</a>
                         </td>
                         <td class="section-divider amount-cell">
@@ -414,7 +414,8 @@
                             <td class="sticky-col-number row-number">{{ $index + 1 }}</td>
                             <td class="sticky-col-district district-name">{{ $row['tuman'] }}</td>
 
-                            <td class="count-cell">
+                            <td class="count-cell"
+                                onclick="openDetails('sold', '{{ $row['tuman'] }}', {{ $index + 1 }})">
                                 <a href="javascript:void(0)">{{ $row['count'] }}</a>
                             </td>
                             <td class="text-right">{{ number_format($row['area'], 2) }}</td>
@@ -424,7 +425,8 @@
 
                             <td class="section-divider text-right">{{ number_format($row['auction_fee'], 1) }}</td>
 
-                            <td class="count-cell">
+                            <td class="count-cell"
+                                onclick="openDetails('discount', '{{ $row['tuman'] }}', {{ $index + 1 }})">
                                 <a href="javascript:void(0)">{{ $row['discount_count'] }}</a>
                             </td>
                             <td class="section-divider text-right">
@@ -555,6 +557,15 @@
         function exportToExcel() {
             const params = new URLSearchParams(new FormData(document.querySelector('form'))).toString();
             window.location.href = '{{ route('monitoring.report2') }}?export=excel&' + params;
+        }
+
+        function openDetails(category, district, districtId) {
+            const form = document.querySelector('form');
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData).toString();
+            const detailUrl =
+                `/monitoring/report2/details?category=${category}&district=${encodeURIComponent(district)}&district_id=${districtId}&${params}`;
+            window.location.href = detailUrl;
         }
     </script>
 @endpush

@@ -53,7 +53,17 @@ Route::middleware('auth')->group(function () {
         // ADD THIS NEW ROUTE FOR DETAILS PAGE
         Route::get('/report1/details', [MonitoringController::class, 'report1Details'])->name('report1.details');
         Route::get('/report2', [MonitoringController::class, 'report2'])->name('report2');
+
+        Route::get('/monitoring/report2/details', [MonitoringController::class, 'report2Details'])
+            ->name('monitoring.report2.details');
         Route::get('/report3', [MonitoringController::class, 'report3'])->name('report3');
+
+
+        Route::get('/monitoring/report3/details', [MonitoringController::class, 'report3Details'])
+            ->name('monitoring.report3.details');
+
+        Route::get('/monitoring/payment-schedule/{lotId}', [MonitoringController::class, 'paymentSchedule'])
+            ->name('monitoring.payment-schedule');
     });
 });
 

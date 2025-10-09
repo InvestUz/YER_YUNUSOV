@@ -388,7 +388,7 @@
                     <tr class="total-row">
                         <td class="sticky-col-number">№</td>
                         <td class="sticky-col-district">ЖАМИ:</td>
-                        <td class="count-cell">
+                        <td class="count-cell" onclick="openDetails('installment_total', 'all', 0)">
                             <a href="javascript:void(0)">{{ $data['totals']['total']['count'] }}</a>
                         </td>
                         <td>{{ number_format($data['totals']['total']['area'], 2) }}</td>
@@ -396,7 +396,7 @@
                         <td class="section-divider amount-cell">
                             {{ number_format($data['totals']['total']['sold_price'], 1) }}</td>
 
-                        <td class="count-cell">
+                        <td class="count-cell" onclick="openDetails('fully_paid', 'all', 0)">
                             <a href="javascript:void(0)">{{ $data['totals']['fully_paid']['count'] }}</a>
                         </td>
                         <td>{{ number_format($data['totals']['fully_paid']['area'], 2) }}</td>
@@ -404,7 +404,7 @@
                         <td class="section-divider amount-cell">
                             {{ number_format($data['totals']['fully_paid']['sold_price'], 1) }}</td>
 
-                        <td class="count-cell">
+                        <td class="count-cell" onclick="openDetails('under_monitoring', 'all', 0)">
                             <a href="javascript:void(0)">{{ $data['totals']['under_monitoring']['count'] }}</a>
                         </td>
                         <td>{{ number_format($data['totals']['under_monitoring']['area'], 2) }}</td>
@@ -412,7 +412,7 @@
                         <td class="section-divider amount-cell">
                             {{ number_format($data['totals']['under_monitoring']['sold_price'], 1) }}</td>
 
-                        <td class="count-cell">
+                        <td class="count-cell" onclick="openDetails('overdue', 'all', 0)">
                             <a href="javascript:void(0)">{{ $data['totals']['overdue']['count'] }}</a>
                         </td>
                         <td>{{ number_format($data['totals']['overdue']['area'], 2) }}</td>
@@ -428,7 +428,8 @@
                             <td class="sticky-col-number row-number">{{ $index + 1 }}</td>
                             <td class="sticky-col-district district-name">{{ $row['tuman'] }}</td>
 
-                            <td class="count-cell">
+                            <td class="count-cell"
+                                onclick="openDetails('installment_total', '{{ $row['tuman'] }}', {{ $index + 1 }})">
                                 <a href="javascript:void(0)">{{ $row['total']['count'] }}</a>
                             </td>
                             <td class="text-right">{{ number_format($row['total']['area'], 2) }}</td>
@@ -436,7 +437,8 @@
                             <td class="amount-cell section-divider text-right">
                                 {{ number_format($row['total']['sold_price'], 1) }}</td>
 
-                            <td class="count-cell">
+                            <td class="count-cell"
+                                onclick="openDetails('fully_paid', '{{ $row['tuman'] }}', {{ $index + 1 }})">
                                 <a href="javascript:void(0)">{{ $row['fully_paid']['count'] }}</a>
                             </td>
                             <td class="text-right">{{ number_format($row['fully_paid']['area'], 2) }}</td>
@@ -444,7 +446,8 @@
                             <td class="amount-cell section-divider text-right">
                                 {{ number_format($row['fully_paid']['sold_price'], 1) }}</td>
 
-                            <td class="count-cell">
+                            <td class="count-cell"
+                                onclick="openDetails('under_monitoring', '{{ $row['tuman'] }}', {{ $index + 1 }})">
                                 <a href="javascript:void(0)">{{ $row['under_monitoring']['count'] }}</a>
                             </td>
                             <td class="text-right">{{ number_format($row['under_monitoring']['area'], 2) }}</td>
@@ -452,7 +455,8 @@
                             <td class="amount-cell section-divider text-right">
                                 {{ number_format($row['under_monitoring']['sold_price'], 1) }}</td>
 
-                            <td class="count-cell">
+                            <td class="count-cell"
+                                onclick="openDetails('overdue', '{{ $row['tuman'] }}', {{ $index + 1 }})">
                                 <a href="javascript:void(0)">{{ $row['overdue']['count'] }}</a>
                             </td>
                             <td class="text-right">{{ number_format($row['overdue']['area'], 2) }}</td>
@@ -551,6 +555,15 @@
         function exportToExcel() {
             const params = new URLSearchParams(new FormData(document.querySelector('form'))).toString();
             window.location.href = '{{ route('monitoring.report3') }}?export=excel&' + params;
+        }
+
+        function openDetails(category, district, districtId) {
+            const form = document.querySelector('form');
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData).toString();
+            const detailUrl =
+                `/monitoring/report3/details?category=${category}&district=${encodeURIComponent(district)}&district_id=${districtId}&${params}`;
+            window.location.href = detailUrl;
         }
     </script>
 @endpush
