@@ -80,12 +80,15 @@ class MonitoringService
         $data = [];
 
         foreach ($tumans as $tuman) {
-            $query = Lot::where('tuman_id', $tuman->id)->withContract();
+            $query = Lot::where('tuman_id', $tuman->id)
+                ->where('lot_status', 'sold')
+                ->where('contract_signed', true);
+
             $query = $this->applyFilters($query, $filters);
 
             $lots = $query->with('distributions')->get();
 
-            // Calculate distributions
+            // Initialize distributions
             $distributions = [
                 'local_budget_allocated' => 0,
                 'development_fund_allocated' => 0,
@@ -97,15 +100,27 @@ class MonitoringService
                 'district_authority_remaining' => 0,
             ];
 
+            // Calculate distributions from lots
             foreach ($lots as $lot) {
-                foreach ($lot->distributions as $dist) {
-                    $distributions[$dist->category . '_allocated'] += $dist->allocated_amount;
-                    $distributions[$dist->category . '_remaining'] += $dist->remaining_amount;
+                if ($lot->distributions && $lot->distributions->count() > 0) {
+                    foreach ($lot->distributions as $dist) {
+                        // Allocated (already paid)
+                        $distributions[$dist->category . '_allocated'] += $dist->allocated_amount / 1000000000;
+                        // Remaining (to be paid)
+                        $distributions[$dist->category . '_remaining'] += $dist->remaining_amount / 1000000000;
+                    }
                 }
             }
 
-            // Future payments calculation
+            // Calculate future payments by year
             $futurePayments = $this->calculateFuturePayments($tuman->id, $filters);
+
+            // Calculate auction expenses and fees
+            $auctionFee = $query->sum('auction_fee') / 1000000000;
+            $discountCount = $query->where('discount', '>', 0)->count();
+            $discountAmount = $query->sum('discount') / 1000000000;
+            $davaktivAmount = $query->sum('davaktiv_amount') / 1000000000;
+            $auctionExpenses = $query->sum('auction_expenses') / 1000000000;
 
             $data[] = [
                 'tuman' => $tuman->name_uz,
@@ -113,11 +128,11 @@ class MonitoringService
                 'area' => $query->sum('land_area'),
                 'initial_price' => $query->sum('initial_price') / 1000000000,
                 'sold_price' => $query->sum('sold_price') / 1000000000,
-                'auction_fee' => $query->sum('auction_fee') / 1000000000,
-                'discount_count' => $query->where('discount', '>', 0)->count(),
-                'discount_amount' => $query->sum('discount') / 1000000000,
-                'davaktiv_amount' => $query->sum('davaktiv_amount') / 1000000000,
-                'auction_expenses' => $query->sum('auction_expenses') / 1000000000,
+                'auction_fee' => $auctionFee,
+                'discount_count' => $discountCount,
+                'discount_amount' => $discountAmount,
+                'davaktiv_amount' => $davaktivAmount,
+                'auction_expenses' => $auctionExpenses,
                 'distributions' => $distributions,
                 'future_payments' => $futurePayments,
             ];
@@ -128,6 +143,7 @@ class MonitoringService
             'totals' => $this->calculateTotals2($data)
         ];
     }
+
 
     /**
      * Свод-3: Installment payment monitoring
@@ -148,29 +164,29 @@ class MonitoringService
             $lots = $query->with('paymentSchedules')->get();
 
             // Fully paid
-            $fullyPaid = $lots->filter(function($lot) {
+            $fullyPaid = $lots->filter(function ($lot) {
                 return $lot->paymentSchedules->sum('actual_amount') >= $lot->sold_price;
             });
 
             // Under monitoring (not fully paid)
-            $underMonitoring = $lots->filter(function($lot) {
+            $underMonitoring = $lots->filter(function ($lot) {
                 return $lot->paymentSchedules->sum('actual_amount') < $lot->sold_price;
             });
 
             // Overdue
-            $overdue = $underMonitoring->filter(function($lot) use ($currentDate) {
+            $overdue = $underMonitoring->filter(function ($lot) use ($currentDate) {
                 return $lot->paymentSchedules->where('payment_date', '<', $currentDate)
                     ->where('actual_amount', '<', 'planned_amount')->count() > 0;
             });
 
             // Calculate payment percentages
-            $totalPlanned = $underMonitoring->sum(function($lot) use ($currentDate) {
+            $totalPlanned = $underMonitoring->sum(function ($lot) use ($currentDate) {
                 return $lot->paymentSchedules
                     ->where('payment_date', '<=', $currentDate)
                     ->sum('planned_amount');
             });
 
-            $totalActual = $underMonitoring->sum(function($lot) {
+            $totalActual = $underMonitoring->sum(function ($lot) {
                 return $lot->paymentSchedules->sum('actual_amount');
             });
 
@@ -219,7 +235,7 @@ class MonitoringService
     {
         $lot = Lot::with('paymentSchedules')->findOrFail($lotId);
 
-        $schedules = $lot->paymentSchedules->map(function($schedule) {
+        $schedules = $lot->paymentSchedules->map(function ($schedule) {
             return [
                 'date' => $schedule->payment_date->format('d.m.Y'),
                 'planned' => $schedule->planned_amount,
@@ -280,12 +296,18 @@ class MonitoringService
         $payments = [];
 
         foreach ($years as $year) {
-            $amount = PaymentSchedule::whereHas('lot', function($q) use ($tumanId) {
+            $query = PaymentSchedule::whereHas('lot', function ($q) use ($tumanId) {
                 $q->where('tuman_id', $tumanId);
-            })
-            ->whereYear('payment_date', $year)
-            ->sum('planned_amount');
+            })->whereYear('payment_date', $year);
 
+            // Apply filters to payment schedules
+            if (!empty($filters['yangi_uzbekiston'])) {
+                $query->whereHas('lot', function ($q) use ($filters) {
+                    $q->where('yangi_uzbekiston', $filters['yangi_uzbekiston']);
+                });
+            }
+
+            $amount = $query->sum('planned_amount');
             $payments[$year] = $amount / 1000000000;
         }
 
@@ -336,14 +358,29 @@ class MonitoringService
     private function calculateTotals2($data)
     {
         $totals = [
-            'count' => 0, 'area' => 0, 'initial_price' => 0, 'sold_price' => 0,
-            'auction_fee' => 0, 'discount_count' => 0, 'discount_amount' => 0,
-            'davaktiv_amount' => 0, 'auction_expenses' => 0,
+            'count' => 0,
+            'area' => 0,
+            'initial_price' => 0,
+            'sold_price' => 0,
+            'auction_fee' => 0,
+            'discount_count' => 0,
+            'discount_amount' => 0,
+            'davaktiv_amount' => 0,
+            'auction_expenses' => 0,
             'distributions' => [
-                'local_budget_allocated' => 0, 'development_fund_allocated' => 0,
-                'new_uzbekistan_allocated' => 0, 'district_authority_allocated' => 0,
-                'local_budget_remaining' => 0, 'development_fund_remaining' => 0,
-                'new_uzbekistan_remaining' => 0, 'district_authority_remaining' => 0,
+                'local_budget_allocated' => 0,
+                'development_fund_allocated' => 0,
+                'new_uzbekistan_allocated' => 0,
+                'district_authority_allocated' => 0,
+                'local_budget_remaining' => 0,
+                'development_fund_remaining' => 0,
+                'new_uzbekistan_remaining' => 0,
+                'district_authority_remaining' => 0,
+            ],
+            'future_payments' => [
+                2025 => 0,
+                2026 => 0,
+                2027 => 0,
             ],
         ];
 
@@ -361,11 +398,14 @@ class MonitoringService
             foreach ($row['distributions'] as $key => $value) {
                 $totals['distributions'][$key] += $value;
             }
+
+            foreach ($row['future_payments'] as $year => $amount) {
+                $totals['future_payments'][$year] += $amount;
+            }
         }
 
         return $totals;
     }
-
     private function calculateTotals3($data)
     {
         $totals = [
@@ -390,7 +430,8 @@ class MonitoringService
 
         if ($totals['overdue']['planned_payment'] > 0) {
             $totals['overdue']['percentage'] = round(
-                ($totals['overdue']['actual_payment'] / $totals['overdue']['planned_payment']) * 100, 1
+                ($totals['overdue']['actual_payment'] / $totals['overdue']['planned_payment']) * 100,
+                1
             );
         } else {
             $totals['overdue']['percentage'] = 0;

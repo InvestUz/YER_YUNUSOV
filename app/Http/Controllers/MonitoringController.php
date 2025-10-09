@@ -229,11 +229,119 @@ class MonitoringController extends Controller
         $filters = $this->getFilters($request);
         $data = $this->monitoringService->getReport2($filters);
 
+        // Handle Excel export
+        if ($request->input('export') === 'excel') {
+            return $this->exportReport2ToExcel($data, $filters);
+        }
+
         if ($request->ajax()) {
             return response()->json($data);
         }
 
         return view('monitoring.report2', compact('data', 'filters'));
+    }
+
+    private function exportReport2ToExcel($data, $filters)
+    {
+        $filename = 'svod2_' . date('Y-m-d_H-i-s') . '.csv';
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function () use ($data) {
+            $file = fopen('php://output', 'w');
+
+            // Add BOM for UTF-8
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // Headers
+            fputcsv($file, [
+                'Т/Р',
+                'Ҳудудлар',
+                'Сони',
+                'Майдони (га)',
+                'Бошланғич нархи (млрд)',
+                'Сотилган нархи (млрд)',
+                'Аукцион ҳақи (млрд)',
+                'Чегирма сони',
+                'Чегирма қиймати (млрд)',
+                'Давактив (млрд)',
+                'Харажат (млрд)',
+                'М.бюджет (амалда)',
+                'Жамғарма (амалда)',
+                'Я.Ўзб (амалда)',
+                'Туман (амалда)',
+                'М.бюджет (келгусида)',
+                'Жамғарма (келгусида)',
+                'Я.Ўзб (келгусида)',
+                'Туман (келгусида)',
+                '2025 йилда',
+                '2026 йилда',
+                '2027 йилда',
+            ]);
+
+            // Data rows
+            $index = 1;
+            foreach ($data['data'] as $row) {
+                fputcsv($file, [
+                    $index++,
+                    $row['tuman'],
+                    $row['count'],
+                    number_format($row['area'], 2),
+                    number_format($row['initial_price'], 1),
+                    number_format($row['sold_price'], 1),
+                    number_format($row['auction_fee'], 1),
+                    $row['discount_count'],
+                    number_format($row['discount_amount'], 1),
+                    number_format($row['davaktiv_amount'], 1),
+                    number_format($row['auction_expenses'], 1),
+                    number_format($row['distributions']['local_budget_allocated'], 1),
+                    number_format($row['distributions']['development_fund_allocated'], 1),
+                    number_format($row['distributions']['new_uzbekistan_allocated'], 1),
+                    number_format($row['distributions']['district_authority_allocated'], 1),
+                    number_format($row['distributions']['local_budget_remaining'], 1),
+                    number_format($row['distributions']['development_fund_remaining'], 1),
+                    number_format($row['distributions']['new_uzbekistan_remaining'], 1),
+                    number_format($row['distributions']['district_authority_remaining'], 1),
+                    number_format($row['future_payments'][2025] ?? 0, 1),
+                    number_format($row['future_payments'][2026] ?? 0, 1),
+                    number_format($row['future_payments'][2027] ?? 0, 1),
+                ]);
+            }
+
+            // Totals row
+            $totals = $data['totals'];
+            fputcsv($file, [
+                '',
+                'ЖАМИ:',
+                $totals['count'],
+                number_format($totals['area'], 2),
+                number_format($totals['initial_price'], 1),
+                number_format($totals['sold_price'], 1),
+                number_format($totals['auction_fee'], 1),
+                $totals['discount_count'],
+                number_format($totals['discount_amount'], 1),
+                number_format($totals['davaktiv_amount'], 1),
+                number_format($totals['auction_expenses'], 1),
+                number_format($totals['distributions']['local_budget_allocated'], 1),
+                number_format($totals['distributions']['development_fund_allocated'], 1),
+                number_format($totals['distributions']['new_uzbekistan_allocated'], 1),
+                number_format($totals['distributions']['district_authority_allocated'], 1),
+                number_format($totals['distributions']['local_budget_remaining'], 1),
+                number_format($totals['distributions']['development_fund_remaining'], 1),
+                number_format($totals['distributions']['new_uzbekistan_remaining'], 1),
+                number_format($totals['distributions']['district_authority_remaining'], 1),
+                number_format($totals['future_payments'][2025] ?? 0, 1),
+                number_format($totals['future_payments'][2026] ?? 0, 1),
+                number_format($totals['future_payments'][2027] ?? 0, 1),
+            ]);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     public function report3(Request $request)
