@@ -48,7 +48,10 @@ Route::middleware('auth')->group(function () {
 
     // Monitoring Reports
     Route::prefix('monitoring')->name('monitoring.')->group(function () {
-        Route::get('/', [MonitoringController::class, 'index'])->name('index');
+        Route::get('/', function () {
+            return redirect()->route('monitoring.report1');
+        })->name('index');
+
         Route::get('/report1', [MonitoringController::class, 'report1'])->name('report1');
         // ADD THIS NEW ROUTE FOR DETAILS PAGE
         Route::get('/report1/details', [MonitoringController::class, 'report1Details'])->name('report1.details');

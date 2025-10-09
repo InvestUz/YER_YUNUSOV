@@ -338,6 +338,8 @@
             <h1>ТОШКЕНТ ШАҲРИДА АУКЦИОН САВДОЛАРИДА СОТИЛГАН ЕР УЧАСТКАЛАРИ ТЎҒРИСИДА ЙИҒМА МАЪЛУМОТ</h1>
             <p>Свод - 1 | Ҳисобот даври: {{ $filters['date_from'] ?? '01.01.2023' }} -
                 {{ $filters['date_to'] ?? date('d.m.Y') }}</p>
+
+@include('monitoring.partials.navigation')
         </div>
         <!-- Report Table -->
         <div class="table-wrapper">

@@ -68,9 +68,6 @@
             </a>
 
 
-
-
-
             @if (Auth::check() && Auth::user()->role === 'admin')
                 <a href="#"
                     class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium transition-colors">

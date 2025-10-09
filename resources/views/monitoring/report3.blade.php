@@ -346,6 +346,8 @@
             <h1>ТОШКЕНТ ШАҲРИДА АУКЦИОН САВДОЛАРИДА БЎЛИБ ТЎЛАШ ШАРТИ БИЛАН СОТИЛГАН ЕР УЧАСТКАЛАРИ ТЎҒРИСИДА ЙИҒМА МАЪЛУМОТ</h1>
             <p>Свод - 3 | Ҳисобот даври: {{ $filters['date_from'] ?? '01.01.2023' }} -
                 {{ $filters['date_to'] ?? date('d.m.Y') }} | Ҳисоб санаси: {{ $filters['current_date'] ?? date('d.m.Y') }}</p>
+
+@include('monitoring.partials.navigation')
         </div>
 
         <!-- Report Table -->
