@@ -259,92 +259,71 @@ class LotController extends Controller
     /**
      * Get all available filter options
      */
+    /**
+     * Get all available filter options
+     */
     private function getFilterOptions($user)
     {
         $query = Lot::query();
 
+        // Filter by user's district if not admin
         if ($user->role === 'district_user' && $user->tuman_id) {
             $query->where('tuman_id', $user->tuman_id);
         }
 
         return [
-            'zones' => $query->select('zone')
-                ->distinct()
-                ->whereNotNull('zone')
-                ->pluck('zone')
-                ->sort()
-                ->values(),
+            // Zones
+            'zones' => $query->clone()->distinct()->pluck('zone')->filter()->sort()->values()->toArray(),
 
-            'master_plan_zones' => Lot::select('master_plan_zone')
-                ->distinct()
-                ->whereNotNull('master_plan_zone')
-                ->pluck('master_plan_zone')
-                ->sort()
-                ->values(),
+            // Master Plan Zones
+            'master_plan_zones' => $query->clone()->distinct()->pluck('master_plan_zone')->filter()->sort()->values()->toArray(),
 
+            // Construction Types
             'construction_types' => [
-                'konservatsiya' => 'Konservatsiya',
-                'konservatsiya_qisman' => 'Konservatsiya (qisman qizil chiziq)',
-                'konservatsiya_qizil_chiziqda' => 'Konservatsiya (qisman qizil chiziqda)',
-                'konservatsiya_qizil_chiziq' => 'Konservatsiya (qizil chiziq)',
-                'konservatsiya_soqliqni' => 'Konservatsiya (Soq\'liqni saqlash muassasalari)',
-                'konservatsiya_yashil' => 'Konservatsiya (yashil hudud)',
-                'rekonstruksiya' => 'Rekonstruksiya',
-                'rekonstruksiya_qisman' => 'Rekonstruksiya (qisman qizil chiziq)',
-                'renovatsiya' => 'Renovatsiya',
-                'renovatsiya_qisman' => 'Renovatsiya (qisman qizil chiziq)',
-                'renovatsiya_yashil' => 'Renovatsiya (yashil hudud)',
-                'renovatsiya_yashil_qisman' => 'Renovatsiya (yashil hudud, qisman qizil chiziq)',
-                'uy_joy' => 'уй-жой',
-                'empty' => '(Пустые)'
+                'konservatsiya' => 'Консервация',
+                'konservatsiya_qisman' => 'Қисман консервация',
+                'konservatsiya_qizil_chiziqda' => 'Қизил чизиқда',
+                'rekonstruksiya' => 'Реконструксия',
+                'renovatsiya' => 'Реновация',
+                'uy_joy' => 'Уй-жой',
+                'empty' => 'Белгиланмаган',
             ],
 
+            // Object Types
             'object_types' => [
-                'avtoturargoh' => 'автотурарғоҳ ва электр',
-                'boshqa' => 'бошқа',
-                'kop_qavatli' => 'кўп қаватли турар жой',
-                'logistika' => 'логистика маркази, куртка',
-                'maktab' => 'мактаб ва мактабгача таълим',
-                'savdo' => 'савдо ва маиший хизмат'
+                'avtoturargoh' => 'Автотураргоҳ',
+                'boshqa' => 'Бошқа',
+                'kop_qavatli' => 'Кўп қаватли',
+                'logistika' => 'Логистика',
+                'maktab' => 'Мактаб',
+                'savdo' => 'Савдо-маиший',
             ],
 
+            // Payment Types Extended
             'payment_types' => [
-                'auction_tanlash' => 'Аукцион/Танлов жунланди (12)',
-                'muddatli' => 'муддатли',
-                'muddatli_emas' => 'муддатли эмас',
+                'auction_tanlash' => 'Аукцион танлов',
+                'muddatli' => 'Муддатли',
+                'muddatli_emas' => 'Муддатли эмас',
                 'nizoli' => 'Низоли',
-                'savdo_tanlash' => 'Савдо/танлов натижаларини расмийла'
+                'savdo_tanlash' => 'Савдо танлов',
             ],
 
-            'basis_types' => [
-                'boshqa' => 'бошқа',
-                'PF-135' => 'ПФ-135',
-                'PF-153' => 'ПФ-153',
-                'PF-33' => 'ПФ-33',
-                'PF-93' => 'ПФ-93'
-            ],
+            // Basis Types (PF Numbers)
+            'basis_types' => $query->clone()->distinct()->pluck('basis')->filter()->sort()->values()->toArray(),
 
+            // Auction Types
             'auction_types' => [
-                'yopiq' => 'Ёпиқ аукцион',
-                'ochiq' => 'Очиқ аукцион'
+                'ochiq' => 'Очиқ',
+                'yopiq' => 'Ёпиқ',
+                'savdo' => 'Савдо',
+                'auction' => 'Аукцион',
             ],
 
-            'lot_statuses' => [
-                'buyurtmachi_roziligi' => 'Buyurtmachi roziligini kutish jarayonida',
-                'ishtirokchi_roziligi' => 'Ishtirokchi roziligini kutish jarayonida (34)',
-                'auction' => 'Аукцион/Танлов жунланди (12)',
-                'vakticha_tuxtildi' => 'Вақтинча тухтатилди',
-                'ishtirokchi_buyurtmachi' => 'Иштирокчи ва Бюртмачи келишуви ёкка',
-                'akunlandi' => 'Лот акунланди (29)',
-                'savdo' => 'Савдо/танлов натижаларини расмийла'
-            ],
+            // Lot Statuses
+            'lot_statuses' => $query->clone()->distinct()->pluck('lot_status')->filter()->sort()->values()->toArray(),
 
-            'winner_types' => Lot::select('winner_type')
-                ->distinct()
-                ->whereNotNull('winner_type')
-                ->pluck('winner_type')
-                ->sort()
-                ->values(),
+            // Winner Types
+            'winner_types' => $query->clone()->distinct()->pluck('winner_type')->filter()->sort()->values()->toArray(),
         ];
     }
 
