@@ -359,8 +359,8 @@
                         <th rowspan="2">майдони<br>(га)</th>
                         <th rowspan="2">бошланғич<br>нархи<br>(млрд сўм)</th>
                         <th rowspan="2" class="section-divider">сотилган<br>нархи<br>(млрд сўм)</th>
-                        <th colspan="4" class="section-divider">Бекор қилинган</th>
-                        <th colspan="4" class="section-divider">Тўлиқ тўланган</th>
+                        <th colspan="4" class="section-divider">бир йўла тўлаганлар</th>
+                        <th colspan="4" class="section-divider">бўлиб тўланадиганлар</th>
                         <th rowspan="2">сони</th>
                         <th rowspan="2">майдони<br>(га)</th>
                         <th rowspan="2">бошланғич<br>нархи<br>(млрд сўм)</th>
