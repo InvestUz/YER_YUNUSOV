@@ -16,7 +16,7 @@ use App\Http\Controllers\ParserController;
 // Redirect root based on authentication
 Route::get('/', function () {
     if (auth()->check()) {
-        return redirect()->route('dashboard');
+        return redirect()->route('monitoring');
     }
     return redirect()->route('login');
 });
