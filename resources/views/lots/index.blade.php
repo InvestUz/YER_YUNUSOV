@@ -485,32 +485,35 @@
                                     </div>
                                 </div>
 
-                             <div>
-    <label class="block text-sm font-semibold text-gray-700 mb-3">Бош режа зонаси</label>
-    <div class="grid grid-cols-1 gap-2">
-        @php
-            // Only show these 3 main zones, nothing else
-            $allowedZones = ['Konservatsiya', 'Rekonstruksiya', 'Renovatsiya'];
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-3">Бош режа зонаси</label>
+                                    <div class="grid grid-cols-1 gap-2">
+                                        @php
+                                            // Only show these 3 main zones, nothing else
+                                            $allowedZones = ['Konservatsiya', 'Rekonstruksiya', 'Renovatsiya'];
 
-            // Filter to show ONLY exact matches
-            $filteredZones = [];
-            foreach ($filterOptions['master_plan_zones'] ?? [] as $zone) {
-                if (in_array($zone, $allowedZones)) {
-                    $filteredZones[] = $zone;
-                }
-            }
-        @endphp
+                                            // Filter to show ONLY exact matches
+                                            $filteredZones = [];
+                                            foreach ($filterOptions['master_plan_zones'] ?? [] as $zone) {
+                                                if (in_array($zone, $allowedZones)) {
+                                                    $filteredZones[] = $zone;
+                                                }
+                                            }
+                                        @endphp
 
-        @foreach ($filteredZones as $zone)
-            <label class="flex items-center p-2.5 bg-white border-2 border-gray-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 cursor-pointer transition-all">
-                <input type="checkbox" name="master_plan_zones[]" value="{{ $zone }}"
-                    {{ in_array($zone, request('master_plan_zones', [])) ? 'checked' : '' }}
-                    class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
-                <span class="ml-3 text-sm font-medium text-gray-700">{{ $zone }}</span>
-            </label>
-        @endforeach
-    </div>
-</div>
+                                        @foreach ($filteredZones as $zone)
+                                            <label
+                                                class="flex items-center p-2.5 bg-white border-2 border-gray-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 cursor-pointer transition-all">
+                                                <input type="checkbox" name="master_plan_zones[]"
+                                                    value="{{ $zone }}"
+                                                    {{ in_array($zone, request('master_plan_zones', [])) ? 'checked' : '' }}
+                                                    class="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                                                <span
+                                                    class="ml-3 text-sm font-medium text-gray-700">{{ $zone }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
 
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-3">Янги Ўзбекистон</label>
