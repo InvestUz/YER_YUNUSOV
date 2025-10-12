@@ -49,6 +49,8 @@ return new class extends Migration
             $table->decimal('incoming_amount', 20, 2)->default(0);
             $table->decimal('davaktiv_amount', 20, 2)->default(0);
             $table->decimal('auction_expenses', 20, 2)->default(0);
+             $table->unsignedInteger('views_count')->default(0);
+            $table->unsignedInteger('likes_count')->default(0);
             $table->timestamps();
             $table->softDeletes();
         });

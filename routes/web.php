@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnalyticsController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
@@ -16,7 +17,7 @@ use App\Http\Controllers\ParserController;
 // Redirect root based on authentication
 Route::get('/', function () {
     if (auth()->check()) {
-        return redirect()->route('monitoring');
+        return redirect()->route('monitoring.report1');
     }
     return redirect()->route('login');
 });
@@ -45,6 +46,25 @@ Route::middleware('auth')->group(function () {
 
     // Resource routes
     Route::resource('lots', LotController::class);
+    Route::post('/lots/{lot}/toggle-like', [LotController::class, 'toggleLike'])->name('lots.toggleLike');
+
+    Route::post('/lots/{lot}/send-message', [LotController::class, 'sendMessage'])
+        ->name('lots.sendMessage');
+
+    // Admin routes for viewing analytics
+    Route::prefix('analytics')->name('analytics.')->group(function () {
+        Route::get('/lot-views/{lot}', [AnalyticsController::class, 'lotViews'])
+            ->name('lot.views');
+        Route::get('/lot-messages/{lot}', [AnalyticsController::class, 'lotMessages'])
+            ->name('lot.messages');
+        Route::get('/login-history', [AnalyticsController::class, 'loginHistory'])
+            ->name('login.history');
+
+        Route::post('/messages/{message}/mark-read', [AnalyticsController::class, 'markMessageAsRead'])
+            ->name('messages.mark-read');
+        Route::post('/messages/{message}/mark-replied', [AnalyticsController::class, 'markMessageAsReplied'])
+            ->name('messages.mark-replied');
+    });
 
     // Monitoring Reports
     Route::prefix('monitoring')->name('monitoring.')->group(function () {

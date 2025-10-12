@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lot;
+use App\Models\LotLike;
+use App\Models\LotMessage;
+use App\Models\LotView;
 use App\Models\Tuman;
 use App\Models\Mahalla;
 use App\Models\PaymentSchedule;
@@ -406,14 +409,50 @@ class LotController extends Controller
     {
         $user = Auth::user();
 
-
         // Check access
-        if ($user->role === 'district_user' && $lot->tuman_id !== $user->tuman_id) {
+        if ($user && $user->role === 'district_user' && $lot->tuman_id !== $user->tuman_id) {
             abort(403, 'Рухсат йўқ');
         }
 
+        // Track view with detailed information
+        $this->trackView($lot, request());
+
+        // Extract coordinates if missing
+        $lot->extractCoordinatesFromUrl();
+
         // Load relationships
-        $lot->load(['tuman', 'mahalla', 'paymentSchedules', 'distributions']);
+        $lot->load(['tuman', 'mahalla', 'paymentSchedules', 'distributions', 'images']);
+
+        // Get unique views count
+        $uniqueViewsCount = LotView::where('lot_id', $lot->id)
+            ->distinct('ip_address')
+            ->count('ip_address');
+
+        // Get total views count
+        $totalViewsCount = LotView::where('lot_id', $lot->id)->count();
+
+        // Get messages count
+        $messagesCount = LotMessage::where('lot_id', $lot->id)->count();
+        $unreadMessagesCount = LotMessage::where('lot_id', $lot->id)
+            ->where('status', 'pending')
+            ->count();
+
+        // Get likes count
+        $likesCount = LotLike::where('lot_id', $lot->id)->count();
+
+        // Check if current user/IP has liked
+        $hasLiked = false;
+        if ($user) {
+            $hasLiked = LotLike::where('lot_id', $lot->id)
+                ->where('user_id', $user->id)
+                ->exists();
+        } else {
+            $hasLiked = LotLike::where('lot_id', $lot->id)
+                ->where('ip_address', request()->ip())
+                ->whereNull('user_id')
+                ->exists();
+        }
+
         // Calculate payment statistics
         $paymentStats = [
             'total_amount' => $lot->sold_price ?? 0,
@@ -424,37 +463,14 @@ class LotController extends Controller
             'overdue_amount' => 0,
         ];
 
-        // Calculate remaining amount and progress
         $totalPaid = $paymentStats['paid_amount'] + $paymentStats['transferred_amount'];
         $paymentStats['remaining_amount'] = $paymentStats['total_amount'] - $totalPaid;
-
 
         if ($paymentStats['total_amount'] > 0) {
             $paymentStats['payment_progress'] = ($totalPaid / $paymentStats['total_amount']) * 100;
         }
 
-        // Calculate installment payment statistics
-        if ($lot->payment_type === 'muddatli' && $lot->contract_signed && $lot->paymentSchedules->count() > 0) {
-            $schedules = $lot->paymentSchedules;
-
-            $paymentStats['scheduled_total'] = $schedules->sum('planned_amount');
-            $paymentStats['scheduled_paid'] = $schedules->sum('actual_amount');
-            $paymentStats['scheduled_remaining'] = $paymentStats['scheduled_total'] - $paymentStats['scheduled_paid'];
-
-            // Calculate overdue payments
-            $overdueSchedules = $schedules->where('payment_date', '<=', now())
-                ->filter(function ($schedule) {
-                    return $schedule->actual_amount < $schedule->planned_amount;
-                });
-
-            $paymentStats['overdue_amount'] = $overdueSchedules->sum(function ($schedule) {
-                return $schedule->planned_amount - $schedule->actual_amount;
-            });
-
-            $paymentStats['overdue_count'] = $overdueSchedules->count();
-        }
-
-        // Calculate distribution statistics
+        // Rest of existing code...
         $distributionStats = [
             'local_budget' => 0,
             'development_fund' => 0,
@@ -470,7 +486,6 @@ class LotController extends Controller
             }
         }
 
-        // Calculate financial metrics
         $financialMetrics = [
             'price_increase' => 0,
             'price_increase_percent' => 0,
@@ -487,10 +502,8 @@ class LotController extends Controller
             $financialMetrics['price_per_hectare'] = $lot->sold_price / $lot->land_area;
         }
 
-        // Net income = Davaktiv amount (final after all deductions)
         $financialMetrics['net_income'] = $lot->davaktiv_amount ?? 0;
 
-        // Auction countdown (if auction hasn't happened yet)
         $auctionCountdown = null;
         if ($lot->auction_date && $lot->auction_date > now()) {
             $auctionCountdown = now()->diff($lot->auction_date);
@@ -501,9 +514,101 @@ class LotController extends Controller
             'paymentStats',
             'distributionStats',
             'financialMetrics',
-            'auctionCountdown'
+            'auctionCountdown',
+            'uniqueViewsCount',
+            'totalViewsCount',
+            'messagesCount',
+            'unreadMessagesCount',
+            'likesCount',
+            'hasLiked'
         ));
     }
+
+    private function trackView(Lot $lot, Request $request)
+    {
+        $userAgent = $request->userAgent();
+        $parsed = LotView::parseUserAgent($userAgent);
+
+        LotView::create([
+            'lot_id' => $lot->id,
+            'user_id' => Auth::id(),
+            'ip_address' => $request->ip(),
+            'user_agent' => $userAgent,
+            'device' => $parsed['device'],
+            'browser' => $parsed['browser'],
+            'platform' => $parsed['platform'],
+            'session_id' => session()->getId(),
+            'viewed_at' => now()
+        ]);
+
+        // Update counter in lots table
+        $lot->increment('views_count');
+    }
+
+    public function toggleLike(Lot $lot)
+    {
+        $user = Auth::user();
+        $ipAddress = request()->ip();
+
+        if ($user) {
+            $like = LotLike::where('lot_id', $lot->id)
+                ->where('user_id', $user->id)
+                ->first();
+        } else {
+            $like = LotLike::where('lot_id', $lot->id)
+                ->where('ip_address', $ipAddress)
+                ->whereNull('user_id')
+                ->first();
+        }
+
+        if ($like) {
+            $like->delete();
+            $lot->decrement('likes_count');
+            return response()->json([
+                'liked' => false,
+                'count' => LotLike::where('lot_id', $lot->id)->count()
+            ]);
+        } else {
+            LotLike::create([
+                'lot_id' => $lot->id,
+                'user_id' => $user ? $user->id : null,
+                'ip_address' => $ipAddress,
+                'liked_at' => now()
+            ]);
+            $lot->increment('likes_count');
+            return response()->json([
+                'liked' => true,
+                'count' => LotLike::where('lot_id', $lot->id)->count()
+            ]);
+        }
+    }
+
+    public function sendMessage(Request $request, Lot $lot)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => 'nullable|string|max:50',
+            'message' => 'required|string|max:5000'
+        ]);
+
+        LotMessage::create([
+            'lot_id' => $lot->id,
+            'user_id' => Auth::id(),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'message' => $validated['message'],
+            'ip_address' => $request->ip(),
+            'status' => 'pending'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Хабар муваффақиятли юборилди'
+        ]);
+    }
+  
     /**
      * Show the form for editing the specified resource.
      */
