@@ -2,472 +2,185 @@
 
 @section('title', 'Детальная информация - Toshkent Invest')
 
-@push('styles')
-<style>
-    .details-container {
-        background: #f8f9fa;
-        min-height: 100vh;
-        padding: 20px;
-    }
-
-    .breadcrumb {
-        background: white;
-        padding: 15px 20px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 13px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .breadcrumb a {
-        color: #1976d2;
-        text-decoration: none;
-        font-weight: 600;
-    }
-
-    .breadcrumb a:hover {
-        text-decoration: underline;
-    }
-
-    .breadcrumb span {
-        color: #666;
-    }
-
-    .details-header {
-        background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
-        color: white;
-        padding: 25px;
-        border-radius: 12px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-
-    .details-header h1 {
-        margin: 0 0 10px 0;
-        font-size: 24px;
-        font-weight: 700;
-    }
-
-    .details-header .info-row {
-        display: flex;
-        gap: 30px;
-        flex-wrap: wrap;
-        margin-top: 15px;
-    }
-
-    .details-header .info-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .details-header .info-item strong {
-        font-weight: 600;
-    }
-
-    .stats-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-
-    .stat-card {
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-left: 4px solid #1976d2;
-    }
-
-    .stat-card .label {
-        font-size: 11px;
-        color: #666;
-        text-transform: uppercase;
-        font-weight: 600;
-        margin-bottom: 8px;
-    }
-
-    .stat-card .value {
-        font-size: 24px;
-        font-weight: 700;
-        color: #1976d2;
-    }
-
-    .stat-card .unit {
-        font-size: 12px;
-        color: #999;
-        margin-left: 4px;
-    }
-
-    .actions-bar {
-        background: white;
-        padding: 15px 20px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .search-box {
-        display: flex;
-        gap: 10px;
-        flex: 1;
-        max-width: 500px;
-    }
-
-    .search-box input {
-        flex: 1;
-        padding: 10px 15px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        font-size: 13px;
-    }
-
-    .btn {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 6px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .btn-primary {
-        background: #1976d2;
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background: #1565c0;
-    }
-
-    .btn-success {
-        background: #2e7d32;
-        color: white;
-    }
-
-    .btn-success:hover {
-        background: #1b5e20;
-    }
-
-    .btn-secondary {
-        background: #757575;
-        color: white;
-    }
-
-    .btn-secondary:hover {
-        background: #616161;
-    }
-
-    .table-container {
-        background: white;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .table-wrapper {
-        overflow-x: auto;
-    }
-
-    .lots-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .lots-table thead {
-        background: linear-gradient(180deg, #5c6bc0 0%, #3f51b5 100%);
-    }
-
-    .lots-table th {
-        padding: 12px 15px;
-        text-align: left;
-        color: white;
-        font-weight: 700;
-        font-size: 11px;
-        text-transform: uppercase;
-        border-right: 1px solid rgba(255,255,255,0.1);
-        white-space: nowrap;
-    }
-
-    .lots-table th:last-child {
-        border-right: none;
-    }
-
-    .lots-table tbody tr {
-        border-bottom: 1px solid #e0e0e0;
-        transition: background 0.2s;
-    }
-
-    .lots-table tbody tr:hover {
-        background: #e3f2fd;
-    }
-
-    .lots-table td {
-        padding: 12px 15px;
-        font-size: 12px;
-        color: #333;
-    }
-
-    .lots-table .lot-number {
-        font-weight: 700;
-        color: #1976d2;
-    }
-
-    .lots-table .lot-address {
-        max-width: 300px;
-        white-space: normal;
-    }
-
-    .status-badge {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-    }
-
-    .status-sold {
-        background: #c8e6c9;
-        color: #1b5e20;
-    }
-
-    .status-contract {
-        background: #fff9c4;
-        color: #f57f17;
-    }
-
-    .status-pending {
-        background: #ffccbc;
-        color: #bf360c;
-    }
-
-    .payment-badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 4px;
-        font-size: 10px;
-        font-weight: 600;
-    }
-
-    .payment-onetime {
-        background: #e1f5fe;
-        color: #01579b;
-    }
-
-    .payment-installment {
-        background: #f3e5f5;
-        color: #4a148c;
-    }
-
-    .pagination {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 5px;
-        padding: 20px;
-        background: white;
-        border-top: 1px solid #e0e0e0;
-    }
-
-    .pagination a,
-    .pagination span {
-        padding: 8px 12px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 12px;
-        text-decoration: none;
-        color: #333;
-    }
-
-    .pagination a:hover {
-        background: #e3f2fd;
-        border-color: #1976d2;
-        color: #1976d2;
-    }
-
-    .pagination .active {
-        background: #1976d2;
-        color: white;
-        border-color: #1976d2;
-    }
-
-    .pagination .disabled {
-        opacity: 0.5;
-        pointer-events: none;
-    }
-
-    .no-data {
-        text-align: center;
-        padding: 60px 20px;
-        color: #999;
-    }
-
-    .no-data svg {
-        width: 80px;
-        height: 80px;
-        margin-bottom: 20px;
-        opacity: 0.3;
-    }
-
-    @media print {
-        .no-print {
-            display: none !important;
-        }
-        
-        .lots-table {
-            font-size: 9px;
-        }
-        
-        .lots-table th,
-        .lots-table td {
-            padding: 6px 8px;
-        }
-    }
-</style>
-@endpush
-
 @section('content')
-<div class="details-container">
+<div class="min-h-screen bg-slate-50 py-6 px-4">
     <!-- Breadcrumb -->
-    <div class="breadcrumb no-print">
-        <a href="{{ route('dashboard') }}">🏠 Бош саҳифа</a>
-        <span>›</span>
-        <a href="{{ route('monitoring.report1') }}">Свод-1</a>
-        <span>›</span>
-        <span>{{ $categoryName }}</span>
+    <div class="bg-white border-2 border-slate-400 px-5 py-3 mb-5 flex items-center gap-3 text-sm font-bold shadow-sm">
+        <a href="{{ route('dashboard') }}" class="text-slate-700 hover:text-blue-700 hover:underline uppercase">БОШ САҲИФА</a>
+        <span class="text-slate-400">›</span>
+        <a href="{{ route('monitoring.report1') }}" class="text-slate-700 hover:text-blue-700 hover:underline uppercase">СВОД-1</a>
+        <span class="text-slate-400">›</span>
+        <span class="text-slate-600 uppercase">{{ $categoryName }}</span>
     </div>
 
     <!-- Header -->
-    <div class="details-header">
-        <h1>{{ $categoryName }}</h1>
-        <div class="info-row">
-            <div class="info-item">
-                <span>📍</span>
-                <span><strong>Ҳудуд:</strong> {{ $districtName }}</span>
+    <div class="bg-white border-2 border-slate-400 p-6 mb-5 shadow-sm">
+        <h1 class="text-2xl font-black text-slate-800 uppercase border-b-4 border-blue-600 pb-3 mb-4">
+            {{ $categoryName }}
+        </h1>
+        <div class="flex flex-wrap gap-6 text-sm font-semibold">
+            <div class="flex items-center gap-2">
+                <span class="font-black text-slate-700">ҲУДУД:</span>
+                <span class="text-slate-600">{{ $districtName }}</span>
             </div>
-            <div class="info-item">
-                <span>📅</span>
-                <span><strong>Давр:</strong> {{ $filters['date_from'] ?? '01.01.2023' }} - {{ $filters['date_to'] ?? date('d.m.Y') }}</span>
+            <div class="flex items-center gap-2">
+                <span class="font-black text-slate-700">ДАВР:</span>
+                <span class="text-slate-600">{{ $filters['date_from'] ?? '01.01.2023' }} - {{ $filters['date_to'] ?? date('d.m.Y') }}</span>
             </div>
             @if(!empty($filters['subject_type']))
-            <div class="info-item">
-                <span>👤</span>
-                <span><strong>Субъект:</strong> {{ $filters['subject_type'] === 'legal' ? 'Юридик' : 'Жисмоний' }}</span>
+            <div class="flex items-center gap-2">
+                <span class="font-black text-slate-700">СУБЪЕКТ:</span>
+                <span class="text-slate-600">{{ $filters['subject_type'] === 'legal' ? 'Юридик' : 'Жисмоний' }}</span>
             </div>
             @endif
             @if(!empty($filters['zone']))
-            <div class="info-item">
-                <span>🏢</span>
-                <span><strong>Зона:</strong> {{ $filters['zone'] }}</span>
+            <div class="flex items-center gap-2">
+                <span class="font-black text-slate-700">ЗОНА:</span>
+                <span class="text-slate-600">{{ $filters['zone'] }}</span>
             </div>
             @endif
-        </div>
-    </div>
-
-    <!-- Statistics Cards -->
-    <div class="stats-cards no-print">
-        <div class="stat-card">
-            <div class="label">Жами участкалар</div>
-            <div class="value">{{ $stats['count'] }}<span class="unit">дона</span></div>
-        </div>
-        <div class="stat-card">
-            <div class="label">Умумий майдон</div>
-            <div class="value">{{ number_format($stats['total_area'], 2) }}<span class="unit">га</span></div>
-        </div>
-        <div class="stat-card">
-            <div class="label">Бошланғич нарх</div>
-            <div class="value">{{ number_format($stats['total_initial_price'], 1) }}<span class="unit">млрд</span></div>
-        </div>
-        <div class="stat-card">
-            <div class="label">Сотилган нарх</div>
-            <div class="value">{{ number_format($stats['total_sold_price'], 1) }}<span class="unit">млрд</span></div>
         </div>
     </div>
 
     <!-- Actions Bar -->
-    <div class="actions-bar no-print">
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Участка рақами, манзил ёки эгаси бўйича қидириш..." onkeyup="filterTable()">
+    <div class="bg-white border-2 border-slate-400 px-5 py-4 mb-5 flex items-center justify-between shadow-sm no-print">
+        <div class="flex-1 max-w-md">
+            <input type="text" id="searchInput"
+                   placeholder="ҚИДИРИШ..."
+                   onkeyup="filterTable()"
+                   class="w-full px-4 py-2.5 border-2 border-slate-300 text-sm font-semibold focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
         </div>
-        <div style="display: flex; gap: 10px;">
-            <button onclick="exportToExcel()" class="btn btn-success">
-                <span>📊</span> Excel
+        <div class="flex gap-3">
+            <button onclick="exportToExcel()"
+                    class="px-5 py-2.5 border-2 border-emerald-600 bg-emerald-50 text-emerald-700 text-sm font-bold uppercase hover:bg-emerald-600 hover:text-white transition shadow-sm">
+                📊 EXCEL
             </button>
-            <button onclick="window.print()" class="btn btn-primary">
-                <span>🖨️</span> Чоп этиш
+            <button onclick="window.print()"
+                    class="px-5 py-2.5 border-2 border-blue-600 bg-blue-50 text-blue-700 text-sm font-bold uppercase hover:bg-blue-600 hover:text-white transition shadow-sm">
+                🖨️ ЧОП ЭТИШ
             </button>
-            <a href="{{ route('monitoring.report1') }}" class="btn btn-secondary">
-                <span>←</span> Орқага
+            <a href="{{ route('monitoring.report1') }}"
+               class="px-5 py-2.5 border-2 border-slate-400 bg-slate-50 text-slate-700 text-sm font-bold uppercase hover:bg-slate-600 hover:text-white transition shadow-sm">
+                ← ОРҚАГА
             </a>
         </div>
     </div>
 
     <!-- Table -->
-    <div class="table-container">
-        <div class="table-wrapper">
+    <div class="bg-white border-2 border-slate-400 overflow-hidden shadow-md">
+        <div class="overflow-x-auto">
             @if($lots->count() > 0)
-            <table class="lots-table" id="lotsTable">
+            <table class="w-full border-collapse" id="lotsTable">
                 <thead>
-                    <tr>
-                        <th style="width: 50px;">№</th>
-                        <th>Участка рақами</th>
-                        <th>Манзил</th>
-                        <th>Майдони (га)</th>
-                        <th>Зона</th>
-                        <th>Бошланғич нарх (сўм)</th>
-                        <th>Сотилган нарх (сўм)</th>
-                        <th>Тўлаш усули</th>
-                        <th>Эгаси</th>
-                        <th>Субъект тури</th>
-                        <th>Аукцион санаси</th>
-                        <th>Ҳолати</th>
-                        <th class="no-print">Амаллар</th>
+                    <tr class="bg-gradient-to-r from-slate-700 to-slate-600">
+                        <th class="px-4 py-3 text-left text-white text-xs font-black uppercase border-r border-slate-500">№</th>
+                        <th class="px-4 py-3 text-left text-white text-xs font-black uppercase border-r border-slate-500">УЧАСТКА РАҚАМИ</th>
+                        <th class="px-4 py-3 text-left text-white text-xs font-black uppercase border-r border-slate-500">МАНЗИЛ</th>
+                        <th class="px-4 py-3 text-left text-white text-xs font-black uppercase border-r border-slate-500">МАЙДОНИ (ГА)</th>
+                        <th class="px-4 py-3 text-left text-white text-xs font-black uppercase border-r border-slate-500">ЗОНА</th>
+                        <th class="px-4 py-3 text-left text-white text-xs font-black uppercase border-r border-slate-500">БОШЛАНҒИЧ НАРХ</th>
+                        <th class="px-4 py-3 text-left text-white text-xs font-black uppercase border-r border-slate-500">СОТИЛГАН НАРХ</th>
+                        <th class="px-4 py-3 text-left text-white text-xs font-black uppercase border-r border-slate-500">ТЎЛАШ</th>
+                        <th class="px-4 py-3 text-left text-white text-xs font-black uppercase border-r border-slate-500">ЭГАСИ</th>
+                        <th class="px-4 py-3 text-left text-white text-xs font-black uppercase border-r border-slate-500">СУБЪЕКТ</th>
+                        <th class="px-4 py-3 text-left text-white text-xs font-black uppercase border-r border-slate-500">АУКЦИОН САНАСИ</th>
+                        <th class="px-4 py-3 text-left text-white text-xs font-black uppercase border-r border-slate-500">ҲОЛАТИ</th>
+                        <th class="px-4 py-3 text-left text-white text-xs font-black uppercase no-print">АМАЛЛАР</th>
                     </tr>
                 </thead>
                 <tbody>
+                    <!-- SUMMARY ROW -->
+                    <tr class="bg-gradient-to-r from-blue-50 to-indigo-50 border-t-4 border-b-4 border-blue-600">
+                        <td colspan="3" class="px-4 py-4 text-left text-base font-black text-slate-800 uppercase">
+                            ЖАМИ:
+                        </td>
+                        <td class="px-4 py-4 text-center">
+                            <span class="text-lg font-black text-blue-700">{{ number_format($stats['total_area'], 2) }}</span>
+                            <span class="text-xs text-slate-600 ml-1 font-semibold">га</span>
+                        </td>
+                        <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold">-</td>
+                        <td class="px-4 py-4 text-center">
+                            <span class="text-lg font-black text-blue-700">{{ number_format($stats['total_initial_price'], 1) }}</span>
+                            <span class="text-xs text-slate-600 ml-1 font-semibold">млрд</span>
+                        </td>
+                        <td class="px-4 py-4 text-center">
+                            <span class="text-lg font-black text-emerald-700">{{ number_format($stats['total_sold_price'], 1) }}</span>
+                            <span class="text-xs text-slate-600 ml-1 font-semibold">млрд</span>
+                        </td>
+                        <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold">-</td>
+                        <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold">-</td>
+                        <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold">-</td>
+                        <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold">-</td>
+                        <td class="px-4 py-4 text-center">
+                            <span class="text-lg font-black text-blue-700">{{ $stats['count'] }}</span>
+                            <span class="text-xs text-slate-600 ml-1 font-semibold">дона</span>
+                        </td>
+                        <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold no-print">-</td>
+                    </tr>
+
+                    <!-- DATA ROWS -->
                     @foreach($lots as $index => $lot)
-                    <tr>
-                        <td>{{ ($lots->currentPage() - 1) * $lots->perPage() + $index + 1 }}</td>
-                        <td class="lot-number">{{ $lot->lot_number ?? 'N/A' }}</td>
-                        <td class="lot-address">{{ $lot->address ?? 'Манзил кўрсатилмаган' }}</td>
-                        <td>{{ number_format($lot->land_area, 2) }}</td>
-                        <td>{{ $lot->zone ?? '-' }}</td>
-                        <td>{{ number_format($lot->initial_price, 0, '.', ' ') }}</td>
-                        <td style="font-weight: 700; color: #2e7d32;">{{ number_format($lot->sold_price, 0, '.', ' ') }}</td>
-                        <td>
-                            @if($lot->payment_method === 'one_time')
-                                <span class="payment-badge payment-onetime">Бир йўла</span>
+                    <tr class="border-b border-slate-200 hover:bg-blue-50 transition">
+                        <td class="px-4 py-3 text-sm font-semibold text-slate-600">
+                            {{ ($lots->currentPage() - 1) * $lots->perPage() + $index + 1 }}
+                        </td>
+                        <td class="px-4 py-3 text-sm font-black text-blue-700">
+                            {{ $lot->lot_number ?? 'N/A' }}
+                        </td>
+                        <td class="px-4 py-3 text-sm font-medium text-slate-700 max-w-xs">
+                            {{ $lot->address ?? 'Манзил кўрсатилмаган' }}
+                        </td>
+                        <td class="px-4 py-3 text-sm font-bold text-slate-800 text-right">
+                            {{ number_format($lot->land_area, 2) }}
+                        </td>
+                        <td class="px-4 py-3 text-sm font-semibold text-slate-600">
+                            {{ $lot->zone ?? '-' }}
+                        </td>
+                        <td class="px-4 py-3 text-sm font-bold text-slate-700 text-right">
+                            {{ number_format($lot->initial_price / 1000000, 1) }} <span class="text-xs text-slate-500">млн</span>
+                        </td>
+                        <td class="px-4 py-3 text-sm font-black text-emerald-700 text-right">
+                            {{ number_format($lot->sold_price / 1000000, 1) }} <span class="text-xs text-slate-500">млн</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            @if($lot->payment_type === 'muddatli_emas')
+                                <span class="inline-block px-3 py-1 bg-emerald-50 border-2 border-emerald-600 text-xs font-black text-emerald-700 uppercase">
+                                    БИР ЙЎЛА
+                                </span>
                             @else
-                                <span class="payment-badge payment-installment">Бўлиб тўлаш</span>
+                                <span class="inline-block px-3 py-1 bg-amber-50 border-2 border-amber-600 text-xs font-black text-amber-700 uppercase">
+                                    МУДДАТЛИ
+                                </span>
                             @endif
                         </td>
-                        <td>{{ $lot->winner_name ?? '-' }}</td>
-                        <td>{{ $lot->winner_type === 'legal' ? 'Юридик' : 'Жисмоний' }}</td>
-                        <td>{{ $lot->auction_date ? \Carbon\Carbon::parse($lot->auction_date)->format('d.m.Y') : '-' }}</td>
-                        <td>
+                        <td class="px-4 py-3 text-sm font-medium text-slate-700">
+                            {{ $lot->winner_name ?? '-' }}
+                        </td>
+                        <td class="px-4 py-3 text-sm font-semibold text-slate-600">
+                            {{ $lot->winner_type === 'legal' ? 'Юридик' : 'Жисмоний' }}
+                        </td>
+                        <td class="px-4 py-3 text-sm font-semibold text-slate-600">
+                            {{ $lot->auction_date ? \Carbon\Carbon::parse($lot->auction_date)->format('d.m.Y') : '-' }}
+                        </td>
+                        <td class="px-4 py-3">
                             @if($lot->contract_signed)
-                                <span class="status-badge status-sold">Сотилган</span>
+                                <span class="inline-block px-3 py-1 bg-emerald-50 border-2 border-emerald-600 text-xs font-black text-emerald-700 uppercase">
+                                    СОТИЛГАН
+                                </span>
                             @elseif($lot->lot_status === 'sold')
-                                <span class="status-badge status-contract">Расмийлаштирилмоқда</span>
+                                <span class="inline-block px-3 py-1 bg-blue-50 border-2 border-blue-600 text-xs font-black text-blue-700 uppercase">
+                                    ЖАРАЁНДА
+                                </span>
                             @else
-                                <span class="status-badge status-pending">Кутилмоқда</span>
+                                <span class="inline-block px-3 py-1 bg-amber-50 border-2 border-amber-600 text-xs font-black text-amber-700 uppercase">
+                                    КУТИЛМОҚДА
+                                </span>
                             @endif
                         </td>
-                        <td class="no-print">
-                            <a href="{{ route('lots.show', $lot->id) }}" class="btn btn-primary" style="padding: 6px 12px; font-size: 11px;">
-                                Кўриш
+                        <td class="px-4 py-3 no-print">
+                            <a href="{{ route('lots.show', $lot->id) }}"
+                               class="inline-block px-4 py-2 bg-blue-600 text-white text-xs font-bold uppercase hover:bg-blue-700 transition shadow-sm">
+                                КЎРИШ
                             </a>
                         </td>
                     </tr>
@@ -475,45 +188,46 @@
                 </tbody>
             </table>
             @else
-            <div class="no-data">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="text-center py-16 px-5">
+                <svg class="w-20 h-20 mx-auto mb-5 text-slate-400 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
                 </svg>
-                <h3>Маълумот топилмади</h3>
-                <p>Танланган фильтр бўйича ҳеч қандай участка топилмади.</p>
+                <h3 class="text-xl font-bold text-slate-700 mb-2">МАЪЛУМОТ ТОПИЛМАДИ</h3>
+                <p class="text-sm font-semibold text-slate-500">Танланган фильтр бўйича ҳеч қандай участка топилмади.</p>
             </div>
             @endif
         </div>
 
         @if($lots->count() > 0)
         <!-- Pagination -->
-        <div class="pagination">
+        <div class="flex items-center justify-center gap-2 px-5 py-5 bg-slate-50 border-t-2 border-slate-300">
             @if($lots->onFirstPage())
-                <span class="disabled">«</span>
+                <span class="px-3 py-2 bg-slate-100 border-2 border-slate-300 text-slate-400 text-xs font-bold">«</span>
             @else
-                <a href="{{ $lots->previousPageUrl() }}">«</a>
+                <a href="{{ $lots->previousPageUrl() }}"
+                   class="px-3 py-2 bg-white border-2 border-slate-400 text-slate-700 text-xs font-bold hover:bg-blue-600 hover:text-white hover:border-blue-600 transition">«</a>
             @endif
 
             @foreach(range(1, $lots->lastPage()) as $page)
                 @if($page == $lots->currentPage())
-                    <span class="active">{{ $page }}</span>
+                    <span class="px-3 py-2 bg-blue-600 border-2 border-blue-600 text-white text-xs font-bold shadow">{{ $page }}</span>
                 @else
-                    <a href="{{ $lots->url($page) }}">{{ $page }}</a>
+                    <a href="{{ $lots->url($page) }}"
+                       class="px-3 py-2 bg-white border-2 border-slate-400 text-slate-700 text-xs font-bold hover:bg-blue-600 hover:text-white hover:border-blue-600 transition">{{ $page }}</a>
                 @endif
             @endforeach
 
             @if($lots->hasMorePages())
-                <a href="{{ $lots->nextPageUrl() }}">»</a>
+                <a href="{{ $lots->nextPageUrl() }}"
+                   class="px-3 py-2 bg-white border-2 border-slate-400 text-slate-700 text-xs font-bold hover:bg-blue-600 hover:text-white hover:border-blue-600 transition">»</a>
             @else
-                <span class="disabled">»</span>
+                <span class="px-3 py-2 bg-slate-100 border-2 border-slate-300 text-slate-400 text-xs font-bold">»</span>
             @endif
         </div>
         @endif
     </div>
 </div>
-@endsection
 
-@push('scripts')
 <script>
 function filterTable() {
     const input = document.getElementById('searchInput');
@@ -521,10 +235,10 @@ function filterTable() {
     const table = document.getElementById('lotsTable');
     const tr = table.getElementsByTagName('tr');
 
-    for (let i = 1; i < tr.length; i++) {
+    for (let i = 2; i < tr.length; i++) {
         let found = false;
         const td = tr[i].getElementsByTagName('td');
-        
+
         for (let j = 0; j < td.length; j++) {
             if (td[j]) {
                 const txtValue = td[j].textContent || td[j].innerText;
@@ -534,7 +248,7 @@ function filterTable() {
                 }
             }
         }
-        
+
         tr[i].style.display = found ? '' : 'none';
     }
 }
@@ -545,4 +259,14 @@ function exportToExcel() {
     window.location.href = '{{ route("monitoring.report1.details") }}?' + params.toString();
 }
 </script>
-@endpush
+
+<style>
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
+</style>
+
+
+@endsection
