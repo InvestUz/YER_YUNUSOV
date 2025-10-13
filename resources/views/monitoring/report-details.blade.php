@@ -8,7 +8,21 @@
     <div class="bg-white border-2 border-slate-400 px-5 py-3 mb-5 flex items-center gap-3 text-sm font-bold shadow-sm">
         <a href="{{ route('dashboard') }}" class="text-slate-700 hover:text-blue-700 hover:underline uppercase">БОШ САҲИФА</a>
         <span class="text-slate-400">›</span>
-        <a href="{{ route('monitoring.report1') }}" class="text-slate-700 hover:text-blue-700 hover:underline uppercase">СВОД-1</a>
+        @php
+            // Determine which report based on current route
+            $currentRoute = Route::currentRouteName();
+            $reportName = 'СВОД-1';
+            $reportRoute = 'monitoring.report1';
+
+            if (str_contains($currentRoute, 'report2')) {
+                $reportName = 'СВОД-2';
+                $reportRoute = 'monitoring.report2';
+            } elseif (str_contains($currentRoute, 'report3')) {
+                $reportName = 'СВОД-3';
+                $reportRoute = 'monitoring.report3';
+            }
+        @endphp
+        <a href="{{ route($reportRoute) }}" class="text-slate-700 hover:text-blue-700 hover:underline uppercase">{{ $reportName }}</a>
         <span class="text-slate-400">›</span>
         <span class="text-slate-600 uppercase">{{ $categoryName }}</span>
     </div>
@@ -18,6 +32,8 @@
         <h1 class="text-2xl font-black text-slate-800 uppercase border-b-4 border-blue-600 pb-3 mb-4">
             {{ $categoryName }}
         </h1>
+
+        <!-- Filter Info -->
         <div class="flex flex-wrap gap-6 text-sm font-semibold">
             <div class="flex items-center gap-2">
                 <span class="font-black text-slate-700">ҲУДУД:</span>
@@ -59,7 +75,7 @@
                     class="px-5 py-2.5 border-2 border-blue-600 bg-blue-50 text-blue-700 text-sm font-bold uppercase hover:bg-blue-600 hover:text-white transition shadow-sm">
                 🖨️ ЧОП ЭТИШ
             </button>
-            <a href="{{ route('monitoring.report1') }}"
+            <a href="{{ route($reportRoute) }}"
                class="px-5 py-2.5 border-2 border-slate-400 bg-slate-50 text-slate-700 text-sm font-bold uppercase hover:bg-slate-600 hover:text-white transition shadow-sm">
                 ← ОРҚАГА
             </a>
@@ -89,32 +105,34 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- SUMMARY ROW -->
+                    <!-- SUMMARY ROW - First row under headers -->
                     <tr class="bg-gradient-to-r from-blue-50 to-indigo-50 border-t-4 border-b-4 border-blue-600">
-                        <td colspan="3" class="px-4 py-4 text-left text-base font-black text-slate-800 uppercase">
+                        <td colspan="1" class="px-4 py-4 text-left text-sm font-black text-slate-800 uppercase">
                             ЖАМИ:
                         </td>
                         <td class="px-4 py-4 text-center">
-                            <span class="text-lg font-black text-blue-700">{{ number_format($stats['total_area'], 2) }}</span>
-                            <span class="text-xs text-slate-600 ml-1 font-semibold">га</span>
+                            <div class="text-lg font-black text-blue-700">{{ number_format($stats['count']) }}</div>
+                            <div class="text-xs text-slate-600 font-semibold">дона</div>
                         </td>
                         <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold">-</td>
                         <td class="px-4 py-4 text-center">
-                            <span class="text-lg font-black text-blue-700">{{ number_format($stats['total_initial_price'], 1) }}</span>
-                            <span class="text-xs text-slate-600 ml-1 font-semibold">млрд</span>
+                            <div class="text-lg font-black text-emerald-700">{{ number_format($stats['total_area'], 2) }}</div>
+                            <div class="text-xs text-slate-600 font-semibold">га</div>
                         </td>
-                        <td class="px-4 py-4 text-center">
-                            <span class="text-lg font-black text-emerald-700">{{ number_format($stats['total_sold_price'], 1) }}</span>
-                            <span class="text-xs text-slate-600 ml-1 font-semibold">млрд</span>
-                        </td>
-                        <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold">-</td>
-                        <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold">-</td>
-                        <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold">-</td>
                         <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold">-</td>
                         <td class="px-4 py-4 text-center">
-                            <span class="text-lg font-black text-blue-700">{{ $stats['count'] }}</span>
-                            <span class="text-xs text-slate-600 ml-1 font-semibold">дона</span>
+                            <div class="text-lg font-black text-amber-700">{{ number_format($stats['total_initial_price'], 1) }}</div>
+                            <div class="text-xs text-slate-600 font-semibold">млрд</div>
                         </td>
+                        <td class="px-4 py-4 text-center">
+                            <div class="text-lg font-black text-indigo-700">{{ number_format($stats['total_sold_price'], 1) }}</div>
+                            <div class="text-xs text-slate-600 font-semibold">млрд</div>
+                        </td>
+                        <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold">-</td>
+                        <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold">-</td>
+                        <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold">-</td>
+                        <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold">-</td>
+                        <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold">-</td>
                         <td class="px-4 py-4 text-center text-sm text-slate-500 font-bold no-print">-</td>
                     </tr>
 
@@ -235,7 +253,7 @@ function filterTable() {
     const table = document.getElementById('lotsTable');
     const tr = table.getElementsByTagName('tr');
 
-    for (let i = 2; i < tr.length; i++) {
+    for (let i = 2; i < tr.length; i++) { // Start from 2 to skip header and summary
         let found = false;
         const td = tr[i].getElementsByTagName('td');
 
@@ -256,7 +274,7 @@ function filterTable() {
 function exportToExcel() {
     const params = new URLSearchParams(window.location.search);
     params.set('export', 'excel');
-    window.location.href = '{{ route("monitoring.report1.details") }}?' + params.toString();
+    window.location.href = window.location.pathname + '?' + params.toString();
 }
 </script>
 
@@ -267,6 +285,4 @@ function exportToExcel() {
     }
 }
 </style>
-
-
 @endsection

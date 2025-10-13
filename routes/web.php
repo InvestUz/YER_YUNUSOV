@@ -78,18 +78,18 @@ Route::middleware('auth')->group(function () {
             return redirect()->route('monitoring.report1');
         })->name('index');
 
+
         Route::get('/report1', [MonitoringController::class, 'report1'])->name('report1');
-        // ADD THIS NEW ROUTE FOR DETAILS PAGE
         Route::get('/report1/details', [MonitoringController::class, 'report1Details'])->name('report1.details');
+
+        // Report 2
         Route::get('/report2', [MonitoringController::class, 'report2'])->name('report2');
+        Route::get('/report2/details', [MonitoringController::class, 'report2Details'])->name('report2.details');
 
-        Route::get('/monitoring/report2/details', [MonitoringController::class, 'report2Details'])
-            ->name('monitoring.report2.details');
+        // Report 3
         Route::get('/report3', [MonitoringController::class, 'report3'])->name('report3');
+        Route::get('/report3/details', [MonitoringController::class, 'report3Details'])->name('report3.details');
 
-
-        Route::get('/monitoring/report3/details', [MonitoringController::class, 'report3Details'])
-            ->name('monitoring.report3.details');
 
         Route::get('/monitoring/payment-schedule/{lotId}', [MonitoringController::class, 'paymentSchedule'])
             ->name('monitoring.payment-schedule');

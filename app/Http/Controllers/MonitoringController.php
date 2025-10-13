@@ -327,7 +327,7 @@ public function report2Details(Request $request)
         return $this->exportReport2DetailsToExcel($lots->items(), $categoryName, $districtName);
     }
 
-    return view('monitoring.report2-details', compact(
+    return view('monitoring.report-details', compact(
         'lots',
         'categoryName',
         'districtName',
@@ -468,7 +468,7 @@ public function report3Details(Request $request)
         return $this->exportReport3DetailsToExcel($lots->items(), $categoryName, $districtName);
     }
 
-    return view('monitoring.report3-details', compact(
+    return view('monitoring.report-details', compact(
         'lots',
         'categoryName',
         'districtName',
