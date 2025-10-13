@@ -3,428 +3,406 @@
 @section('title', 'Янги лот қўшиш')
 
 @section('content')
-<div class="min-h-screen bg-gray-100 py-8">
+<div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-7xl mx-auto px-6">
         {{-- Page Header --}}
-        <div class="mb-6">
-            <h1 class="text-2xl font-bold text-gray-900 mb-2">Янги лот қўшиш</h1>
+        <div class="mb-8 pb-4 border-b-2 border-gray-300">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Янги лот қўшиш</h1>
             <nav class="flex items-center gap-2 text-sm text-gray-600">
-                <a href="{{ route('lots.index') }}" class="hover:text-gray-900">Лотлар</a>
-                <span>/</span>
-                <span class="text-gray-900">Янги лот</span>
+                <a href="{{ route('lots.index') }}" class="hover:text-blue-700 font-medium">Лотлар</a>
+                <span class="text-gray-400">/</span>
+                <span class="text-gray-900 font-semibold">Янги лот</span>
             </nav>
         </div>
+
+        @if ($errors->any())
+            <div class="mb-6 bg-red-50 border-l-4 border-red-600 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-bold text-red-800">Хатоликлар мавжуд:</h3>
+                        <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <form action="{{ route('lots.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
             @csrf
 
-            {{-- 1. КА1726294005/2-1 – ер участкаларининг хисобини юритиш маълумотлари --}}
-            <div class="bg-white border border-gray-300 shadow-sm">
-                <div class="px-6 py-4 bg-blue-600 text-white">
-                    <h2 class="text-base font-bold">1. КА1726294005/2-1 – ер участкаларининг хисобини юритиш маълумотлари</h2>
+            {{-- 1. Асосий маълумотлар --}}
+            <div class="bg-white border-2 border-gray-300 shadow">
+                <div class="px-6 py-4 bg-gray-800 border-b-2 border-gray-900">
+                    <h2 class="text-lg font-bold text-white">1. АСОСИЙ МАЪЛУМОТЛАР</h2>
                 </div>
                 <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {{-- Буюда --}}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {{-- Лот рақами --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Буюда</label>
-                            <input type="text" name="buyuda" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('buyuda') }}">
-                            @error('buyuda')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">
+                                Лот рақами <span class="text-red-600">*</span>
+                            </label>
+                            <input type="text" name="lot_number" required
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('lot_number') }}"
+                                   placeholder="Мисол: 7815834">
+                            @error('lot_number')
+                                <p class="mt-1 text-sm text-red-600 font-medium">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        {{-- Уникал рақами --}}
+                        {{-- Туман --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Уникал рақами <span class="text-red-600">*</span></label>
-                            <input type="text" name="unique_number" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('unique_number') }}"
-                                   placeholder="Кадастр рақами">
-                            @error('unique_number')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        {{-- Манзили --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Манзили</label>
-                            <input type="text" name="address"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('address') }}">
-                            @error('address')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        {{-- Майдони --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Майдони (га) <span class="text-red-600">*</span></label>
-                            <input type="number" step="0.01" name="land_area" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('land_area') }}"
-                                   placeholder="0.00">
-                            @error('land_area')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        {{-- Жойлашган зонаси --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Жойлашган зонаси</label>
-                            <input type="text" name="zone"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('zone') }}">
-                            @error('zone')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        {{-- Бош река зонаси --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Бош река зонаси</label>
-                            <input type="text" name="master_plan_zone"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('master_plan_zone') }}">
-                            @error('master_plan_zone')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        {{-- Доканичси --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Доканичси</label>
-                            <input type="text" name="dokanichsi"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('dokanichsi') }}">
-                            @error('dokanichsi')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        {{-- Бахоланган нархи --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Бахоланган нархи (UZS)</label>
-                            <input type="number" step="0.01" name="estimated_price"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('estimated_price') }}"
-                                   placeholder="0.00">
-                            @error('estimated_price')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        {{-- Расмлари --}}
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Расмлари</label>
-                            <input type="file" name="images[]" multiple accept="image/*"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   onchange="previewImages(event)">
-                            <p class="mt-1 text-xs text-gray-500">Бир неча расм танлашингиз мумкин</p>
-                            <div id="imagePreview" class="mt-4 grid grid-cols-4 gap-4"></div>
-                            @error('images')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        {{-- Холати --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Холати</label>
-                            <input type="text" name="lot_status"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('lot_status') }}">
-                            @error('lot_status')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        {{-- Кўринали --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Кўринали</label>
-                            <select name="kurinali" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
-                                <option value="">Танланг</option>
-                                <option value="ha" {{ old('kurinali') == 'ha' ? 'selected' : '' }}>Ҳа</option>
-                                <option value="yoq" {{ old('kurinali') == 'yoq' ? 'selected' : '' }}>Йўқ</option>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">
+                                Туман <span class="text-red-600">*</span>
+                            </label>
+                            <select name="tuman_id" id="tuman_select" required
+                                    onchange="loadMahallas(this.value)"
+                                    class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium">
+                                <option value="">-- Туманни танланг --</option>
+                                @foreach($tumans as $tuman)
+                                    <option value="{{ $tuman->id }}" {{ old('tuman_id') == $tuman->id ? 'selected' : '' }}>
+                                        {{ $tuman->name_uz }}
+                                    </option>
+                                @endforeach
                             </select>
-                            @error('kurinali')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @error('tuman_id')
+                                <p class="mt-1 text-sm text-red-600 font-medium">{{ $message }}</p>
                             @enderror
+                        </div>
+
+                        {{-- Маҳалла --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">
+                                Маҳалла / Кўча
+                            </label>
+                            <select name="mahalla_id" id="mahalla_select"
+                                    class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium">
+                                <option value="">-- Аввал туманни танланг --</option>
+                            </select>
+                            @error('mahalla_id')
+                                <p class="mt-1 text-sm text-red-600 font-medium">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Манзил --}}
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-bold text-gray-900 mb-2">
+                                Тўлiq манзил <span class="text-red-600">*</span>
+                            </label>
+                            <input type="text" name="address" required
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('address') }}"
+                                   placeholder="Мисол: Yangi Beltepa MFY">
+                            @error('address')
+                                <p class="mt-1 text-sm text-red-600 font-medium">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Уникал рақам --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">
+                                Кадастр рақами <span class="text-red-600">*</span>
+                            </label>
+                            <input type="text" name="unique_number" required
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('unique_number') }}"
+                                   placeholder="MG1726277007/2">
+                            @error('unique_number')
+                                <p class="mt-1 text-sm text-red-600 font-medium">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Зона --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Зона</label>
+                            <select name="zone" class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium">
+                                <option value="">-- Танланг --</option>
+                                <option value="1-зона" {{ old('zone') == '1-зона' ? 'selected' : '' }}>1-зона</option>
+                                <option value="2-зона" {{ old('zone') == '2-зона' ? 'selected' : '' }}>2-зона</option>
+                                <option value="3-зона" {{ old('zone') == '3-зона' ? 'selected' : '' }}>3-зона</option>
+                                <option value="4-зона" {{ old('zone') == '4-зона' ? 'selected' : '' }}>4-зона</option>
+                            </select>
+                        </div>
+
+                        {{-- Бош режа зонаси --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Бош режа зонаси</label>
+                            <select name="master_plan_zone" class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium">
+                                <option value="">-- Танланг --</option>
+                                <option value="Konservatsiya" {{ old('master_plan_zone') == 'Konservatsiya' ? 'selected' : '' }}>Konservatsiya</option>
+                                <option value="Rekonstruksiya" {{ old('master_plan_zone') == 'Rekonstruksiya' ? 'selected' : '' }}>Rekonstruksiya</option>
+                                <option value="Renovatsiya" {{ old('master_plan_zone') == 'Renovatsiya' ? 'selected' : '' }}>Renovatsiya</option>
+                            </select>
+                        </div>
+
+                        {{-- Янги Ўзбекистон --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Янги Ўзбекистон</label>
+                            <select name="yangi_uzbekiston" class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium">
+                                <option value="0" {{ old('yangi_uzbekiston', '0') == '0' ? 'selected' : '' }}>Йўқ</option>
+                                <option value="1" {{ old('yangi_uzbekiston') == '1' ? 'selected' : '' }}>Ҳа</option>
+                            </select>
+                        </div>
+
+                        {{-- Ер майдони --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">
+                                Ер майдони (га) <span class="text-red-600">*</span>
+                            </label>
+                            <input type="number" step="0.01" name="land_area" required
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('land_area') }}"
+                                   placeholder="0.45">
+                            @error('land_area')
+                                <p class="mt-1 text-sm text-red-600 font-medium">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Объект тури --}}
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Объект тури</label>
+                            <input type="text" name="object_type"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('object_type') }}"
+                                   placeholder="Maktabgacha ta'lim muassasalari">
+                        </div>
+
+                        {{-- Қурилиш майдони --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Қурилиш майдони (м²)</label>
+                            <input type="number" step="0.01" name="construction_area"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('construction_area') }}"
+                                   placeholder="5850.00">
+                        </div>
+
+                        {{-- Инвестиция --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Инвестиция ($)</label>
+                            <input type="number" step="0.01" name="investment_amount"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('investment_amount') }}"
+                                   placeholder="2340000.00">
+                        </div>
+
+                        {{-- Координаталар --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Latitude</label>
+                            <input type="text" name="latitude"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('latitude') }}"
+                                   placeholder="41.3419730499832">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Longitude</label>
+                            <input type="text" name="longitude"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('longitude') }}"
+                                   placeholder="69.16886331525568">
+                        </div>
+
+                        {{-- Локация URL --}}
+                        <div class="md:col-span-3">
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Google Maps URL</label>
+                            <input type="url" name="location_url"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('location_url') }}"
+                                   placeholder="https://www.google.com/maps?q=...">
                         </div>
                     </div>
                 </div>
             </div>
 
             {{-- 2. Аукцион маълумотлари --}}
-            <div class="bg-white border border-gray-300 shadow-sm">
-                <div class="px-6 py-4 bg-blue-600 text-white">
-                    <h2 class="text-base font-bold">2. Аукцион маълумотлари</h2>
+            <div class="bg-white border-2 border-gray-300 shadow">
+                <div class="px-6 py-4 bg-gray-800 border-b-2 border-gray-900">
+                    <h2 class="text-lg font-bold text-white">2. АУКЦИОН МАЪЛУМОТЛАРИ</h2>
                 </div>
                 <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {{-- Буюда --}}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {{-- Бошланғич нарх --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Буюда</label>
-                            <input type="text" name="auction_buyuda"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('auction_buyuda') }}">
-                        </div>
-
-                        {{-- Ер участкасига бўлган хуқуқ тури --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Ер участкасига бўлган хуқуқ тури</label>
-                            <input type="text" name="land_right_type"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('land_right_type') }}">
-                        </div>
-
-                        {{-- Лот рақами --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Лот рақами <span class="text-red-600">*</span></label>
-                            <input type="text" name="lot_number" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('lot_number') }}">
-                            @error('lot_number')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">
+                                Бошланғич нарх (сўм) <span class="text-red-600">*</span>
+                            </label>
+                            <input type="number" step="0.01" name="initial_price" required
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('initial_price') }}"
+                                   placeholder="3350266925.0">
+                            @error('initial_price')
+                                <p class="mt-1 text-sm text-red-600 font-medium">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        {{-- Лот холати --}}
+                        {{-- Аукцион санаси --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Лот холати</label>
-                            <select name="lot_status_auction" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
-                                <option value="">Танланг</option>
-                                <option value="active">Актив</option>
-                                <option value="sold">Сотилган</option>
-                                <option value="pending">Кутилмоқда</option>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Аукцион санаси</label>
+                            <input type="date" name="auction_date"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('auction_date') }}">
+                        </div>
+
+                        {{-- Сотилган нарх --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Сотилган нарх (сўм)</label>
+                            <input type="number" step="0.01" name="sold_price"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('sold_price') }}"
+                                   placeholder="6197993811.3">
+                        </div>
+
+                        {{-- Ғолиб тури --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Ғолиб тури</label>
+                            <select name="winner_type" class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium">
+                                <option value="">-- Танланг --</option>
+                                <option value="G`olib" {{ old('winner_type') == 'G`olib' ? 'selected' : '' }}>G`olib</option>
+                                <option value="Yuridik shaxs" {{ old('winner_type') == 'Yuridik shaxs' ? 'selected' : '' }}>Yuridik shaxs</option>
+                                <option value="Jismoniy shaxs" {{ old('winner_type') == 'Jismoniy shaxs' ? 'selected' : '' }}>Jismoniy shaxs</option>
                             </select>
                         </div>
 
-                        {{-- Аукцион ўтказиш тури --}}
+                        {{-- Ғолиб номи --}}
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Ғолиб номи</label>
+                            <input type="text" name="winner_name"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('winner_name') }}"
+                                   placeholder="NTM WISDOM">
+                        </div>
+
+                        {{-- Телефон --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Аукцион ўтказиш тури</label>
-                            <select name="auction_type" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
-                                <option value="">Танланг</option>
-                                <option value="ochiq" {{ old('auction_type') == 'ochiq' ? 'selected' : '' }}>Очиқ аукцион</option>
-                                <option value="yopiq" {{ old('auction_type') == 'yopiq' ? 'selected' : '' }}>Ёпиқ танлов</option>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Телефон рақами</label>
+                            <input type="text" name="winner_phone"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('winner_phone') }}"
+                                   placeholder="+998 90 123 45 67">
+                        </div>
+
+                        {{-- Тўлов тури --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Тўлов тури</label>
+                            <select name="payment_type" class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium">
+                                <option value="">-- Танланг --</option>
+                                <option value="muddatli" {{ old('payment_type') == 'muddatli' ? 'selected' : '' }}>Муддатли</option>
+                                <option value="muddatli_emas" {{ old('payment_type') == 'muddatli_emas' ? 'selected' : '' }}>Муддатли эмас</option>
                             </select>
                         </div>
 
                         {{-- Асос --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Асос</label>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Асос (ПФ)</label>
                             <input type="text" name="basis"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('basis') }}">
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('basis') }}"
+                                   placeholder="ПФ-93">
                         </div>
 
-                        {{-- Аукцион ўтказилиган сана --}}
+                        {{-- Аукцион тури --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Аукцион ўтказилиган сана</label>
-                            <input type="date" name="auction_date"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('auction_date') }}">
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Аукцион тури</label>
+                            <select name="auction_type" class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium">
+                                <option value="">-- Танланг --</option>
+                                <option value="ochiq" {{ old('auction_type') == 'ochiq' ? 'selected' : '' }}>Очиқ аукцион</option>
+                                <option value="yopiq" {{ old('auction_type') == 'yopiq' ? 'selected' : '' }}>Ёпиқ аукцион</option>
+                            </select>
                         </div>
 
-                        {{-- Голиб ФИО --}}
+                        {{-- Лот холати --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Голиб ФИО</label>
-                            <input type="text" name="winner_name"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('winner_name') }}">
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Лот холати</label>
+                            <input type="text" name="lot_status"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('lot_status', 'Лот якунланди (29)') }}"
+                                   placeholder="Лот якунланди (29)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- 3. Шартнома маълумотлари --}}
+            <div class="bg-white border-2 border-gray-300 shadow">
+                <div class="px-6 py-4 bg-gray-800 border-b-2 border-gray-900">
+                    <h2 class="text-lg font-bold text-white">3. ШАРТНОМА МАЪЛУМОТЛАРИ</h2>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {{-- Шартнома тузилди --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Шартнома тузилдими?</label>
+                            <select name="contract_signed" class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium">
+                                <option value="0" {{ old('contract_signed', '0') == '0' ? 'selected' : '' }}>Йўқ</option>
+                                <option value="1" {{ old('contract_signed') == '1' ? 'selected' : '' }}>Ҳа</option>
+                            </select>
                         </div>
 
-                        {{-- Сотилган нархи --}}
+                        {{-- Шартнома санаси --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Сотилган нархи (UZS)</label>
-                            <input type="number" step="0.01" name="sold_price"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('sold_price') }}"
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Шартнома санаси</label>
+                            <input type="date" name="contract_date"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('contract_date') }}">
+                        </div>
+
+                        {{-- Шартнома рақами --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Шартнома рақами</label>
+                            <input type="text" name="contract_number"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('contract_number') }}"
+                                   placeholder="2e">
+                        </div>
+
+                        {{-- Тўланган сумма --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Тўланган сумма</label>
+                            <input type="number" step="0.01" name="paid_amount"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('paid_amount') }}"
+                                   placeholder="134010677.00">
+                        </div>
+
+                        {{-- Ўтказилган сумма --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Ўтказилган сумма</label>
+                            <input type="number" step="0.01" name="transferred_amount"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('transferred_amount') }}"
+                                   placeholder="72030738.89">
+                        </div>
+
+                        {{-- Чегирма --}}
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Чегирма</label>
+                            <input type="number" step="0.01" name="discount"
+                                   class="w-full px-4 py-2.5 border-2 border-gray-300 rounded focus:outline-none focus:border-blue-600 font-medium"
+                                   value="{{ old('discount', '0') }}"
                                    placeholder="0.00">
-                        </div>
-
-                        {{-- Сотилган ва рақами --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Сотилган ва рақами (муниципал бўлса, санаси ва рақами)</label>
-                            <input type="text" name="sold_reference"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('sold_reference') }}">
-                        </div>
-
-                        {{-- Холати --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Холати</label>
-                            <input type="text" name="status"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('status') }}">
-                        </div>
-
-                        {{-- Мулкни қабул қилиб олиш тугмаси босилган ерлар кўринали --}}
-                        <div class="md:col-span-2">
-                            <label class="flex items-center">
-                                <input type="checkbox" name="property_accepted" value="1" 
-                                       {{ old('property_accepted') ? 'checked' : '' }}
-                                       class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-700">Мулкни қабул қилиб олиш тугмаси босилган ерлар кўринали</span>
-                            </label>
-                        </div>
-
-                        {{-- Кўринали --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Кўринали</label>
-                            <select name="visible" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
-                                <option value="1" {{ old('visible', '1') == '1' ? 'selected' : '' }}>Ҳа</option>
-                                <option value="0" {{ old('visible') == '0' ? 'selected' : '' }}>Йўқ</option>
-                            </select>
-                        </div>
-
-                        {{-- ИНН --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">ИНН</label>
-                            <input type="text" name="inn"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('inn') }}">
-                        </div>
-
-                        {{-- ЖШШИРга --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">ЖШШИРга</label>
-                            <input type="text" name="jshshir"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('jshshir') }}">
-                        </div>
-
-                        {{-- Кўрастин керак --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Кўрастин керак</label>
-                            <input type="text" name="kurastin_kerak"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('kurastin_kerak') }}">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- 3. Шартнома шартлари --}}
-            <div class="bg-white border border-gray-300 shadow-sm">
-                <div class="px-6 py-4 bg-blue-600 text-white">
-                    <h2 class="text-base font-bold">3. Шартнома шартлари</h2>
-                </div>
-                <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {{-- Буюда --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Буюда</label>
-                            <input type="text" name="contract_buyuda"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('contract_buyuda') }}">
-                        </div>
-
-                        {{-- Сотилган нархи --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Сотилган нархи</label>
-                            <input type="number" step="0.01" name="contract_sold_price"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('contract_sold_price') }}">
-                        </div>
-
-                        {{-- Тўлов тури --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Тўлов тури (муддатли, муддатли змас)</label>
-                            <select name="payment_type" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
-                                <option value="">Танланг</option>
-                                <option value="muddatli" {{ old('payment_type') == 'muddatli' ? 'selected' : '' }}>Муддатли</option>
-                                <option value="muddatsiz" {{ old('payment_type') == 'muddatsiz' ? 'selected' : '' }}>Муддатли эмас</option>
-                            </select>
-                        </div>
-
-                        {{-- Муддатли тўлов танланганда тўлов графики кўринали --}}
-                        <div class="md:col-span-2" id="paymentScheduleSection" style="display: none;">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Муддатли тўлов танланганда тўлов графики кўринали</label>
-                            <div id="paymentScheduleContainer">
-                                <button type="button" onclick="addPaymentSchedule()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                                    + Тўлов қўшиш
-                                </button>
-                            </div>
-                        </div>
-
-                        {{-- Унинг таксимланиш холатлари кўринали --}}
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Унинг таксимланиш холатлари кўринали</label>
-                            <textarea name="distribution_conditions" rows="3"
-                                      class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500">{{ old('distribution_conditions') }}</textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- 4. Тўлов таксимоти --}}
-            <div class="bg-white border border-gray-300 shadow-sm">
-                <div class="px-6 py-4 bg-blue-600 text-white">
-                    <h2 class="text-base font-bold">4. Тўлов таксимоти</h2>
-                </div>
-                <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {{-- Буюда --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Буюда</label>
-                            <input type="text" name="distribution_buyuda"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('distribution_buyuda') }}">
-                        </div>
-
-                        {{-- Амалга оширилган тўловлар --}}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Амалга оширилган тўловлар</label>
-                            <input type="number" step="0.01" name="completed_payments"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                   value="{{ old('completed_payments') }}">
-                        </div>
-
-                        {{-- Унинг таксимланиш холатлари кўринали --}}
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Унинг таксимланиш холатлари кўринали</label>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-xs text-gray-600 mb-1">Махаллий бюджет</label>
-                                    <input type="number" step="0.01" name="local_budget"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                           value="{{ old('local_budget') }}">
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-gray-600 mb-1">Тошкент шаҳрини ривожлантириш жамғармаси</label>
-                                    <input type="number" step="0.01" name="development_fund"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                           value="{{ old('development_fund') }}">
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-gray-600 mb-1">Янги Ўзбекистон дирекцияси</label>
-                                    <input type="number" step="0.01" name="new_uzbekistan"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                           value="{{ old('new_uzbekistan') }}">
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-gray-600 mb-1">Туман ҳокимияти</label>
-                                    <input type="number" step="0.01" name="district_authority"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                                           value="{{ old('district_authority') }}">
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             {{-- Form Actions --}}
-            <div class="flex items-center justify-end gap-4">
-                <a href="{{ route('lots.index') }}" 
-                   class="px-6 py-3 bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 rounded transition font-medium">
-                    Бекор қилиш
+            <div class="flex items-center justify-between pt-6 border-t-2 border-gray-300">
+                <a href="{{ route('lots.index') }}"
+                   class="px-8 py-3 bg-white hover:bg-gray-100 text-gray-900 border-2 border-gray-400 rounded font-bold transition">
+                    ◄ БЕКОР ҚИЛИШ
                 </a>
-                <button type="submit" 
-                        class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded transition font-medium">
-                    Сақлаш
+                <button type="submit"
+                        class="px-8 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded font-bold transition border-2 border-blue-900">
+                    ✓ САҚЛАШ
                 </button>
             </div>
         </form>
@@ -432,45 +410,71 @@
 </div>
 
 <script>
-// Toggle payment schedule section
-document.querySelector('select[name="payment_type"]').addEventListener('change', function removePaymentSchedule(button) {
-    button.closest('.payment-schedule-item').remove();
-}
+// Load mahallas when tuman is selected
+function loadMahallas(tumanId) {
+    const mahallaSelect = document.getElementById('mahalla_select');
 
-// Image preview function
-function previewImages(event) {
-    const preview = document.getElementById('imagePreview');
-    preview.innerHTML = '';
-    
-    const files = event.target.files;
-    
-    if (files) {
-        Array.from(files).forEach((file, index) => {
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                const div = document.createElement('div');
-                div.className = 'relative';
-                div.innerHTML = `
-                    <img src="${e.target.result}" class="w-full h-32 object-cover border border-gray-300 rounded">
-                    <div class="absolute top-1 right-1 bg-white rounded-full p-1 shadow">
-                        <span class="text-xs text-gray-600">${index + 1}</span>
-                    </div>
-                `;
-                preview.appendChild(div);
-            };
-            
-            reader.readAsDataURL(file);
+    if (!tumanId) {
+        mahallaSelect.innerHTML = '<option value="">-- Аввал туманни танланг --</option>';
+        return;
+    }
+
+    mahallaSelect.disabled = true;
+    mahallaSelect.innerHTML = '<option value="">Юкланмоқда...</option>';
+
+    fetch(`/api/mahallas/${tumanId}`)
+        .then(response => response.json())
+        .then(data => {
+            mahallaSelect.innerHTML = '<option value="">-- Маҳалла танланг --</option>';
+
+            data.forEach(mahalla => {
+                const option = document.createElement('option');
+                option.value = mahalla.id;
+                option.textContent = mahalla.name;
+
+                if ('{{ old("mahalla_id") }}' == mahalla.id) {
+                    option.selected = true;
+                }
+
+                mahallaSelect.appendChild(option);
+            });
+
+            mahallaSelect.disabled = false;
+        })
+        .catch(error => {
+            console.error('Error loading mahallas:', error);
+            mahallaSelect.innerHTML = '<option value="">Хатолик юз берди</option>';
+            mahallaSelect.disabled = false;
         });
-    }
 }
-</script>
 
-<style>
-@media print {
-    form {
-        display: none;
+// Load mahallas on page load if tuman is selected
+document.addEventListener('DOMContentLoaded', function() {
+    const tumanSelect = document.getElementById('tuman_select');
+    if (tumanSelect && tumanSelect.value) {
+        loadMahallas(tumanSelect.value);
     }
-}
-</style>
+});
+
+// Form validation before submit
+document.querySelector('form').addEventListener('submit', function(e) {
+    const requiredFields = this.querySelectorAll('[required]');
+    let isValid = true;
+
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            isValid = false;
+            field.classList.add('border-red-600');
+        } else {
+            field.classList.remove('border-red-600');
+        }
+    });
+
+    if (!isValid) {
+        e.preventDefault();
+        alert('Илтимос, барча мажбурий майдонларни тўлдиринг!');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+});
+</script>
 @endsection

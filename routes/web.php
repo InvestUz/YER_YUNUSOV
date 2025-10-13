@@ -21,7 +21,13 @@ Route::get('/', function () {
     }
     return redirect()->route('login');
 });
+Route::get('/api/mahallas/{tuman_id}', function ($tuman_id) {
+    $mahallas = \App\Models\Mahalla::where('tuman_id', $tuman_id)
+        ->orderBy('name', 'asc')
+        ->get(['id', 'name']);
 
+    return response()->json($mahallas);
+});
 // Guest routes (not authenticated)
 Route::middleware('guest')->group(function () {
     Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');

@@ -12,6 +12,7 @@ use App\Models\PaymentSchedule;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 
@@ -19,6 +20,15 @@ class ExcelDataSeeder extends Seeder
 {
     private $tumanMap = [];
     private $mahallaMap = [];
+    private $stats = [
+        'total_rows' => 0,
+        'imported' => 0,
+        'errors' => 0,
+        'tumans' => [],
+        'mahallas' => [],
+        'unique_mahallas' => [],
+        'addresses' => []
+    ];
 
     public function run(): void
     {
@@ -50,7 +60,9 @@ class ExcelDataSeeder extends Seeder
 
         $this->command->info("Reading Excel file...");
         $this->importFromExcel($excelPath);
-        $this->command->info("✓ Data imported successfully!");
+
+        // Display comprehensive statistics
+        $this->displayStatistics();
     }
 
     private function createRegionsAndTumans()
@@ -63,7 +75,7 @@ class ExcelDataSeeder extends Seeder
             'name_ru' => 'Город Ташкент',
         ]);
 
-        // Create districts
+        // Create districts with proper mapping
         $tumanNames = [
             'Бектемир тумани' => 'Бектемирский район',
             'Мирзо Улуғбек тумани' => 'Мирзо-Улугбекский район',
@@ -87,9 +99,11 @@ class ExcelDataSeeder extends Seeder
             ]);
 
             $this->tumanMap[$nameUz] = $tuman->id;
+            $this->stats['tumans'][$nameUz] = 0; // Initialize counter
         }
 
         $this->command->info("✓ Created " . count($tumanNames) . " districts");
+        Log::info("Districts created", ['tumans' => $this->tumanMap]);
     }
 
     private function createUsers()
@@ -139,8 +153,7 @@ class ExcelDataSeeder extends Seeder
         // Remove header row
         array_shift($rows);
 
-        $imported = 0;
-        $errors = 0;
+        $this->stats['total_rows'] = count($rows);
 
         $progressBar = $this->command->getOutput()->createProgressBar(count($rows));
         $progressBar->start();
@@ -153,10 +166,17 @@ class ExcelDataSeeder extends Seeder
                 }
 
                 $this->importRow($row, $index + 2);
-                $imported++;
+                $this->stats['imported']++;
             } catch (\Exception $e) {
-                $errors++;
-                $this->command->error("\nRow " . ($index + 2) . ": " . $e->getMessage());
+                $this->stats['errors']++;
+                $errorMsg = "Row " . ($index + 2) . ": " . $e->getMessage();
+                $this->command->error("\n" . $errorMsg);
+                Log::error($errorMsg, [
+                    'row_number' => $index + 2,
+                    'lot_number' => $row[1] ?? 'N/A',
+                    'tuman' => $row[2] ?? 'N/A',
+                    'address' => $row[3] ?? 'N/A'
+                ]);
             }
 
             $progressBar->advance();
@@ -164,10 +184,6 @@ class ExcelDataSeeder extends Seeder
 
         $progressBar->finish();
         $this->command->newLine(2);
-        $this->command->info("Imported: {$imported} lots");
-        if ($errors > 0) {
-            $this->command->warn("Errors: {$errors}");
-        }
     }
 
     private function importRow($row, $rowNumber)
@@ -178,18 +194,34 @@ class ExcelDataSeeder extends Seeder
             throw new \Exception("Missing lot number");
         }
 
-        // Get tuman
+        // Get tuman (Column 2)
         $tumanName = trim($row[2]);
         $tumanId = $this->findTumanId($tumanName);
         if (!$tumanId) {
             throw new \Exception("Tuman not found: {$tumanName}");
         }
 
-        // Get or create mahalla
-        $mahallaName = trim($row[3]);
+        // Count lots per tuman
+        $this->stats['tumans'][$tumanName] = ($this->stats['tumans'][$tumanName] ?? 0) + 1;
+
+        // Get FULL ADDRESS from column 3 (this is the address, NOT mahalla name)
+        $fullAddress = trim($row[3]);
+
+        // Extract mahalla name from address
+        // Pattern: "SomeName MFY" or "SomeName MFҲ" or just the address
+        $mahallaName = $this->extractMahallaName($fullAddress);
+
         $mahallaId = null;
         if ($mahallaName) {
-            $mahallaId = $this->findOrCreateMahalla($mahallaName, $tumanId);
+            $mahallaId = $this->findOrCreateMahalla($mahallaName, $tumanId, $tumanName);
+        }
+
+        // Store address separately
+        if (!isset($this->stats['addresses'][$tumanName])) {
+            $this->stats['addresses'][$tumanName] = [];
+        }
+        if (!in_array($fullAddress, $this->stats['addresses'][$tumanName])) {
+            $this->stats['addresses'][$tumanName][] = $fullAddress;
         }
 
         // Parse dates
@@ -201,7 +233,7 @@ class ExcelDataSeeder extends Seeder
             'lot_number' => $lotNumber,
             'tuman_id' => $tumanId,
             'mahalla_id' => $mahallaId,
-            'address' => $row[3] ?? null,
+            'address' => $fullAddress, // Store full address here
             'unique_number' => $row[4] ?? null,
             'zone' => $row[5] ?? null,
             'latitude' => $row[6] ?? null,
@@ -242,48 +274,68 @@ class ExcelDataSeeder extends Seeder
             $lot->save();
         }
 
-        // Import distributions (columns 36-43)
+        // Import distributions
         $this->importDistributions($lot, $row);
 
-        // Import payment schedules (columns from 44 onwards)
+        // Import payment schedules
         $this->importPaymentSchedules($lot, $row);
+
+        // Log successful import
+        Log::info("Lot imported successfully", [
+            'lot_number' => $lotNumber,
+            'tuman' => $tumanName,
+            'mahalla' => $mahallaName,
+            'address' => $fullAddress,
+            'row' => $rowNumber
+        ]);
 
         return $lot;
     }
 
+    /**
+     * Extract mahalla name from full address
+     */
+    private function extractMahallaName($address)
+    {
+        if (empty($address)) {
+            return null;
+        }
+
+        // Pattern 1: "Name MFY" or "Name MFҲ"
+        if (preg_match('/^(.+?)\s+MF[YҲ]/iu', $address, $matches)) {
+            return trim($matches[1]) . ' MFY';
+        }
+
+        // Pattern 2: Just return the address as mahalla name
+        // This ensures we capture all unique locations
+        return $address;
+    }
+
     private function importDistributions($lot, $row)
     {
-        // Columns 36-39: Allocated amounts
-        $allocatedAmounts = [
-            'local_budget' => $this->parseDecimal($row[36] ?? 0),
-            'development_fund' => $this->parseDecimal($row[37] ?? 0),
-            'new_uzbekistan' => $this->parseDecimal($row[38] ?? 0),
-            'district_authority' => $this->parseDecimal($row[39] ?? 0),
+        // Based on your Excel structure:
+        // Columns 36-39: Allocated amounts (Тақсимот)
+        // Columns 40-43: Distributed amounts (Тақсимланган)
+        // Columns 44-47: Remaining amounts (Қолдиқ)
+
+        $categories = [
+            'local_budget' => [36, 40, 44],
+            'development_fund' => [37, 41, 45],
+            'new_uzbekistan' => [38, 42, 46],
+            'district_authority' => [39, 43, 47],
         ];
 
-        // Columns 40-43: Distributed amounts (already distributed)
-        $distributedAmounts = [
-            'local_budget' => $this->parseDecimal($row[40] ?? 0),
-            'development_fund' => $this->parseDecimal($row[41] ?? 0),
-            'new_uzbekistan' => $this->parseDecimal($row[42] ?? 0),
-            'district_authority' => $this->parseDecimal($row[43] ?? 0),
-        ];
+        foreach ($categories as $category => $indices) {
+            $allocatedAmount = $this->parseDecimal($row[$indices[0]] ?? 0);
+            $distributedAmount = $this->parseDecimal($row[$indices[1]] ?? 0);
+            $remainingAmount = $this->parseDecimal($row[$indices[2]] ?? 0);
 
-        // Columns 44-47: Remaining amounts
-        $remainingAmounts = [
-            'local_budget' => $this->parseDecimal($row[44] ?? 0),
-            'development_fund' => $this->parseDecimal($row[45] ?? 0),
-            'new_uzbekistan' => $this->parseDecimal($row[46] ?? 0),
-            'district_authority' => $this->parseDecimal($row[47] ?? 0),
-        ];
-
-        foreach ($allocatedAmounts as $category => $amount) {
-            if ($amount > 0 || $distributedAmounts[$category] > 0 || $remainingAmounts[$category] > 0) {
+            if ($allocatedAmount > 0 || $distributedAmount > 0 || $remainingAmount > 0) {
                 Distribution::create([
                     'lot_id' => $lot->id,
                     'category' => $category,
-                    'allocated_amount' => $distributedAmounts[$category] ?? 0,
-                    'remaining_amount' => $remainingAmounts[$category] ?? 0,
+                    'allocated_amount' => $distributedAmount, // Already distributed
+                    'remaining_amount' => $remainingAmount,
                 ]);
             }
         }
@@ -292,45 +344,47 @@ class ExcelDataSeeder extends Seeder
     private function importPaymentSchedules($lot, $row)
     {
         // Payment schedules start from column 49 (index 48)
-        // Years: 2024, 2025, 2026, 2027, 2028, 2029
-        // Each year has 12 months
-
         $years = [2024, 2025, 2026, 2027, 2028, 2029];
-        $months = ['август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
-                   'январь', 'февраль', 'март', 'аперль', 'май', 'июнь', 'июль'];
+        $monthsRu = ['август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
+                     'январь', 'февраль', 'март', 'аперль', 'май', 'июнь', 'июль'];
 
-        $colIndex = 49; // Starting column for payments (after contract amount column 48)
+        $colIndex = 49;
 
-        foreach ($years as $year) {
-            foreach ($months as $monthIndex => $month) {
-                if (isset($row[$colIndex])) {
-                    $amount = $this->parseDecimal($row[$colIndex]);
+        foreach ($years as $yearIndex => $year) {
+            foreach ($monthsRu as $monthIndex => $monthName) {
+                if (!isset($row[$colIndex])) {
+                    $colIndex++;
+                    continue;
+                }
 
-                    if ($amount > 0) {
-                        // Determine actual month number
-                        $monthNum = ($monthIndex + 8) % 12;
-                        if ($monthNum == 0) $monthNum = 12;
+                $amount = $this->parseDecimal($row[$colIndex]);
 
-                        // Adjust year if month wraps around
-                        $actualYear = $year;
-                        if ($monthIndex < 5) {
-                            $actualYear = $year - 1;
-                        }
+                if ($amount > 0) {
+                    // Calculate correct month number (1-12)
+                    // August=8, September=9, ..., December=12, January=1, ..., July=7
+                    $monthNum = ($monthIndex < 5) ? ($monthIndex + 8) : ($monthIndex - 4);
 
-                        try {
-                            PaymentSchedule::create([
-                                'lot_id' => $lot->id,
-                                'year' => $actualYear,
-                                'month' => $month,
-                                'payment_date' => date('Y-m-d', strtotime("{$actualYear}-{$monthNum}-01")),
-                                'planned_amount' => $amount,
-                                'actual_amount' => 0,
-                                'difference' => -$amount,
-                                'payment_frequency' => 'monthly',
-                            ]);
-                        } catch (\Exception $e) {
-                            // Skip invalid dates
-                        }
+                    // Adjust year for January-July (they belong to next year)
+                    $actualYear = ($monthIndex < 5) ? $year : ($year + 1);
+
+                    try {
+                        PaymentSchedule::create([
+                            'lot_id' => $lot->id,
+                            'year' => $actualYear,
+                            'month' => $monthName,
+                            'payment_date' => date('Y-m-d', strtotime("{$actualYear}-{$monthNum}-01")),
+                            'planned_amount' => $amount,
+                            'actual_amount' => 0,
+                            'difference' => -$amount,
+                            'payment_frequency' => 'monthly',
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::warning("Failed to create payment schedule", [
+                            'lot_id' => $lot->id,
+                            'year' => $actualYear,
+                            'month' => $monthName,
+                            'error' => $e->getMessage()
+                        ]);
                     }
                 }
                 $colIndex++;
@@ -338,7 +392,6 @@ class ExcelDataSeeder extends Seeder
         }
     }
 
-    // Helper methods
     private function findTumanId($tumanName)
     {
         $tumanName = trim($tumanName);
@@ -358,7 +411,7 @@ class ExcelDataSeeder extends Seeder
         return null;
     }
 
-    private function findOrCreateMahalla($mahallaName, $tumanId)
+    private function findOrCreateMahalla($mahallaName, $tumanId, $tumanName)
     {
         $key = $tumanId . '_' . $mahallaName;
 
@@ -372,23 +425,93 @@ class ExcelDataSeeder extends Seeder
         );
 
         $this->mahallaMap[$key] = $mahalla->id;
+
+        // Track unique mahallas per tuman
+        if (!isset($this->stats['unique_mahallas'][$tumanName])) {
+            $this->stats['unique_mahallas'][$tumanName] = [];
+        }
+        if (!in_array($mahallaName, $this->stats['unique_mahallas'][$tumanName])) {
+            $this->stats['unique_mahallas'][$tumanName][] = $mahallaName;
+        }
+
         return $mahalla->id;
     }
 
+    private function displayStatistics()
+    {
+        $this->command->newLine();
+        $this->command->info("═══════════════════════════════════════════════════════");
+        $this->command->info("                 IMPORT STATISTICS                      ");
+        $this->command->info("═══════════════════════════════════════════════════════");
+
+        $this->command->info("Total Rows: {$this->stats['total_rows']}");
+        $this->command->info("Successfully Imported: {$this->stats['imported']}");
+        $this->command->warn("Errors: {$this->stats['errors']}");
+
+        $this->command->newLine();
+        $this->command->info("LOTS BY DISTRICT:");
+        $this->command->info("───────────────────────────────────────────────────────");
+
+        $totalLots = 0;
+        foreach ($this->stats['tumans'] as $tuman => $count) {
+            $this->command->info(sprintf("  %-35s : %d lots", $tuman, $count));
+            $totalLots += $count;
+        }
+
+        $this->command->newLine();
+        $this->command->info("MAHALLAS (NEIGHBORHOODS) BY DISTRICT:");
+        $this->command->info("───────────────────────────────────────────────────────");
+
+        foreach ($this->stats['unique_mahallas'] as $tuman => $mahallas) {
+            $this->command->info(sprintf("  %-35s : %d mahallas", $tuman, count($mahallas)));
+            foreach ($mahallas as $mahalla) {
+                $this->command->line("    • " . $mahalla);
+            }
+        }
+
+        $this->command->newLine();
+        $this->command->info("UNIQUE ADDRESSES BY DISTRICT:");
+        $this->command->info("───────────────────────────────────────────────────────");
+
+        foreach ($this->stats['addresses'] as $tuman => $addresses) {
+            $this->command->info(sprintf("  %-35s : %d addresses", $tuman, count($addresses)));
+        }
+
+        $this->command->newLine();
+        $this->command->info("═══════════════════════════════════════════════════════");
+
+        // Log complete JSON statistics
+        Log::info("Import completed", [
+            'summary' => [
+                'total_rows' => $this->stats['total_rows'],
+                'imported' => $this->stats['imported'],
+                'errors' => $this->stats['errors'],
+                'total_lots' => $totalLots,
+                'total_mahallas' => array_sum(array_map('count', $this->stats['unique_mahallas'])),
+                'total_addresses' => array_sum(array_map('count', $this->stats['addresses']))
+            ],
+            'lots_by_district' => $this->stats['tumans'],
+            'mahallas_by_district' => array_map('count', $this->stats['unique_mahallas']),
+            'mahallas_detail' => $this->stats['unique_mahallas'],
+            'addresses_by_district' => array_map('count', $this->stats['addresses']),
+            'addresses_detail' => $this->stats['addresses']
+        ]);
+
+        $this->command->info("✓ Data imported successfully!");
+        $this->command->info("✓ Check storage/logs/laravel.log for detailed JSON output");
+    }
+
+    // Helper methods
     private function cleanNumber($value)
     {
         if (empty($value)) return null;
-        // Remove commas and spaces
         return str_replace([',', ' '], '', $value);
     }
 
     private function parseDecimal($value)
     {
         if (empty($value)) return 0;
-
-        // Remove commas and spaces
         $cleaned = str_replace([',', ' '], ['', ''], $value);
-
         return is_numeric($cleaned) ? floatval($cleaned) : 0;
     }
 
@@ -397,12 +520,10 @@ class ExcelDataSeeder extends Seeder
         if (empty($value)) return null;
 
         try {
-            // Check if it's an Excel date serial number
             if (is_numeric($value)) {
                 return Date::excelToDateTimeObject($value)->format('Y-m-d');
             }
 
-            // Try parsing as string date
             $timestamp = strtotime($value);
             if ($timestamp !== false) {
                 return date('Y-m-d', $timestamp);
@@ -417,7 +538,6 @@ class ExcelDataSeeder extends Seeder
     private function parseBool($value)
     {
         if (empty($value)) return false;
-
         $value = strtolower(trim($value));
         return in_array($value, ['янги ўзбекистон', 'yes', '1', 'true', 'ha', '+']);
     }
@@ -425,7 +545,6 @@ class ExcelDataSeeder extends Seeder
     private function parsePaymentType($value)
     {
         if (empty($value)) return null;
-
         $value = strtolower(trim($value));
 
         if (strpos($value, 'муддатли эмас') !== false) {
@@ -442,7 +561,6 @@ class ExcelDataSeeder extends Seeder
     private function parseAuctionType($value)
     {
         if (empty($value)) return null;
-
         $value = strtolower(trim($value));
 
         if (strpos($value, 'ёпиқ') !== false) {
@@ -459,16 +577,13 @@ class ExcelDataSeeder extends Seeder
     private function parseContractSigned($value)
     {
         if (empty($value)) return false;
-
         $value = strtolower(trim($value));
         return strpos($value, 'шартнома тузилган') !== false;
     }
 }
 
-// Helper function for transliteration
 function transliterate($text) {
     $cyrillic = ['а', 'б', 'в', 'г', 'д', 'е', 'ё', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ', 'ъ', 'ы', 'ь', 'э', 'ю', 'я', 'ў', 'қ', 'ғ', 'ҳ'];
     $latin = ['a', 'b', 'v', 'g', 'd', 'e', 'yo', 'zh', 'z', 'i', 'y', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'f', 'h', 'ts', 'ch', 'sh', 'sch', '', 'y', '', 'e', 'yu', 'ya', 'o', 'q', 'g', 'h'];
-
     return str_replace($cyrillic, $latin, mb_strtolower($text));
 }

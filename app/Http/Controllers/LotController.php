@@ -61,7 +61,7 @@ class LotController extends Controller
 
         // ===== ADVANCED FILTERS FROM IMAGES =====
 
-        // 1. Боош режа бўйича жойлашув зонаси (Zone Filter)
+        // 1. Zone Filter
         if ($request->filled('zones') && is_array($request->zones)) {
             $query->whereIn('zone', $request->zones);
         }
@@ -71,12 +71,12 @@ class LotController extends Controller
             $query->whereIn('master_plan_zone', $request->master_plan_zones);
         }
 
-        // 3. Янги Ўзбекистон (Yangi Uzbekiston Filter)
+        // 3. Yangi Uzbekiston Filter
         if ($request->filled('yangi_uzbekiston')) {
             $query->where('yangi_uzbekiston', $request->yangi_uzbekiston === '1');
         }
 
-        // 4. Конструксия фильтры (Construction/Reconstruction Types)
+        // 4. Construction Types
         if ($request->filled('construction_types') && is_array($request->construction_types)) {
             $query->where(function ($q) use ($request) {
                 foreach ($request->construction_types as $type) {
@@ -107,7 +107,7 @@ class LotController extends Controller
             });
         }
 
-        // 5. Қурилишга рухсат берилган объект тури (Object Type Filter)
+        // 5. Object Type Filter
         if ($request->filled('object_types') && is_array($request->object_types)) {
             $query->where(function ($q) use ($request) {
                 foreach ($request->object_types as $type) {
@@ -137,7 +137,7 @@ class LotController extends Controller
             });
         }
 
-        // 6. Тўлов тури Extended (Payment Type Extended)
+        // 6. Payment Type Extended
         if ($request->filled('payment_types_extended') && is_array($request->payment_types_extended)) {
             $query->where(function ($q) use ($request) {
                 foreach ($request->payment_types_extended as $type) {
@@ -162,22 +162,22 @@ class LotController extends Controller
             });
         }
 
-        // 7. Асос (Basis Filter - PF Numbers)
+        // 7. Basis Filter
         if ($request->filled('basis_types') && is_array($request->basis_types)) {
             $query->whereIn('basis', $request->basis_types);
         }
 
-        // 8. Ўтказиш тури (Auction Type - Ochiq/Yopiq)
+        // 8. Auction Type
         if ($request->filled('auction_types') && is_array($request->auction_types)) {
             $query->whereIn('auction_type', $request->auction_types);
         }
 
-        // 9. Лот ҳолати Extended (Lot Status Extended)
+        // 9. Lot Status Extended
         if ($request->filled('lot_statuses') && is_array($request->lot_statuses)) {
             $query->whereIn('lot_status', $request->lot_statuses);
         }
 
-        // 10. Шартнома тузганлиги (Contract Signed Status)
+        // 10. Contract Signed Status
         if ($request->filled('contract_statuses') && is_array($request->contract_statuses)) {
             foreach ($request->contract_statuses as $status) {
                 if ($status === 'signed') {
@@ -191,7 +191,7 @@ class LotController extends Controller
             }
         }
 
-        // 11. Ғолиб тури (Winner Type Filter)
+        // 11. Winner Type Filter
         if ($request->filled('winner_types') && is_array($request->winner_types)) {
             $query->whereIn('winner_type', $request->winner_types);
         }
@@ -225,6 +225,16 @@ class LotController extends Controller
             $query->where('mahalla_id', $request->mahalla_id);
         }
 
+        // ===== CALCULATE TOTALS BEFORE PAGINATION =====
+        // Clone query to calculate totals across ALL pages
+        $totalStatsQuery = clone $query;
+
+        $totalStats = [
+            'total_area' => $totalStatsQuery->sum('land_area'),
+            'total_initial_price' => $totalStatsQuery->sum('initial_price'),
+            'total_sold_price' => $totalStatsQuery->sum('sold_price'),
+        ];
+
         // ===== SORTING =====
         $sortField = $request->get('sort', 'auction_date');
         $sortDirection = $request->get('direction', 'desc');
@@ -242,7 +252,7 @@ class LotController extends Controller
             $query->orderBy($sortField, $sortDirection);
         }
 
-        // Paginate
+        // ===== PAGINATE =====
         $perPage = $request->get('per_page', 20);
         $lots = $query->paginate($perPage)->withQueryString();
 
@@ -258,7 +268,7 @@ class LotController extends Controller
         // Get unique filter values
         $filterOptions = $this->getFilterOptions($user);
 
-        return view('lots.index', compact('lots', 'tumans', 'mahallas', 'user', 'filterOptions'));
+        return view('lots.index', compact('lots', 'tumans', 'mahallas', 'user', 'filterOptions', 'totalStats'));
     }
 
     /**
@@ -353,175 +363,51 @@ class LotController extends Controller
      */
     public function store(Request $request)
     {
-        // Validation rules
-        $validator = Validator::make($request->all(), [
-            // Section 1: КА1726294005/2-1
-            'unique_number' => 'required|string|max:255|unique:lots,unique_number',
+        $validated = $request->validate([
+            'lot_number' => 'required|string|unique:lots,lot_number',
+            'tuman_id' => 'required|exists:tumans,id',
+            'mahalla_id' => 'nullable|exists:mahallas,id',
+            'address' => 'required|string',
+            'unique_number' => 'required|string',
             'land_area' => 'required|numeric|min:0',
-            'buyuda' => 'nullable|string|max:255',
-            'address' => 'nullable|string|max:500',
-            'zone' => 'nullable|string|max:255',
-            'master_plan_zone' => 'nullable|string|max:255',
-            'dokanichsi' => 'nullable|string|max:255',
-            'estimated_price' => 'nullable|numeric|min:0',
-            'lot_status' => 'nullable|string|max:255',
-            'kurinali' => 'nullable|string|in:ha,yoq',
-
-            // Section 2: Аукцион маълумотлари
-            'lot_number' => 'required|string|max:255|unique:lots,lot_number',
-            'auction_buyuda' => 'nullable|string|max:255',
-            'land_right_type' => 'nullable|string|max:255',
-            'lot_status_auction' => 'nullable|string|max:255',
-            'auction_type' => 'nullable|string|in:ochiq,yopiq',
-            'basis' => 'nullable|string|max:500',
+            'initial_price' => 'required|numeric|min:0',
+            'zone' => 'nullable|string',
+            'master_plan_zone' => 'nullable|string',
+            'yangi_uzbekiston' => 'boolean',
+            'object_type' => 'nullable|string',
+            'construction_area' => 'nullable|numeric',
+            'investment_amount' => 'nullable|numeric',
+            'latitude' => 'nullable|string',
+            'longitude' => 'nullable|string',
+            'location_url' => 'nullable|url',
             'auction_date' => 'nullable|date',
-            'winner_name' => 'nullable|string|max:255',
-            'sold_price' => 'nullable|numeric|min:0',
-            'sold_reference' => 'nullable|string|max:500',
-            'status' => 'nullable|string|max:255',
-            'property_accepted' => 'nullable|boolean',
-            'visible' => 'nullable|boolean',
-            'inn' => 'nullable|string|max:20',
-            'jshshir' => 'nullable|string|max:20',
-            'kurastin_kerak' => 'nullable|string|max:255',
-
-            // Section 3: Шартнома шартлари
-            'contract_buyuda' => 'nullable|string|max:255',
-            'contract_sold_price' => 'nullable|numeric|min:0',
-            'payment_type' => 'nullable|string|in:muddatli,muddatsiz',
-            'distribution_conditions' => 'nullable|string|max:2000',
-
-            // Section 4: Тўлов таксимоти
-            'distribution_buyuda' => 'nullable|string|max:255',
-            'completed_payments' => 'nullable|numeric|min:0',
-            'local_budget' => 'nullable|numeric|min:0',
-            'development_fund' => 'nullable|numeric|min:0',
-            'new_uzbekistan' => 'nullable|numeric|min:0',
-            'district_authority' => 'nullable|numeric|min:0',
-
-            // Images
-            'images' => 'nullable|array',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB max
-
-            // Payment schedules
-            'payment_schedules' => 'nullable|array',
-            'payment_schedules.*.payment_date' => 'required_with:payment_schedules|date',
-            'payment_schedules.*.planned_amount' => 'required_with:payment_schedules|numeric|min:0',
-            'payment_schedules.*.actual_amount' => 'nullable|numeric|min:0',
-        ], [
-            'unique_number.required' => 'Уникал рақамни киритинг',
-            'unique_number.unique' => 'Бу уникал рақам аллақачон мавжуд',
-            'land_area.required' => 'Ер майдонини киритинг',
-            'lot_number.required' => 'Лот рақамини киритинг',
-            'lot_number.unique' => 'Бу лот рақами аллақачон мавжуд',
-            'images.*.image' => 'Файл расм форматида бўлиши керак',
-            'images.*.max' => 'Расм ҳажми 5MB дан ошмаслиги керак',
+            'sold_price' => 'nullable|numeric',
+            'winner_type' => 'nullable|string',
+            'winner_name' => 'nullable|string',
+            'winner_phone' => 'nullable|string',
+            'payment_type' => 'nullable|in:muddatli,muddatli_emas',
+            'basis' => 'nullable|string',
+            'auction_type' => 'nullable|in:ochiq,yopiq',
+            'lot_status' => 'nullable|string',
+            'contract_signed' => 'boolean',
+            'contract_date' => 'nullable|date',
+            'contract_number' => 'nullable|string',
+            'paid_amount' => 'nullable|numeric',
+            'transferred_amount' => 'nullable|numeric',
+            'discount' => 'nullable|numeric',
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
+        $lot = Lot::create($validated);
+
+        // Auto-calculate fields if sold_price exists
+        if ($lot->sold_price) {
+            $lot->autoCalculate();
+            $lot->save();
         }
 
-        DB::beginTransaction();
-
-        try {
-            // Create the lot
-            $lot = Lot::create([
-                // Section 1
-                'unique_number' => $request->unique_number,
-                'land_area' => $request->land_area,
-                'buyuda' => $request->buyuda,
-                'address' => $request->address,
-                'zone' => $request->zone,
-                'master_plan_zone' => $request->master_plan_zone,
-                'dokanichsi' => $request->dokanichsi,
-                'estimated_price' => $request->estimated_price,
-                'lot_status' => $request->lot_status,
-                'kurinali' => $request->kurinali,
-
-                // Section 2
-                'lot_number' => $request->lot_number,
-                'auction_buyuda' => $request->auction_buyuda,
-                'land_right_type' => $request->land_right_type,
-                'lot_status_auction' => $request->lot_status_auction,
-                'auction_type' => $request->auction_type,
-                'basis' => $request->basis,
-                'auction_date' => $request->auction_date,
-                'winner_name' => $request->winner_name,
-                'sold_price' => $request->sold_price,
-                'sold_reference' => $request->sold_reference,
-                'status' => $request->status,
-                'property_accepted' => $request->has('property_accepted'),
-                'visible' => $request->input('visible', 1),
-                'inn' => $request->inn,
-                'jshshir' => $request->jshshir,
-                'kurastin_kerak' => $request->kurastin_kerak,
-
-                // Section 3
-                'contract_buyuda' => $request->contract_buyuda,
-                'contract_sold_price' => $request->contract_sold_price,
-                'payment_type' => $request->payment_type,
-                'distribution_conditions' => $request->distribution_conditions,
-
-                // Section 4
-                'distribution_buyuda' => $request->distribution_buyuda,
-                'completed_payments' => $request->completed_payments,
-                'local_budget' => $request->local_budget,
-                'development_fund' => $request->development_fund,
-                'new_uzbekistan' => $request->new_uzbekistan,
-                'district_authority' => $request->district_authority,
-
-                // Auth user
-                'user_id' => auth()->id(),
-                'tuman_id' => auth()->user()->tuman_id ?? null,
-            ]);
-
-            // Handle image uploads
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $index => $image) {
-                    $path = $image->store('lots/' . $lot->id, 'public');
-
-                    LotImage::create([
-                        'lot_id' => $lot->id,
-                        'url' => Storage::url($path),
-                        'path' => $path,
-                        'is_primary' => $index === 0, // First image is primary
-                        'order' => $index,
-                    ]);
-                }
-            }
-
-            // Handle payment schedules (if payment type is muddatli)
-            if ($request->payment_type === 'muddatli' && $request->has('payment_schedules')) {
-                foreach ($request->payment_schedules as $schedule) {
-                    if (!empty($schedule['payment_date'])) {
-                        PaymentSchedule::create([
-                            'lot_id' => $lot->id,
-                            'payment_date' => $schedule['payment_date'],
-                            'planned_amount' => $schedule['planned_amount'] ?? 0,
-                            'actual_amount' => $schedule['actual_amount'] ?? 0,
-                        ]);
-                    }
-                }
-            }
-
-            DB::commit();
-
-            return redirect()
-                ->route('lots.show', $lot)
-                ->with('success', 'Лот муваффақиятли қўшилди');
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            return redirect()
-                ->back()
-                ->withInput()
-                ->with('error', 'Хатолик юз берди: ' . $e->getMessage());
-        }
+        return redirect()->route('lots.index')
+            ->with('success', 'Лот муваффақиятли қўшилди!');
     }
-
 
     /**
      * Display the specified resource.

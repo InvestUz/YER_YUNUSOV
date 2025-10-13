@@ -162,41 +162,93 @@
                         <tbody>
                             <!-- Summary Row -->
                             <tr class="bg-gray-50 border-b border-gray-200">
-                                <td colspan="13" class="py-4 px-4">
-                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                        <!-- Total Lots -->
-                                        <div class="border-r border-gray-200 pr-6">
-                                            <p class="text-xs text-gray-500 mb-1">Жами лотлар</p>
-                                            <p class="text-xl font-semibold text-gray-900">
-                                                {{ number_format($lots->total()) }}</p>
-                                        </div>
+<!-- Summary Row - Table Version (ALL PAGES TOTAL) -->
+<tr class="bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-300 font-bold">
+    <!-- № -->
+    <td class="py-3 px-4 text-center text-sm text-gray-700">
+        ЖАМИ
+    </td>
 
-                                        <!-- Total Area -->
-                                        <div class="border-r border-gray-200 pr-6">
-                                            <p class="text-xs text-gray-500 mb-1">Майдон</p>
-                                            <p class="text-xl font-semibold text-gray-900">
-                                                {{ number_format($lots->sum('land_area'), 2) }} <span
-                                                    class="text-sm font-normal text-gray-600">га</span></p>
-                                        </div>
+    <!-- Лот рақами -->
+    <td class="py-3 px-4 text-center">
+        <span class="text-lg font-bold text-blue-900">
+            {{ number_format($lots->total()) }}
+        </span>
+    </td>
 
-                                        <!-- Initial Price -->
-                                        <div class="border-r border-gray-200 pr-6">
-                                            <p class="text-xs text-gray-500 mb-1">Бошл. нарх</p>
-                                            <p class="text-xl font-semibold text-gray-900">
-                                                {{ number_format($lots->sum('initial_price') / 1000000000, 2) }} <span
-                                                    class="text-sm font-normal text-gray-600">млрд</span></p>
-                                        </div>
+    <!-- Туман -->
+    <td class="py-3 px-4 text-center text-sm text-gray-500">
+        -
+    </td>
 
-                                        <!-- Sold Price -->
-                                        <div>
-                                            <p class="text-xs text-gray-500 mb-1">Сотилган нарх</p>
-                                            <p class="text-xl font-semibold text-gray-900">
-                                                {{ number_format($lots->sum('sold_price') / 1000000000, 2) }} <span
-                                                    class="text-sm font-normal text-gray-600">млрд</span></p>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
+    <!-- Манзил -->
+    <td class="py-3 px-4 text-center text-sm text-gray-500">
+        -
+    </td>
+
+    <!-- Уникал № -->
+    <td class="py-3 px-4 text-center text-sm text-gray-500">
+        -
+    </td>
+
+    <!-- Майдон -->
+    <td class="py-3 px-4 text-right">
+        @if(isset($totalStats['total_area']) && $totalStats['total_area'] > 0)
+            <span class="text-lg font-bold text-green-700">
+                {{ number_format($totalStats['total_area'], 2) }}
+            </span>
+        @else
+            <span class="text-sm text-gray-500">-</span>
+        @endif
+    </td>
+
+    <!-- Бошл. нарх -->
+    <td class="py-3 px-4 text-right">
+        @if(isset($totalStats['total_initial_price']) && $totalStats['total_initial_price'] > 0)
+            <span class="text-lg font-bold text-blue-700">
+                {{ number_format($totalStats['total_initial_price'] / 1000000, 1) }}
+            </span>
+        @else
+            <span class="text-sm text-gray-500">-</span>
+        @endif
+    </td>
+
+    <!-- Санаси -->
+    <td class="py-3 px-4 text-center text-sm text-gray-500">
+        -
+    </td>
+
+    <!-- Сотилган -->
+    <td class="py-3 px-4 text-right">
+        @if(isset($totalStats['total_sold_price']) && $totalStats['total_sold_price'] > 0)
+            <span class="text-lg font-bold text-green-700">
+                {{ number_format($totalStats['total_sold_price'] / 1000000, 1) }}
+            </span>
+        @else
+            <span class="text-sm text-gray-500">-</span>
+        @endif
+    </td>
+
+    <!-- Ғолиб -->
+    <td class="py-3 px-4 text-center text-sm text-gray-500">
+        -
+    </td>
+
+    <!-- Тўлов -->
+    <td class="py-3 px-4 text-center text-sm text-gray-500">
+        -
+    </td>
+
+    <!-- Ҳолат -->
+    <td class="py-3 px-4 text-center text-sm text-gray-500">
+        -
+    </td>
+
+    <!-- Амаллар -->
+    <td class="py-3 px-4 text-center text-sm text-gray-500">
+        -
+    </td>
+</tr>
 
                             <!-- Data Rows -->
                             @forelse($lots as $index => $lot)
@@ -353,22 +405,22 @@
                     </table>
                 </div>
 
-                <!-- Pagination -->
-                @if ($lots->hasPages())
-                    <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <div class="text-sm text-gray-700 font-medium">
-                                <span class="font-bold text-blue-600">{{ $lots->firstItem() }}</span> -
-                                <span class="font-bold text-blue-600">{{ $lots->lastItem() }}</span> /
-                                <span class="font-bold text-gray-900">{{ number_format($lots->total()) }}</span> дан
-                            </div>
-                            <div class="flex items-center gap-2">
-                                {{ $lots->links() }}
-                            </div>
+            </div>
+            <!-- Pagination -->
+            @if ($lots->hasPages())
+                <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-gray-700 font-medium">
+                            <span class="font-bold text-blue-600">{{ $lots->firstItem() }}</span> -
+                            <span class="font-bold text-blue-600">{{ $lots->lastItem() }}</span> /
+                            <span class="font-bold text-gray-900">{{ number_format($lots->total()) }}</span> дан
+                        </div>
+                        <div class="flex items-center gap-2">
+                            {{ $lots->links() }}
                         </div>
                     </div>
-                @endif
-            </div>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -551,25 +603,9 @@
                                 <h4 class="text-lg font-bold text-gray-800">Объект турлари</h4>
                             </div>
                             <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-3">Конструксия тури</label>
-                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                        @foreach ($filterOptions['construction_types'] ?? [] as $key => $label)
-                                            <label
-                                                class="flex items-center p-3 bg-white border-2 border-gray-200 rounded-lg hover:border-green-400 hover:bg-green-50 cursor-pointer transition-all">
-                                                <input type="checkbox" name="construction_types[]"
-                                                    value="{{ $key }}"
-                                                    {{ in_array($key, request('construction_types', [])) ? 'checked' : '' }}
-                                                    class="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
-                                                <span
-                                                    class="ml-3 text-sm font-medium text-gray-700">{{ $label }}</span>
-                                            </label>
-                                        @endforeach
-                                    </div>
-                                </div>
+
 
                                 <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-3">Объект тури</label>
                                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                                         @foreach ($filterOptions['object_types'] ?? [] as $key => $label)
                                             <label
