@@ -154,7 +154,7 @@ class MonitoringController extends Controller
             return $this->exportDetailsToExcel($lots->items(), $categoryName, $districtName);
         }
 
-        return view('monitoring.report1-details', compact(
+        return view('monitoring.report-details', compact(
             'lots',
             'categoryName',
             'districtName',
@@ -370,12 +370,8 @@ public function report3Details(Request $request)
         }
     }
 
-    // Installment payment lots only
-    if (method_exists(\App\Models\Lot::class, 'scopeInstallmentPayment')) {
-        $query->installmentPayment();
-    } else {
-        $query->where('installment_months', '>', 0);
-    }
+    // Installment payment lots only (muddatli)
+    $query->where('payment_type', 'muddatli');
 
     // Apply date filters
     if (!empty($filters['date_from'])) {
@@ -402,28 +398,35 @@ public function report3Details(Request $request)
     switch ($category) {
         case 'fully_paid':
             // Lots where total actual payments >= sold price
-            $lotsQuery->whereHas('paymentSchedules', function($q) {
-                $q->selectRaw('lot_id, SUM(actual_amount) as total_paid')
-                  ->groupBy('lot_id')
-                  ->havingRaw('SUM(actual_amount) >= (SELECT sold_price FROM lots WHERE id = lot_id)');
+            $lotsQuery->whereExists(function($q) {
+                $q->selectRaw('1')
+                  ->from('payment_schedules')
+                  ->whereColumn('payment_schedules.lot_id', 'lots.id')
+                  ->groupBy('payment_schedules.lot_id')
+                  ->havingRaw('SUM(payment_schedules.actual_amount) >= lots.sold_price');
             });
             break;
 
         case 'under_monitoring':
-            // Lots where payments are ongoing but not overdue
+            // Lots where contract signed and payments ongoing but not fully paid
             $lotsQuery->where('contract_signed', true)
-                ->whereHas('paymentSchedules', function($q) {
-                    $q->selectRaw('lot_id, SUM(actual_amount) as total_paid')
-                      ->groupBy('lot_id')
-                      ->havingRaw('SUM(actual_amount) < (SELECT sold_price FROM lots WHERE id = lot_id)');
+                ->whereExists(function($q) {
+                    $q->selectRaw('1')
+                      ->from('payment_schedules')
+                      ->whereColumn('payment_schedules.lot_id', 'lots.id')
+                      ->groupBy('payment_schedules.lot_id')
+                      ->havingRaw('SUM(payment_schedules.actual_amount) < lots.sold_price');
                 });
             break;
 
         case 'overdue':
             // Lots with overdue payments
-            $lotsQuery->whereHas('paymentSchedules', function($q) use ($currentDate) {
-                $q->where('payment_date', '<', $currentDate)
-                  ->whereRaw('actual_amount < planned_amount');
+            $lotsQuery->whereExists(function($q) use ($currentDate) {
+                $q->selectRaw('1')
+                  ->from('payment_schedules')
+                  ->whereColumn('payment_schedules.lot_id', 'lots.id')
+                  ->where('payment_schedules.payment_date', '<', $currentDate)
+                  ->whereRaw('payment_schedules.actual_amount < payment_schedules.planned_amount');
             });
             break;
 
@@ -451,16 +454,20 @@ public function report3Details(Request $request)
 
     // Calculate payment statistics for overdue category
     if ($category === 'overdue') {
-        $paymentStats = \App\Models\PaymentSchedule::whereIn('lot_id', $statsQuery->pluck('id'))
-            ->where('payment_date', '<=', $currentDate)
-            ->selectRaw('SUM(planned_amount) as total_planned, SUM(actual_amount) as total_actual')
-            ->first();
+        $lotIds = $statsQuery->pluck('id');
 
-        $stats['total_planned_payment'] = ($paymentStats->total_planned ?? 0) / 1000000000;
-        $stats['total_actual_payment'] = ($paymentStats->total_actual ?? 0) / 1000000000;
-        $stats['percentage'] = $stats['total_planned_payment'] > 0
-            ? round(($stats['total_actual_payment'] / $stats['total_planned_payment']) * 100, 1)
-            : 0;
+        if ($lotIds->isNotEmpty()) {
+            $paymentStats = \App\Models\PaymentSchedule::whereIn('lot_id', $lotIds)
+                ->where('payment_date', '<=', $currentDate)
+                ->selectRaw('SUM(planned_amount) as total_planned, SUM(actual_amount) as total_actual')
+                ->first();
+
+            $stats['total_planned_payment'] = ($paymentStats->total_planned ?? 0) / 1000000000;
+            $stats['total_actual_payment'] = ($paymentStats->total_actual ?? 0) / 1000000000;
+            $stats['percentage'] = $stats['total_planned_payment'] > 0
+                ? round(($stats['total_actual_payment'] / $stats['total_planned_payment']) * 100, 1)
+                : 0;
+        }
     }
 
     // Handle Excel export
