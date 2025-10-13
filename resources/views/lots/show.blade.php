@@ -42,12 +42,12 @@
                     <div class="relative bg-gray-200" style="height: 450px;">
                         @if($lot->images && $lot->images->count() > 0)
                             {{-- Show Images --}}
-                            <img id="mainImage" 
-                                 src="{{ $lot->primary_image_url }}" 
+                            <img id="mainImage"
+                                 src="{{ $lot->primary_image_url }}"
                                  alt="Лот {{ $lot->lot_number }}"
                                  onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22800%22 height=%22600%22 viewBox=%220 0 800 600%22%3E%3Crect width=%22800%22 height=%22600%22 fill=%22%23e5e7eb%22/%3E%3Cg transform=%22translate(400,300)%22%3E%3Cpath d=%22M-80-60h160v120h-160z%22 fill=%22%239ca3af%22 opacity=%220.3%22/%3E%3Ccircle cx=%22-40%22 cy=%22-20%22 r=%2215%22 fill=%22%239ca3af%22 opacity=%220.5%22/%3E%3Cpath d=%22M-80 60l60-80 40 50 60-80 60 110h-220z%22 fill=%22%239ca3af%22 opacity=%220.4%22/%3E%3C/g%3E%3Ctext x=%22400%22 y=%22340%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2216%22 fill=%22%236b7280%22%3EРасм топилмади%3C/text%3E%3C/svg%3E'"
                                  class="w-full h-full object-contain bg-gray-100">
-                            
+
                             {{-- Navigation Arrows --}}
                             @if($lot->images->count() > 1)
                             <button onclick="previousImage()" class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/95 hover:bg-white border border-gray-300 flex items-center justify-center shadow-md transition">
@@ -78,10 +78,10 @@
                     @if($lot->images && $lot->images->count() > 1)
                     <div class="flex gap-2 p-3 bg-gray-50 border-t border-gray-300 overflow-x-auto">
                         @foreach($lot->images as $index => $image)
-                        <div class="flex-shrink-0 w-20 h-20 border-2 cursor-pointer {{ $index === 0 ? 'border-gray-700' : 'border-gray-300' }} hover:border-gray-700 transition" 
+                        <div class="flex-shrink-0 w-20 h-20 border-2 cursor-pointer {{ $index === 0 ? 'border-gray-700' : 'border-gray-300' }} hover:border-gray-700 transition"
                              onclick="showImage({{ $index }})"
                              id="thumb-{{ $index }}">
-                            <img src="{{ $image->url }}" 
+                            <img src="{{ $image->url }}"
                                  alt="Thumbnail {{ $index + 1 }}"
                                  onerror="this.parentElement.style.display='none'"
                                  class="w-full h-full object-cover">
@@ -119,10 +119,10 @@
                             </div>
 
                             <div class="flex items-center gap-1 cursor-pointer hover:text-red-600 transition" onclick="toggleLike()">
-                                <svg class="w-4 h-4 {{ isset($hasLiked) && $hasLiked ? 'fill-red-600 text-red-600' : '' }}" 
-                                     fill="{{ isset($hasLiked) && $hasLiked ? 'currentColor' : 'none' }}" 
-                                     stroke="currentColor" 
-                                     viewBox="0 0 24 24" 
+                                <svg class="w-4 h-4 {{ isset($hasLiked) && $hasLiked ? 'fill-red-600 text-red-600' : '' }}"
+                                     fill="{{ isset($hasLiked) && $hasLiked ? 'currentColor' : 'none' }}"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
                                      id="likeIcon">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                                 </svg>
@@ -415,39 +415,6 @@
                 </div>
                 @endif
 
-                {{-- Payment Progress --}}
-                @if(isset($paymentStats) && is_array($paymentStats) && ($paymentStats['total_amount'] ?? 0) > 0 && $lot->sold_price)
-                <div class="bg-white border border-gray-300 shadow-sm">
-                    <div class="px-6 py-4 bg-gray-50 border-b border-gray-300">
-                        <h3 class="text-sm font-bold text-gray-900">Тўлов статистикаси</h3>
-                    </div>
-                    <div class="p-6">
-                        <div class="space-y-4">
-                            <div class="p-4 bg-green-50 border border-green-300">
-                                <p class="text-xs text-gray-600 mb-1">Тўланган</p>
-                                <p class="text-lg font-bold text-green-700">{{ number_format(($paymentStats['paid_amount'] ?? 0) + ($paymentStats['transferred_amount'] ?? 0), 0, '.', ' ') }}</p>
-                                <p class="text-xs text-gray-500 mt-1">UZS</p>
-                            </div>
-
-                            <div class="p-4 bg-orange-50 border border-orange-300">
-                                <p class="text-xs text-gray-600 mb-1">Қолган қарз</p>
-                                <p class="text-lg font-bold text-orange-700">{{ number_format($paymentStats['remaining_amount'] ?? 0, 0, '.', ' ') }}</p>
-                                <p class="text-xs text-gray-500 mt-1">UZS</p>
-                            </div>
-
-                            <div>
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-xs font-medium text-gray-700">Тўлов прогресси</span>
-                                    <span class="text-xs font-bold text-gray-900">{{ number_format($paymentStats['payment_progress'] ?? 0, 1) }}%</span>
-                                </div>
-                                <div class="w-full bg-gray-300 h-2.5 border border-gray-400">
-                                    <div class="bg-green-600 h-full transition-all" style="width: {{ min($paymentStats['payment_progress'] ?? 0, 100) }}%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                @endif
 
                 {{-- Location Map --}}
                 @if($lot->map_embed_url)
@@ -488,7 +455,7 @@
                         </div>
 
                         @if($lot->location_url)
-                        <a href="{{ $lot->location_url }}" target="_blank" 
+                        <a href="{{ $lot->location_url }}" target="_blank"
                            class="mt-4 block w-full text-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300 transition text-sm font-medium">
                             Google Maps-да очиш
                         </a>
@@ -538,12 +505,12 @@
                 <div class="bg-white border border-gray-300 shadow-sm">
                     <div class="p-4 space-y-2">
                         @if(Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->tuman_id === $lot->tuman_id))
-                        <a href="{{ route('lots.edit', $lot) }}" 
+                        <a href="{{ route('lots.edit', $lot) }}"
                            class="block w-full text-center px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white border border-gray-900 transition text-sm font-medium">
                             Таҳрирлаш
                         </a>
                         @endif
-                        <button onclick="window.print()" 
+                        <button onclick="window.print()"
                                 class="block w-full text-center px-4 py-2 bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 transition text-sm font-medium">
                             Чоп этиш
                         </button>
@@ -557,7 +524,7 @@
                         <h3 class="text-sm font-bold text-gray-900">Аналитика</h3>
                     </div>
                     <div class="p-4 space-y-2">
-                        <a href="{{ route('analytics.lot.views', $lot) }}" 
+                        <a href="{{ route('analytics.lot.views', $lot) }}"
                            class="block w-full text-center px-4 py-2 bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 transition text-sm font-medium">
                             <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -565,8 +532,8 @@
                             </svg>
                             Кўришлар батафсил
                         </a>
-                        
-                        <a href="{{ route('analytics.lot.messages', $lot) }}" 
+
+                        <a href="{{ route('analytics.lot.messages', $lot) }}"
                            class="block w-full text-center px-4 py-2 bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 transition text-sm font-medium">
                             <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
@@ -620,7 +587,7 @@
                 </svg>
             </button>
         </div>
-        
+
         <form id="messageForm" class="p-6 space-y-4">
             @csrf
             <div>
@@ -652,7 +619,7 @@
             </div>
 
             <div class="flex gap-3">
-                <button type="submit" 
+                <button type="submit"
                         class="flex-1 bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 px-6 border border-gray-900 transition">
                     Юбориш
                 </button>
@@ -740,11 +707,11 @@ class LotInteractions {
                     'X-CSRF-TOKEN': this.csrfToken
                 }
             });
-            
+
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
-            
+
             const data = await response.json();
             this.updateLikeUI(data);
         } catch (error) {
@@ -755,9 +722,9 @@ class LotInteractions {
     updateLikeUI(data) {
         const likeCount = document.getElementById('likeCount');
         const likeIcon = document.getElementById('likeIcon');
-        
+
         if (likeCount) likeCount.textContent = data.count || 0;
-        
+
         if (likeIcon) {
             likeIcon.setAttribute('fill', data.liked ? 'currentColor' : 'none');
             likeIcon.classList.toggle('fill-red-600', data.liked);
@@ -775,13 +742,13 @@ class LotInteractions {
                 },
                 body: JSON.stringify(formData)
             });
-            
+
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 this.updateMessageCount();
                 return true;
@@ -846,12 +813,12 @@ class MessageModal {
 
     async handleSubmit(e) {
         e.preventDefault();
-        
+
         const formData = new FormData(this.form);
         const data = Object.fromEntries(formData);
-        
+
         const success = await window.lotInteractions.sendMessage(data);
-        
+
         if (success) {
             alert('Хабарингиз муваффақиятли юборилди');
             this.close();
