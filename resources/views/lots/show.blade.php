@@ -22,11 +22,14 @@
             {{-- Page Header --}}
             <div class="bg-white border border-gray-300 shadow-sm mb-6 p-6">
                 <h1 class="text-xl font-bold text-gray-900 mb-2">
-                    Лот № {{ $lot->lot_number }}
+                    Уникал № {{ $lot->unique_number }}
                 </h1>
                 <div class="flex items-center gap-4 text-sm text-gray-600">
                     @if ($lot->tuman)
                         <span>Туман: <strong class="text-gray-900">{{ $lot->tuman->name_uz }}</strong></span>
+                    @endif
+                    @if ($lot->tuman)
+                        <span>Мфй: <strong class="text-gray-900">{{ $lot->mahalla->name }}</strong></span>
                     @endif
                     @if ($lot->lot_status)
                         <span class="border-l pl-4">Ҳолат: <strong
@@ -183,14 +186,15 @@
                                         <td class="py-3 px-4 text-gray-900">{{ $lot->master_plan_zone ?? '-' }}</td>
                                     </tr>
                                     <tr class="hover:bg-gray-50">
-                                        <td class="py-3 px-4 text-gray-600 font-medium">Янги Ўзбекистон</td>
+                                        <td class="py-3 px-4 text-gray-600 font-medium">Алохида дирекциясиларга мансублиги
+                                        </td>
                                         <td class="py-3 px-4">
                                             @if ($lot->yangi_uzbekiston)
                                                 <span
-                                                    class="inline-block px-2 py-1 bg-blue-100 text-blue-800 border border-blue-300 text-xs font-medium">Ҳа</span>
+                                                    class="inline-block px-2 py-1 bg-blue-100 text-blue-800 border border-blue-300 text-xs font-medium"></span>
                                             @else
                                                 <span
-                                                    class="inline-block px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 text-xs font-medium">Йўқ</span>
+                                                    class="inline-block px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 text-xs font-medium">-</span>
                                             @endif
                                         </td>
                                     </tr>
@@ -233,45 +237,13 @@
                                     <td class="py-3 px-4 text-gray-600 font-medium">Аукцион ғолиби / Ғолиб номи</td>
                                     <td class="py-3 px-4 text-gray-900 font-semibold">{{ $lot->winner_name ?? '-' }}</td>
                                 </tr>
+
                                 <tr class="hover:bg-gray-50">
                                     <td class="py-3 px-4 text-gray-600 font-medium">Телефон рақами</td>
                                     <td class="py-3 px-4 text-gray-900">{{ $lot->winner_phone ?? '-' }}</td>
                                 </tr>
                                 <tr class="hover:bg-gray-50">
-                                    <td class="py-3 px-4 text-gray-600 font-medium">Тўлов тури</td>
-                                    <td class="py-3 px-4 text-gray-900">
-                                        @if ($lot->payment_type === 'muddatli')
-                                            <span
-                                                class="inline-block px-2 py-1 bg-blue-100 text-blue-800 border border-blue-300 text-xs font-medium">Муддатли</span>
-                                        @else
-                                            <span
-                                                class="inline-block px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 text-xs font-medium">Муддатли
-                                                эмас</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                                <tr class="hover:bg-gray-50">
-                                    <td class="py-3 px-4 text-gray-600 font-medium">Асос</td>
-                                    <td class="py-3 px-4 text-gray-900">{{ $lot->basis ?? '-' }}</td>
-                                </tr>
-                                <tr class="hover:bg-gray-50">
-                                    <td class="py-3 px-4 text-gray-600 font-medium">Ўтказиш тури</td>
-                                    <td class="py-3 px-4 text-gray-900">
-                                        @if ($lot->auction_type === 'ochiq')
-                                            Очиқ аукцион
-                                        @elseif($lot->auction_type === 'yopiq')
-                                            Ёпиқ танлов
-                                        @else
-                                            {{ $lot->auction_type ?? '-' }}
-                                        @endif
-                                    </td>
-                                </tr>
-                                <tr class="hover:bg-gray-50">
-                                    <td class="py-3 px-4 text-gray-600 font-medium">Лот ҳолати</td>
-                                    <td class="py-3 px-4 text-gray-900">{{ $lot->lot_status ?? '-' }}</td>
-                                </tr>
-                                <tr class="hover:bg-gray-50">
-                                    <td class="py-3 px-4 text-gray-600 font-medium">Шартнома тузилиши</td>
+                                    <td class="py-3 px-4 text-gray-600 font-medium">Шартнома холати</td>
                                     <td class="py-3 px-4">
                                         @if ($lot->contract_signed)
                                             <div>
@@ -292,6 +264,41 @@
                                         @endif
                                     </td>
                                 </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-3 px-4 text-gray-600 font-medium">Тўлов тури</td>
+                                    <td class="py-3 px-4 text-gray-900">
+                                        @if ($lot->payment_type === 'muddatli')
+                                            <span
+                                                class="inline-block px-2 py-1 bg-blue-100 text-blue-800 border border-blue-300 text-xs font-medium">бўлиб
+                                                тўлаш</span>
+                                        @else
+                                            <span
+                                                class="inline-block px-2 py-1 bg-gray-100 text-gray-800 border border-gray-300 text-xs font-medium">бир
+                                                йўла</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-3 px-4 text-gray-600 font-medium">Асос</td>
+                                    <td class="py-3 px-4 text-gray-900">{{ $lot->basis ?? '-' }}</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-3 px-4 text-gray-600 font-medium">Аукцион тури</td>
+                                    <td class="py-3 px-4 text-gray-900">
+                                        @if ($lot->auction_type === 'ochiq')
+                                            Очиқ аукцион
+                                        @elseif($lot->auction_type === 'yopiq')
+                                            Ёпиқ танлов
+                                        @else
+                                            {{ $lot->auction_type ?? '-' }}
+                                        @endif
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-3 px-4 text-gray-600 font-medium">Лот ҳолати</td>
+                                    <td class="py-3 px-4 text-gray-900">{{ $lot->lot_status ?? '-' }}</td>
+                                </tr>
+
                                 <tr class="bg-yellow-50 hover:bg-yellow-100">
                                     <td class="py-3 px-4 text-gray-700 font-bold">Ғолиб аукционга тўлаган сумма</td>
                                     <td class="py-3 px-4 text-gray-900 font-semibold">
@@ -368,7 +375,7 @@
 
                                 @if (($distributionStats['new_uzbekistan'] ?? 0) > 0)
                                     <div class="p-4 bg-purple-50 border border-purple-300">
-                                        <p class="text-xs text-gray-600 mb-1">Янги Ўзбекистон дирекцияси</p>
+                                        <p class="text-xs text-gray-600 mb-1">Алохида дирекциясиларга мансублиги</p>
                                         <p class="text-lg font-bold text-purple-700">
                                             {{ number_format($distributionStats['new_uzbekistan'], 0, '.', ' ') }}</p>
                                         <p class="text-xs text-gray-500 mt-1">UZS</p>
