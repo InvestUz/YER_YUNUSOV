@@ -1,5 +1,5 @@
 @extends('layouts.app')
-
+{{-- https://claude.ai/chat/c78eec54-6fc4-4be7-a14a-7e98c156d83c --}}
 @section('content')
 <div class="container mx-auto px-4 py-6">
     @if(session('success'))

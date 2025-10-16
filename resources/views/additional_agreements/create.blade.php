@@ -43,12 +43,25 @@
 
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-bold mb-2">
-                    Қўшимча сумма (сўм) <span class="text-red-500">*</span>
+                    Ўзгариш тури <span class="text-red-500">*</span>
                 </label>
-                <input type="number" step="0.01" name="new_amount" value="{{ old('new_amount') }}" required
+                <select name="change_type" id="changeType" required
+                        class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="">Танланг...</option>
+                    <option value="increase" {{ old('change_type') == 'increase' ? 'selected' : '' }}>Қўшиш (+)</option>
+                    <option value="decrease" {{ old('change_type') == 'decrease' ? 'selected' : '' }}>Камайтириш (-)</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                    Ўзгариш суммаси (сўм) <span class="text-red-500">*</span>
+                </label>
+                <input type="number" step="0.01" name="new_amount" id="newAmount" value="{{ old('new_amount') }}" required
                        class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                        placeholder="0.00">
-                <p class="text-xs text-gray-500 mt-1">Бу сумма шартнома суммасига қўшилади</p>
+                <p class="text-xs text-gray-500 mt-1" id="amountHint">Ўзгариш турини танланг</p>
+                <p class="text-xs font-semibold mt-2" id="newTotal"></p>
             </div>
 
             <div class="mb-4">
@@ -125,6 +138,46 @@
 </div>
 
 <script>
+const currentAmount = {{ $contract->contract_amount }};
+const changeTypeSelect = document.getElementById('changeType');
+const newAmountInput = document.getElementById('newAmount');
+const amountHint = document.getElementById('amountHint');
+const newTotalDiv = document.getElementById('newTotal');
+
+function updateAmountInfo() {
+    const changeType = changeTypeSelect.value;
+    const amount = parseFloat(newAmountInput.value) || 0;
+
+    if (changeType === 'increase') {
+        amountHint.textContent = 'Бу сумма шартнома суммасига қўшилади';
+        amountHint.className = 'text-xs text-green-600 mt-1';
+
+        const newTotal = currentAmount + amount;
+        newTotalDiv.textContent = `Янги шартнома суммаси: ${newTotal.toLocaleString('uz-UZ')} сўм`;
+        newTotalDiv.className = 'text-xs font-semibold mt-2 text-green-700';
+    } else if (changeType === 'decrease') {
+        amountHint.textContent = 'Бу сумма шартнома суммасидан айрилади';
+        amountHint.className = 'text-xs text-red-600 mt-1';
+
+        const newTotal = currentAmount - amount;
+        if (newTotal < 0) {
+            newTotalDiv.textContent = `Огоҳлантириш: Камайтириш суммаси жуда катта! Янги сумма манфий бўлади.`;
+            newTotalDiv.className = 'text-xs font-semibold mt-2 text-red-700';
+        } else {
+            newTotalDiv.textContent = `Янги шартнома суммаси: ${newTotal.toLocaleString('uz-UZ')} сўм`;
+            newTotalDiv.className = 'text-xs font-semibold mt-2 text-orange-700';
+        }
+    } else {
+        amountHint.textContent = 'Ўзгариш турини танланг';
+        amountHint.className = 'text-xs text-gray-500 mt-1';
+        newTotalDiv.textContent = '';
+    }
+}
+
+changeTypeSelect.addEventListener('change', updateAmountInfo);
+newAmountInput.addEventListener('input', updateAmountInfo);
+
+// Payment schedule checkbox handler
 document.getElementById('generateSchedule')?.addEventListener('change', function() {
     const fields = document.getElementById('scheduleFields');
     const frequency = document.getElementById('frequency');
