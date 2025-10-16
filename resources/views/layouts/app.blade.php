@@ -38,7 +38,8 @@
 
         <!-- Navigation -->
         <nav class="p-4 space-y-1">
-            <a href="{{ route('monitoring.index') }}"
+            <!-- Monitoring -->
+            <a href="{{ route('monitoring.report1') }}"
                 class="flex items-center gap-3 px-4 py-3 {{ request()->routeIs('monitoring.*') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }} rounded-lg font-medium transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -48,6 +49,7 @@
                 <span>Мониторинг</span>
             </a>
 
+            <!-- Lots -->
             <a href="{{ route('lots.index') }}"
                 class="flex items-center gap-3 px-4 py-3 {{ request()->routeIs('lots.*') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }} rounded-lg font-medium transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -57,6 +59,8 @@
                 </svg>
                 <span>Лотлар</span>
             </a>
+
+            <!-- Dashboard / Infographics -->
             <a href="{{ route('dashboard') }}"
                 class="flex items-center gap-3 px-4 py-3 {{ request()->routeIs('dashboard') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }} rounded-lg font-medium transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,16 +71,49 @@
                 <span>Инфографика</span>
             </a>
 
+            <!-- Contracts -->
+            <a href="{{ route('contracts.index') }}"
+                class="flex items-center gap-3 px-4 py-3 {{ request()->routeIs('contracts.*') || request()->routeIs('additional-agreements.*') || request()->routeIs('payment-schedules.*') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }} rounded-lg font-medium transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                    </path>
+                </svg>
+                <span>Шартномалар</span>
+            </a>
+
+            <!-- Distributions -->
+            <a href="{{ route('distributions.create') }}"
+                class="flex items-center gap-3 px-4 py-3 {{ request()->routeIs('distributions.*') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }} rounded-lg font-medium transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4">
+                    </path>
+                </svg>
+                <span>Тақсимлаш</span>
+            </a>
 
             @if (Auth::check() && Auth::user()->role === 'admin')
-                <a href="#"
-                    class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium transition-colors">
+                <!-- Analytics (Admin Only) -->
+                <a href="{{ route('analytics.login.history') }}"
+                    class="flex items-center gap-3 px-4 py-3 {{ request()->routeIs('analytics.*') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }} rounded-lg font-medium transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                            d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
                         </path>
                     </svg>
-                    <span>Фойдаланувчилар</span>
+                    <span>Аналитика</span>
+                </a>
+
+                <!-- Parser (Admin Only) -->
+                <a href="{{ route('parser.index') }}"
+                    class="flex items-center gap-3 px-4 py-3 {{ request()->routeIs('parser.*') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }} rounded-lg font-medium transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4">
+                        </path>
+                    </svg>
+                    <span>Парсер</span>
                 </a>
             @endif
         </nav>
@@ -86,7 +123,7 @@
             <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
                 <div class="flex items-center gap-3 mb-3">
                     <div class="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full">
-                        <span class="text-sm font-semibold text-blue-600">{{ substr(Auth::user()->name, 0, 2) }}</span>
+                        <span class="text-sm font-semibold text-blue-600">{{ strtoupper(substr(Auth::user()->name, 0, 2)) }}</span>
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-medium text-gray-900 truncate">{{ Auth::user()->name }}</p>

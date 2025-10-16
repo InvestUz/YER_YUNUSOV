@@ -159,9 +159,10 @@
 </div>
 
 <!-- Charts Row -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+<!-- Charts Row -->
+<div class="grid grid-cols-4 gap-6 mb-8">
     <!-- Payment Dynamics Chart -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div class="col-span-3 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div class="flex items-center justify-between mb-4">
             <div>
                 <h3 class="text-lg font-bold text-gray-900">ТЎЛОВЛАР ДИНАМИКАСИ</h3>
@@ -188,7 +189,7 @@
     </div>
 
     <!-- Status Pie Chart -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div class="col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div class="mb-4">
             <h3 class="text-lg font-bold text-gray-900">ШАРТНОМАЛАР ҲОЛАТИ</h3>
             <p class="text-xs text-gray-500">Жорий давр учун шартномаларнинг ҳолат бўйича тақсимланиши</p>
@@ -198,6 +199,7 @@
         </div>
     </div>
 </div>
+
 
 <!-- District Distribution (Admin only) -->
 @if($user->role === 'admin' && count($tumanDistribution) > 0)
