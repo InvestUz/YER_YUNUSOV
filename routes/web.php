@@ -1,12 +1,16 @@
 <?php
 
+use App\Http\Controllers\AdditionalAgreementController;
 use App\Http\Controllers\AnalyticsController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\ContractController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DistributionController;
 use App\Http\Controllers\LotController;
 use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\ParserController;
+use App\Http\Controllers\PaymentScheduleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,7 +40,37 @@ Route::middleware('guest')->group(function () {
 
 // Authenticated routes
 Route::middleware('auth')->group(function () {
+    Route::resource('contracts', ContractController::class);
+    Route::post('/contracts/{contract}/generate-schedule', [ContractController::class, 'generateSchedule'])
+        ->name('contracts.generate-schedule');
 
+    // Additional Agreements
+    Route::get('/contracts/{contract}/additional-agreements/create', [AdditionalAgreementController::class, 'create'])
+        ->name('additional-agreements.create');
+    Route::post('/contracts/{contract}/additional-agreements', [AdditionalAgreementController::class, 'store'])
+        ->name('additional-agreements.store');
+    Route::get('/additional-agreements/{agreement}', [AdditionalAgreementController::class, 'show'])
+        ->name('additional-agreements.show');
+    Route::delete('/additional-agreements/{agreement}', [AdditionalAgreementController::class, 'destroy'])
+        ->name('additional-agreements.destroy');
+
+    // Payment Schedules
+    Route::put('/payment-schedules/{schedule}', [PaymentScheduleController::class, 'update'])
+        ->name('payment-schedules.update');
+    Route::delete('/payment-schedules/{schedule}', [PaymentScheduleController::class, 'destroy'])
+        ->name('payment-schedules.destroy');
+
+    // Distributions
+    Route::get('/distributions/create', [DistributionController::class, 'create'])
+        ->name('distributions.create');
+    Route::post('/distributions', [DistributionController::class, 'store'])
+        ->name('distributions.store');
+    Route::get('/distributions/{distribution}/edit', [DistributionController::class, 'edit'])
+        ->name('distributions.edit');
+    Route::put('/distributions/{distribution}', [DistributionController::class, 'update'])
+        ->name('distributions.update');
+    Route::delete('/distributions/{distribution}', [DistributionController::class, 'destroy'])
+        ->name('distributions.destroy');
     // Logout
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 

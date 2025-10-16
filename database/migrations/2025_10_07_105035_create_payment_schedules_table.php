@@ -11,26 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('distributions', function (Blueprint $table) {
+        Schema::create('payment_schedules', function (Blueprint $table) {
             $table->id();
             $table->foreignId('contract_id')->constrained()->onDelete('cascade');
-            $table->foreignId('payment_schedule_id')->nullable()->constrained()->onDelete('set null');
             $table->foreignId('additional_agreement_id')->nullable()->constrained()->onDelete('cascade');
 
-            $table->enum('category', [
-                'tashkent_budget',
-                'development_fund',
-                'shayxontoxur_budget',
-                'new_uzbekistan',
-                'industrial_park',
-                'ksz_directorate',
-                'tashkent_city',
-                'district_budget'
-            ]);
+            $table->integer('payment_number');
+            $table->date('planned_date');
+            $table->date('deadline_date');
+            $table->decimal('planned_amount', 15, 2);
 
-            $table->decimal('allocated_amount', 15, 2);
-            $table->date('distribution_date');
-            $table->enum('status', ['pending', 'distributed', 'cancelled'])->default('pending');
+            $table->date('actual_date')->nullable();
+            $table->decimal('actual_amount', 15, 2)->default(0);
+            $table->decimal('difference', 15, 2)->default(0);
+
+            $table->enum('status', ['pending', 'partial', 'paid', 'overdue'])->default('pending');
             $table->text('note')->nullable();
 
             $table->foreignId('created_by')->nullable()->constrained('users');
@@ -44,6 +39,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('distributions');
+        Schema::dropIfExists('payment_schedules');
     }
 };

@@ -265,29 +265,46 @@ class Lot extends Model
     }
 
     public function views()
-{
-    return $this->hasMany(LotView::class);
-}
+    {
+        return $this->hasMany(LotView::class);
+    }
 
-public function likes()
-{
-    return $this->hasMany(LotLike::class);
-}
+    public function likes()
+    {
+        return $this->hasMany(LotLike::class);
+    }
 
-public function messages()
-{
-    return $this->hasMany(LotMessage::class);
-}
+    public function messages()
+    {
+        return $this->hasMany(LotMessage::class);
+    }
 
-// Helper method to get unique viewers
-public function getUniqueViewersCountAttribute()
-{
-    return $this->views()->distinct('ip_address')->count('ip_address');
-}
+    // Helper method to get unique viewers
+    public function getUniqueViewersCountAttribute()
+    {
+        return $this->views()->distinct('ip_address')->count('ip_address');
+    }
 
-// Helper method to get authenticated viewers
-public function getAuthenticatedViewersCountAttribute()
-{
-    return $this->views()->whereNotNull('user_id')->distinct('user_id')->count('user_id');
-}
+    // Helper method to get authenticated viewers
+    public function getAuthenticatedViewersCountAttribute()
+    {
+        return $this->views()->whereNotNull('user_id')->distinct('user_id')->count('user_id');
+    }
+
+    public function contract()
+    {
+        return $this->hasOne(Contract::class);
+    }
+
+    // Lot ning shartnoma borligini tekshirish
+    public function hasContract()
+    {
+        return $this->contract()->exists();
+    }
+
+    // Lot ning shartnoma raqamini olish
+    public function getContractNumberAttribute()
+    {
+        return $this->contract?->contract_number ?? '-';
+    }
 }
