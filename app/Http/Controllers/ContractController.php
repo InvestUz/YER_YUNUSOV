@@ -73,20 +73,78 @@ class ContractController extends Controller
 
     public function update(Request $request, Contract $contract)
     {
+        // Check if this is a status-only update
+        if ($request->has('status_only') && $request->status_only == '1') {
+            // Only validate and update status
+            $validated = $request->validate([
+                'status' => 'required|in:draft,active,completed,cancelled',
+                'status_reason' => 'nullable|string|max:1000',
+            ]);
+
+            try {
+                DB::beginTransaction();
+
+                $contract->status = $validated['status'];
+
+                // If there's a status reason, append it to notes
+                if (!empty($validated['status_reason'])) {
+                    $timestamp = now()->format('d.m.Y H:i');
+                    $user = auth()->user()->name;
+                    $statusLabel = $contract->status_label;
+
+                    $statusNote = "\n\n[{$timestamp}] {$user} статусни '{$statusLabel}' га ўзгартирди.\nСабаби: {$validated['status_reason']}";
+                    $contract->note = ($contract->note ?? '') . $statusNote;
+                }
+
+                $contract->save();
+
+                DB::commit();
+
+                return redirect()
+                    ->route('contracts.show', $contract)
+                    ->with('success', 'Шартнома статуси муваффақиятли янгиланди!');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return redirect()
+                    ->back()
+                    ->with('error', 'Статусни янгилашда хатолик: ' . $e->getMessage());
+            }
+        }
+
+        // Check if contract has payment schedules - prevent full edit if it does
+        if ($contract->paymentSchedules()->count() > 0) {
+            return redirect()
+                ->back()
+                ->with('error', 'Тўлов графиги мавжуд бўлган шартномани таҳрирлаш мумкин эмас. Фақат статусни ўзгартириш мумкин.');
+        }
+
+        // Regular full update validation
         $validated = $request->validate([
-            'contract_number' => 'required|unique:contracts,contract_number,' . $contract->id,
+            'contract_number' => 'required|string|max:255|unique:contracts,contract_number,' . $contract->id,
             'contract_date' => 'required|date',
-            'payment_type' => 'required|in:muddatli,muddatsiz',
+            'payment_type' => 'required|in:bir_martalik,muddatli',
             'contract_amount' => 'required|numeric|min:0',
+            'status' => 'required|in:draft,active,completed,cancelled',
             'note' => 'nullable|string',
-            'status' => 'required|in:active,completed,cancelled',
         ]);
 
-        $contract->update($validated);
+        try {
+            DB::beginTransaction();
 
-        return redirect()
-            ->route('contracts.show', $contract)
-            ->with('success', 'Шартнома муваффақиятли янгиланди!');
+            $contract->update($validated);
+
+            DB::commit();
+
+            return redirect()
+                ->route('contracts.show', $contract)
+                ->with('success', 'Шартнома муваффақиятли янгиланди!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Янгилашда хатолик: ' . $e->getMessage());
+        }
     }
 
     public function destroy(Contract $contract)

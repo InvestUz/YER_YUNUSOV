@@ -1,5 +1,5 @@
 @extends('layouts.app')
-{{-- https://claude.ai/chat/c78eec54-6fc4-4be7-a14a-7e98c156d83c --}}
+
 @section('content')
 <div class="container mx-auto px-4 py-6">
     @if(session('success'))
@@ -22,10 +22,19 @@
                 <p class="text-gray-600">Сана: {{ $contract->contract_date->format('d.m.Y') }}</p>
             </div>
             <div class="flex gap-2">
-                <a href="{{ route('contracts.edit', $contract) }}"
-                   class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                    Таҳрирлаш
-                </a>
+                @if($contract->paymentSchedules->count() === 0)
+                    <!-- Фақат график бўлмаса таҳрирлаш имкони -->
+                    <a href="{{ route('contracts.edit', $contract) }}"
+                       class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        Таҳрирлаш
+                    </a>
+                @else
+                    <!-- График бор бўлса статус ўзгартириш -->
+                    <button onclick="document.getElementById('statusModal').classList.remove('hidden')"
+                            class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">
+                        Статус ўзгартириш
+                    </button>
+                @endif
                 <a href="{{ route('contracts.index') }}"
                    class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
                     Орқага
@@ -51,10 +60,19 @@
                     <span class="px-2 py-1 text-xs rounded
                         @if($contract->status === 'active') bg-yellow-100 text-yellow-800
                         @elseif($contract->status === 'completed') bg-green-100 text-green-800
-                        @else bg-red-100 text-red-800 @endif">
+                        @elseif($contract->status === 'cancelled') bg-red-100 text-red-800
+                        @else bg-gray-100 text-gray-800 @endif">
                         {{ $contract->status_label }}
                     </span>
                 </p>
+                @if($contract->paymentSchedules->count() > 0)
+                <p class="text-xs text-gray-500 mt-1">
+                    <svg class="inline w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                    Тўлов графиги мавжуд - таҳрирлаш чекланган
+                </p>
+                @endif
             </div>
 
             <div>
@@ -93,10 +111,12 @@
     <div class="bg-white shadow rounded-lg p-6 mb-6">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-bold">Тўлов графиги</h2>
+            @if($contract->paymentSchedules->count() === 0)
             <button onclick="document.getElementById('scheduleModal').classList.remove('hidden')"
                     class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
                 График яратиш
             </button>
+            @endif
         </div>
 
         @if($contract->paymentSchedules->count() > 0)
@@ -133,11 +153,15 @@
                             </span>
                         </td>
                         <td class="px-4 py-2">
+                            @if($contract->status !== 'cancelled')
                             <button onclick="openPaymentModal({{ $schedule->id }}, '{{ $schedule->planned_date->format('Y-m-d') }}', {{ $schedule->actual_amount }})"
                                     class="text-blue-600 hover:text-blue-900 mr-2">Тўлов</button>
                             @if($schedule->actual_amount > 0)
                             <a href="{{ route('distributions.create', ['payment_schedule_id' => $schedule->id]) }}"
                                class="text-green-600 hover:text-green-900">Тақсимлаш</a>
+                            @endif
+                            @else
+                            <span class="text-gray-400 text-sm">Бекор қилинган</span>
                             @endif
                         </td>
                     </tr>
@@ -155,10 +179,12 @@
     <div class="bg-white shadow rounded-lg p-6 mb-6">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-bold">Қўшимча келишувлар</h2>
+            @if($contract->status !== 'cancelled')
             <a href="{{ route('additional-agreements.create', $contract) }}"
                class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
                 Қўшимча келишув қўшиш
             </a>
+            @endif
         </div>
 
         @if($contract->additionalAgreements->count() > 0)
@@ -169,7 +195,12 @@
                     <div>
                         <h3 class="font-semibold">№ {{ $agreement->agreement_number }}</h3>
                         <p class="text-sm text-gray-600">Сана: {{ $agreement->agreement_date->format('d.m.Y') }}</p>
-                        <p class="text-sm">Сумма: <strong>{{ number_format($agreement->new_amount, 0, '.', ' ') }} сўм</strong></p>
+                        <p class="text-sm">
+                            Сумма:
+                            <strong class="{{ $agreement->new_amount >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                {{ $agreement->new_amount >= 0 ? '+' : '' }}{{ number_format($agreement->new_amount, 0, '.', ' ') }} сўм
+                            </strong>
+                        </p>
                         <p class="text-sm text-gray-600">Сабаб: {{ $agreement->reason }}</p>
                     </div>
                     <div>
@@ -253,6 +284,49 @@
                 </button>
                 <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
                     Яратиш
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Статус ўзгартириш модали -->
+<div id="statusModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <h3 class="text-lg font-bold mb-4">Шартнома статусини ўзгартириш</h3>
+        <form action="{{ route('contracts.update', $contract) }}" method="POST">
+            @csrf
+            @method('PUT')
+            <input type="hidden" name="status_only" value="1">
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Статус</label>
+                <select name="status" required class="w-full border rounded px-3 py-2">
+                    <option value="draft" {{ $contract->status === 'draft' ? 'selected' : '' }}>Қоралама</option>
+                    <option value="active" {{ $contract->status === 'active' ? 'selected' : '' }}>Фаол</option>
+                    <option value="completed" {{ $contract->status === 'completed' ? 'selected' : '' }}>Якунланган</option>
+                    <option value="cancelled" {{ $contract->status === 'cancelled' ? 'selected' : '' }}>Бекор қилинган</option>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Сабаби (мажбурий эмас)</label>
+                <textarea name="status_reason" rows="3" class="w-full border rounded px-3 py-2" placeholder="Статус ўзгартириш сабабини кўрсатинг"></textarea>
+            </div>
+
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-3 mb-4">
+                <p class="text-xs text-yellow-700">
+                    <strong>Диққат:</strong> Тўлов графиги мавжуд бўлган шартномаларни таҳрирлаш имкони йўқ. Фақат статусни ўзгартириш мумкин.
+                </p>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="document.getElementById('statusModal').classList.add('hidden')"
+                        class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                    Бекор қилиш
+                </button>
+                <button type="submit" class="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
+                    Сақлаш
                 </button>
             </div>
         </form>
