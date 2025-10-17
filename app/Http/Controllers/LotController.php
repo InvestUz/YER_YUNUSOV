@@ -430,8 +430,17 @@ class LotController extends Controller
         // Extract coordinates if missing
         $lot->extractCoordinatesFromUrl();
 
-        // Load relationships
-        $lot->load(['tuman', 'mahalla', 'paymentSchedules', 'distributions', 'images']);
+        // Load relationships - FIXED: proper eager loading
+        $lot->load([
+            'tuman',
+            'mahalla',
+            'images',
+            'contract.paymentSchedules' => function ($query) {
+                $query->orderBy('payment_number');
+            },
+            'contract.distributions',
+            'contract.additionalAgreements'
+        ]);
 
         // Get unique views count
         $uniqueViewsCount = LotView::where('lot_id', $lot->id)
@@ -480,7 +489,7 @@ class LotController extends Controller
             $paymentStats['payment_progress'] = ($totalPaid / $paymentStats['total_amount']) * 100;
         }
 
-        // Rest of existing code...
+        // Distribution statistics - FIXED: get from contract if exists
         $distributionStats = [
             'local_budget' => 0,
             'development_fund' => 0,
@@ -489,13 +498,16 @@ class LotController extends Controller
             'total_distributed' => 0,
         ];
 
-        if ($lot->distributions->count() > 0) {
-            foreach ($lot->distributions as $dist) {
-                $distributionStats[$dist->category] = $dist->allocated_amount;
-                $distributionStats['total_distributed'] += $dist->allocated_amount;
+        if ($lot->contract && $lot->contract->distributions->count() > 0) {
+            foreach ($lot->contract->distributions as $dist) {
+                if (isset($distributionStats[$dist->category])) {
+                    $distributionStats[$dist->category] += $dist->allocated_amount;
+                    $distributionStats['total_distributed'] += $dist->allocated_amount;
+                }
             }
         }
 
+        // Financial metrics
         $financialMetrics = [
             'price_increase' => 0,
             'price_increase_percent' => 0,
@@ -514,6 +526,7 @@ class LotController extends Controller
 
         $financialMetrics['net_income'] = $lot->davaktiv_amount ?? 0;
 
+        // Auction countdown
         $auctionCountdown = null;
         if ($lot->auction_date && $lot->auction_date > now()) {
             $auctionCountdown = now()->diff($lot->auction_date);

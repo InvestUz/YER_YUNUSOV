@@ -44,6 +44,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/contracts/{contract}/generate-schedule', [ContractController::class, 'generateSchedule'])
         ->name('contracts.generate-schedule');
 
+ Route::post('/contracts/{contract}/add-schedule-item', [ContractController::class, 'addScheduleItem'])
+        ->name('contracts.add-schedule-item');
+
     // Additional Agreements
     Route::get('/contracts/{contract}/additional-agreements/create', [AdditionalAgreementController::class, 'create'])
         ->name('additional-agreements.create');

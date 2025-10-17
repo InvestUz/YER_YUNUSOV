@@ -14,28 +14,27 @@ return new class extends Migration
         Schema::create('distributions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('contract_id')->constrained()->onDelete('cascade');
-            $table->foreignId('payment_schedule_id')->nullable()->constrained()->onDelete('set null');
-            $table->foreignId('additional_agreement_id')->nullable()->constrained()->onDelete('cascade');
-
+            $table->foreignId('payment_schedule_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('additional_agreement_id')->nullable()->constrained()->onDelete('set null');
             $table->enum('category', [
-                'tashkent_budget',
+                'local_budget',
                 'development_fund',
-                'shayxontoxur_budget',
                 'new_uzbekistan',
-                'industrial_park',
-                'ksz_directorate',
-                'tashkent_city',
-                'district_budget'
+                'district_authority'
             ]);
-
-            $table->decimal('allocated_amount', 15, 2);
+            $table->decimal('allocated_amount', 20, 2);
             $table->date('distribution_date');
             $table->enum('status', ['pending', 'distributed', 'cancelled'])->default('pending');
             $table->text('note')->nullable();
-
-            $table->foreignId('created_by')->nullable()->constrained('users');
-            $table->foreignId('updated_by')->nullable()->constrained('users');
+            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
+            $table->softDeletes();
+
+            $table->index('contract_id');
+            $table->index('payment_schedule_id');
+            $table->index('category');
+            $table->index('status');
         });
     }
 

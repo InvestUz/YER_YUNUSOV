@@ -1,377 +1,453 @@
 @extends('layouts.app')
 
+@section('title', 'Лот ' . $lot->lot_number)
+
 @section('content')
-<div class="container mx-auto px-4 py-6">
+<div class="min-h-screen bg-gray-50">
+
+    {{-- ============================================ --}}
+    {{-- SECTION 1: MESSAGES (Success/Error)         --}}
+    {{-- ============================================ --}}
     @if(session('success'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-            {{ session('success') }}
+        <div class="max-w-7xl mx-auto px-6 py-3">
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                {{ session('success') }}
+            </div>
         </div>
     @endif
 
     @if(session('error'))
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {{ session('error') }}
+        <div class="max-w-7xl mx-auto px-6 py-3">
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                {{ session('error') }}
+            </div>
         </div>
     @endif
 
-    <!-- Шартнома маълумотлари -->
-    <div class="bg-white shadow rounded-lg p-6 mb-6">
-        <div class="flex justify-between items-start mb-4">
-            <div>
-                <h1 class="text-2xl font-bold">Шартнома № {{ $contract->contract_number }}</h1>
-                <p class="text-gray-600">Сана: {{ $contract->contract_date->format('d.m.Y') }}</p>
+    {{-- ============================================ --}}
+    {{-- SECTION 2: BREADCRUMB                        --}}
+    {{-- ============================================ --}}
+    <div class="bg-white border-b">
+        <div class="max-w-7xl mx-auto px-6 py-3">
+            <nav class="flex items-center gap-2 text-sm text-gray-600">
+                <a href="{{ route('lots.index') }}" class="hover:text-gray-900">Асосий</a>
+                <span>/</span>
+                <a href="{{ route('lots.index') }}" class="hover:text-gray-900">Лотлар</a>
+                <span>/</span>
+                <span class="text-gray-900 font-medium">{{ $lot->lot_number }}</span>
+            </nav>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 py-6">
+
+        {{-- ============================================ --}}
+        {{-- SECTION 3: LOT HEADER INFO                  --}}
+        {{-- ============================================ --}}
+        <div class="bg-white shadow-sm rounded mb-4 p-6">
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">
+                Лот № {{ $lot->lot_number }} - {{ $lot->address }}
+            </h1>
+            <div class="text-sm text-gray-600">
+                <span>Туман: <strong>{{ $lot->tuman->name_uz ?? '-' }}</strong></span>
+                <span class="ml-4">Ғолиб: <strong>{{ $lot->winner_name ?? '-' }}</strong></span>
+                <span class="ml-4">Сотилган нарх: <strong>{{ number_format($lot->sold_price, 0, '.', ' ') }} сўм</strong></span>
             </div>
-            <div class="flex gap-2">
-                @if($contract->paymentSchedules->count() === 0)
-                    <!-- Фақат график бўлмаса таҳрирлаш имкони -->
-                    <a href="{{ route('contracts.edit', $contract) }}"
-                       class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                        Таҳрирлаш
-                    </a>
-                @else
-                    <!-- График бор бўлса статус ўзгартириш -->
-                    <button onclick="document.getElementById('statusModal').classList.remove('hidden')"
-                            class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">
-                        Статус ўзгартириш
-                    </button>
-                @endif
-                <a href="{{ route('contracts.index') }}"
-                   class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
-                    Орқага
+        </div>
+
+        {{-- ============================================ --}}
+        {{-- SECTION 4: CONTRACT STATUS CARD             --}}
+        {{-- Show only if contract exists                --}}
+        {{-- ============================================ --}}
+        @if($lot->contract)
+        <div class="bg-white shadow-sm rounded mb-4 p-6">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h2 class="text-lg font-bold">Шартнома № {{ $lot->contract->contract_number }}</h2>
+                    <p class="text-sm text-gray-600">Сана: {{ $lot->contract->contract_date->format('d.m.Y') }}</p>
+                </div>
+                <a href="{{ route('contracts.show', $lot->contract) }}"
+                   class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
+                    Батафсил
                 </a>
             </div>
+
+            {{-- Contract Summary Stats --}}
+            <div class="grid grid-cols-3 gap-4">
+                <div class="p-4 bg-blue-50 rounded text-center">
+                    <p class="text-xs text-gray-600">Шартнома</p>
+                    <p class="text-xl font-bold text-blue-700">{{ number_format($lot->contract->contract_amount, 0, '.', ' ') }}</p>
+                </div>
+                <div class="p-4 bg-green-50 rounded text-center">
+                    <p class="text-xs text-gray-600">Тўланган</p>
+                    <p class="text-xl font-bold text-green-700">{{ number_format($lot->contract->paid_amount, 0, '.', ' ') }}</p>
+                </div>
+                <div class="p-4 bg-orange-50 rounded text-center">
+                    <p class="text-xs text-gray-600">Қолган</p>
+                    <p class="text-xl font-bold text-orange-700">{{ number_format($lot->contract->remaining_amount, 0, '.', ' ') }}</p>
+                </div>
+            </div>
+        </div>
+        @else
+            {{-- No Contract Yet --}}
+            @if($lot->contract_signed)
+            <div class="bg-yellow-50 border border-yellow-200 rounded mb-4 p-4">
+                <p class="text-yellow-800">
+                    <strong>Эслатма:</strong> Шартнома тузилган, лекин тизимда яратилмаган.
+                    <a href="{{ route('contracts.create', ['lot_id' => $lot->id]) }}" class="underline ml-2">Шартнома яратиш →</a>
+                </p>
+            </div>
+            @endif
+        @endif
+
+        {{-- ============================================ --}}
+        {{-- SECTION 5: PAYMENT SCHEDULE TABLE (ГРАФИК)  --}}
+        {{-- This is the main table from Image 1         --}}
+        {{-- ============================================ --}}
+        @if($lot->contract)
+        <div class="bg-white shadow-sm rounded mb-4">
+
+            {{-- Table Header with Add Button --}}
+            <div class="bg-blue-600 text-white px-6 py-3 flex justify-between items-center">
+                <h2 class="font-bold">ХИСОБОТ ДАВРИДА БАЖАРИЛИШИ БЕЛГИЛАНГАН МАЖБУРИЯТЛАР</h2>
+                <button onclick="openAddScheduleModal()"
+                        class="bg-white text-blue-600 px-3 py-1 rounded text-sm hover:bg-blue-50">
+                    + Қўшиш
+                </button>
+            </div>
+
+            {{-- Payment Schedule Table --}}
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-xs border-collapse">
+                    <thead>
+                        {{-- First Header Row --}}
+                        <tr class="bg-gray-100">
+                            <th rowspan="2" class="px-2 py-2 border">№</th>
+                            <th rowspan="2" class="px-2 py-2 border">сана</th>
+                            <th colspan="3" class="px-2 py-2 border text-center">хисобот даврида (сўздиришув)</th>
+                            <th colspan="3" class="px-2 py-2 border text-center">иш ўрини соли</th>
+                            <th colspan="3" class="px-2 py-2 border text-center">хисобот саналари (усиб бўлиниш)</th>
+                            <th colspan="3" class="px-2 py-2 border text-center">иш ўрини соли</th>
+                            <th rowspan="2" class="px-2 py-2 border">Амаллар</th>
+                        </tr>
+
+                        {{-- Second Header Row --}}
+                        <tr class="bg-gray-50">
+                            <th class="px-2 py-1 border">график</th>
+                            <th class="px-2 py-1 border">амалда</th>
+                            <th class="px-2 py-1 border">+/-</th>
+                            <th class="px-2 py-1 border">график</th>
+                            <th class="px-2 py-1 border">амалда</th>
+                            <th class="px-2 py-1 border">+/-</th>
+                            <th class="px-2 py-1 border">график</th>
+                            <th class="px-2 py-1 border">амалда</th>
+                            <th class="px-2 py-1 border">+/-</th>
+                            <th class="px-2 py-1 border">график</th>
+                            <th class="px-2 py-1 border">амалда</th>
+                            <th class="px-2 py-1 border">+/-</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @forelse($lot->contract->paymentSchedules->sortBy('planned_date') as $index => $schedule)
+                        <tr class="hover:bg-gray-50">
+                            {{-- Row Number --}}
+                            <td class="px-2 py-2 border text-center">{{ $index + 1 }}</td>
+
+                            {{-- Date --}}
+                            <td class="px-2 py-2 border text-center">{{ $schedule->planned_date->format('d.m.Y') }}</td>
+
+                            {{-- Column 1: хисобот даврида (сўздиришув) --}}
+                            <td class="px-2 py-2 border text-right">{{ number_format($schedule->planned_amount, 0, '.', ' ') }}</td>
+                            <td class="px-2 py-2 border text-right {{ $schedule->actual_amount > 0 ? 'bg-green-50 font-bold' : '' }}">
+                                {{ number_format($schedule->actual_amount, 0, '.', ' ') }}
+                            </td>
+                            <td class="px-2 py-2 border text-right {{ $schedule->difference >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                {{ $schedule->difference != 0 ? number_format($schedule->difference, 0, '.', ' ') : '0' }}
+                            </td>
+
+                            {{-- Column 2: иш ўрини соли (placeholder zeros) --}}
+                            <td class="px-2 py-2 border text-right text-gray-400">0</td>
+                            <td class="px-2 py-2 border text-right text-gray-400">0</td>
+                            <td class="px-2 py-2 border text-right text-gray-400">0</td>
+
+                            {{-- Column 3: хисобот саналари (усиб бўлиниш) --}}
+                            <td class="px-2 py-2 border text-right">{{ number_format($schedule->planned_amount, 0, '.', ' ') }}</td>
+                            <td class="px-2 py-2 border text-right {{ $schedule->actual_amount > 0 ? 'bg-green-50 font-bold' : '' }}">
+                                {{ number_format($schedule->actual_amount, 0, '.', ' ') }}
+                            </td>
+                            <td class="px-2 py-2 border text-right {{ $schedule->difference >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                {{ $schedule->difference != 0 ? number_format($schedule->difference, 0, '.', ' ') : '0' }}
+                            </td>
+
+                            {{-- Column 4: иш ўрини соли (placeholder zeros) --}}
+                            <td class="px-2 py-2 border text-right text-gray-400">0</td>
+                            <td class="px-2 py-2 border text-right text-gray-400">0</td>
+                            <td class="px-2 py-2 border text-right text-gray-400">0</td>
+
+                            {{-- Action Buttons --}}
+                            <td class="px-2 py-2 border text-center whitespace-nowrap">
+                                <button onclick="openPaymentModal({{ $schedule->id }}, '{{ $schedule->planned_date->format('Y-m-d') }}', {{ $schedule->planned_amount }})"
+                                        class="text-blue-600 hover:underline mr-2">
+                                    Тўлов
+                                </button>
+                                @if($schedule->actual_amount > 0)
+                                <a href="{{ route('distributions.create', ['payment_schedule_id' => $schedule->id]) }}"
+                                   class="text-green-600 hover:underline">
+                                    Тақсимлаш
+                                </a>
+                                @endif
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="14" class="px-4 py-8 text-center text-gray-500">
+                                График яратилмаган. Юқоридаги "+ Қўшиш" тугмасини босинг.
+                            </td>
+                        </tr>
+                        @endforelse
+
+                        {{-- TOTAL ROW --}}
+                        @if($lot->contract->paymentSchedules->count() > 0)
+                        <tr class="bg-gray-100 font-bold">
+                            <td colspan="2" class="px-2 py-2 border text-right">жами:</td>
+                            <td class="px-2 py-2 border text-right">{{ number_format($lot->contract->paymentSchedules->sum('planned_amount'), 0, '.', ' ') }}</td>
+                            <td class="px-2 py-2 border text-right">{{ number_format($lot->contract->paymentSchedules->sum('actual_amount'), 0, '.', ' ') }}</td>
+                            <td class="px-2 py-2 border"></td>
+                            <td class="px-2 py-2 border text-right text-gray-400">0</td>
+                            <td class="px-2 py-2 border text-right text-gray-400">0</td>
+                            <td class="px-2 py-2 border text-right text-gray-400">0</td>
+                            <td class="px-2 py-2 border text-right">{{ number_format($lot->contract->paymentSchedules->sum('planned_amount'), 0, '.', ' ') }}</td>
+                            <td class="px-2 py-2 border text-right">{{ number_format($lot->contract->paymentSchedules->sum('actual_amount'), 0, '.', ' ') }}</td>
+                            <td class="px-2 py-2 border"></td>
+                            <td class="px-2 py-2 border text-right text-gray-400">0</td>
+                            <td class="px-2 py-2 border text-right text-gray-400">0</td>
+                            <td class="px-2 py-2 border text-right text-gray-400">0</td>
+                            <td class="px-2 py-2 border"></td>
+                        </tr>
+                        @endif
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <h3 class="font-semibold text-gray-700">Лот маълумотлари</h3>
-                <p class="text-sm"><strong>Рақам:</strong> {{ $contract->lot->lot_number }}</p>
-                <p class="text-sm"><strong>Манзил:</strong> {{ $contract->lot->address }}</p>
+        {{-- ============================================ --}}
+        {{-- SECTION 6: DISTRIBUTION TABLE (ТАҚСИМОТ)    --}}
+        {{-- This is the table from Image 2              --}}
+        {{-- ============================================ --}}
+        <div class="bg-white shadow-sm rounded mb-4">
+            <div class="bg-blue-600 text-white px-6 py-3">
+                <h2 class="font-bold">ХИСОБОТ ДАВРИДА БАЖАРИЛИШИ БЕЛГИЛАНГАН МАҲБУРИЯТЛАР БЎЙИЧА ТАҚСИМОТ</h2>
             </div>
 
-            <div>
-                <h3 class="font-semibold text-gray-700">Шартнома маълумотлари</h3>
-                <p class="text-sm"><strong>Тури:</strong>
-                    <span class="px-2 py-1 text-xs rounded {{ $contract->isMuddatli() ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' }}">
-                        {{ $contract->payment_type_label }}
-                    </span>
-                </p>
-                <p class="text-sm"><strong>Ҳолат:</strong>
-                    <span class="px-2 py-1 text-xs rounded
-                        @if($contract->status === 'active') bg-yellow-100 text-yellow-800
-                        @elseif($contract->status === 'completed') bg-green-100 text-green-800
-                        @elseif($contract->status === 'cancelled') bg-red-100 text-red-800
-                        @else bg-gray-100 text-gray-800 @endif">
-                        {{ $contract->status_label }}
-                    </span>
-                </p>
-                @if($contract->paymentSchedules->count() > 0)
-                <p class="text-xs text-gray-500 mt-1">
-                    <svg class="inline w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                    </svg>
-                    Тўлов графиги мавжуд - таҳрирлаш чекланган
-                </p>
-                @endif
-            </div>
+            <div class="p-6">
+                {{-- Investment Plan Table --}}
+                <table class="w-full text-xs border-collapse mb-6">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="px-2 py-2 border">хисобот саналари</th>
+                            <th class="px-2 py-2 border">инвестиция режаси (млн. сўм)</th>
+                            <th class="px-2 py-2 border">инвестиция режаси (минг дол.)</th>
+                            <th class="px-2 py-2 border">яратилдиган иш ўрини сони</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="px-2 py-2 border">{{ now()->format('d.m.Y') }}</td>
+                            <td class="px-2 py-2 border text-right">0</td>
+                            <td class="px-2 py-2 border text-right">0</td>
+                            <td class="px-2 py-2 border text-right">0</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-            <div>
-                <h3 class="font-semibold text-gray-700">Молиявий маълумотлар</h3>
-                <p class="text-sm"><strong>Шартнома суммаси:</strong> {{ number_format($contract->contract_amount, 0, '.', ' ') }} сўм</p>
-                <p class="text-sm"><strong>Тўланган:</strong> {{ number_format($contract->paid_amount, 0, '.', ' ') }} сўм</p>
-                <p class="text-sm"><strong>Қолган:</strong> {{ number_format($contract->remaining_amount, 0, '.', ' ') }} сўм</p>
-                <div class="mt-2">
-                    <div class="w-full bg-gray-200 rounded-full h-4">
-                        <div class="bg-blue-600 h-4 rounded-full" style="width: {{ $contract->payment_percentage }}%"></div>
-                    </div>
-                    <p class="text-xs text-gray-600 mt-1">{{ number_format($contract->payment_percentage, 1) }}% тўланди</p>
+                {{-- Actual Performance --}}
+                <h3 class="font-bold mb-3 text-sm">ХИСОБОТ ДАВРИДА АМАЛДА БАЖАРИЛГАН МАЖБУРИЯТЛАР</h3>
+
+                <table class="w-full text-xs border-collapse mb-4">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="px-2 py-2 border">амалда инвестиция (млн. сўм)</th>
+                            <th class="px-2 py-2 border">амалда инвестиция (минг дол.)</th>
+                            <th class="px-2 py-2 border">яратилган иш ўрини сони</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="px-2 py-2 border text-right">
+                                {{ number_format($lot->contract->distributions->sum('allocated_amount'), 0, '.', ' ') }}
+                            </td>
+                            <td class="px-2 py-2 border text-right">0</td>
+                            <td class="px-2 py-2 border text-right">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-medium mb-1">Мониторинг далолатномаси:</label>
+                    <textarea class="w-full border rounded px-2 py-1 text-xs" rows="2"></textarea>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-medium mb-1">Фотосуратлар:</label>
+                    <input type="file" class="text-xs">
                 </div>
             </div>
 
-            <div>
-                <h3 class="font-semibold text-gray-700">Тизим маълумотлари</h3>
-                <p class="text-sm"><strong>Яратди:</strong> {{ $contract->creator?->name ?? '-' }}</p>
-                <p class="text-sm"><strong>Яратилган:</strong> {{ $contract->created_at->format('d.m.Y H:i') }}</p>
-                @if($contract->updater)
-                <p class="text-sm"><strong>Янгиланган:</strong> {{ $contract->updater->name }} ({{ $contract->updated_at->format('d.m.Y H:i') }})</p>
-                @endif
+            <div class="px-6 py-3 bg-gray-50 border-t flex justify-end">
+                <button class="bg-blue-600 text-white px-6 py-2 rounded text-sm hover:bg-blue-700">
+                    Чиқариш
+                </button>
             </div>
         </div>
-
-        @if($contract->note)
-        <div class="mt-4">
-            <h3 class="font-semibold text-gray-700">Изоҳ</h3>
-            <p class="text-sm text-gray-600">{{ $contract->note }}</p>
-        </div>
         @endif
-    </div>
 
-    <!-- Тўлов графиги (Муддатли учун) -->
-    @if($contract->isMuddatli())
-    <div class="bg-white shadow rounded-lg p-6 mb-6">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold">Тўлов графиги</h2>
-            @if($contract->paymentSchedules->count() === 0)
-            <button onclick="document.getElementById('scheduleModal').classList.remove('hidden')"
-                    class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-                График яратиш
+        {{-- ============================================ --}}
+        {{-- SECTION 7: ACTION BUTTONS                   --}}
+        {{-- ============================================ --}}
+        <div class="flex gap-2">
+            @if(Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->tuman_id === $lot->tuman_id))
+                @if(!$lot->contract && $lot->contract_signed)
+                    <a href="{{ route('contracts.create', ['lot_id' => $lot->id]) }}"
+                       class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                        Шартнома яратиш
+                    </a>
+                @endif
+                <a href="{{ route('lots.edit', $lot) }}"
+                   class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    Таҳрирлаш
+                </a>
+            @endif
+            <button onclick="window.print()" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+                Чоп этиш
             </button>
-            @endif
         </div>
-
-        @if($contract->paymentSchedules->count() > 0)
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">№</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Режалаштирилган сана</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Муддат</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Режалаштирилган</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Тўланган</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Фарқ</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ҳолат</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Амаллар</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @foreach($contract->paymentSchedules as $schedule)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-2">{{ $schedule->payment_number }}</td>
-                        <td class="px-4 py-2">{{ $schedule->planned_date->format('d.m.Y') }}</td>
-                        <td class="px-4 py-2">{{ $schedule->deadline_date->format('d.m.Y') }}</td>
-                        <td class="px-4 py-2">{{ number_format($schedule->planned_amount, 0, '.', ' ') }}</td>
-                        <td class="px-4 py-2">{{ number_format($schedule->actual_amount, 0, '.', ' ') }}</td>
-                        <td class="px-4 py-2">
-                            <span class="{{ $schedule->difference >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                {{ number_format($schedule->difference, 0, '.', ' ') }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-2">
-                            <span class="px-2 py-1 text-xs rounded bg-{{ $schedule->status_color }}-100 text-{{ $schedule->status_color }}-800">
-                                {{ $schedule->status_label }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-2">
-                            @if($contract->status !== 'cancelled')
-                            <button onclick="openPaymentModal({{ $schedule->id }}, '{{ $schedule->planned_date->format('Y-m-d') }}', {{ $schedule->actual_amount }})"
-                                    class="text-blue-600 hover:text-blue-900 mr-2">Тўлов</button>
-                            @if($schedule->actual_amount > 0)
-                            <a href="{{ route('distributions.create', ['payment_schedule_id' => $schedule->id]) }}"
-                               class="text-green-600 hover:text-green-900">Тақсимлаш</a>
-                            @endif
-                            @else
-                            <span class="text-gray-400 text-sm">Бекор қилинган</span>
-                            @endif
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-        @else
-        <p class="text-gray-500 text-center py-4">Тўлов графиги яратилмаган</p>
-        @endif
-    </div>
-    @endif
-
-    <!-- Қўшимча келишувлар -->
-    <div class="bg-white shadow rounded-lg p-6 mb-6">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold">Қўшимча келишувлар</h2>
-            @if($contract->status !== 'cancelled')
-            <a href="{{ route('additional-agreements.create', $contract) }}"
-               class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
-                Қўшимча келишув қўшиш
-            </a>
-            @endif
-        </div>
-
-        @if($contract->additionalAgreements->count() > 0)
-        <div class="space-y-4">
-            @foreach($contract->additionalAgreements as $agreement)
-            <div class="border rounded p-4">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h3 class="font-semibold">№ {{ $agreement->agreement_number }}</h3>
-                        <p class="text-sm text-gray-600">Сана: {{ $agreement->agreement_date->format('d.m.Y') }}</p>
-                        <p class="text-sm">
-                            Сумма:
-                            <strong class="{{ $agreement->new_amount >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                {{ $agreement->new_amount >= 0 ? '+' : '' }}{{ number_format($agreement->new_amount, 0, '.', ' ') }} сўм
-                            </strong>
-                        </p>
-                        <p class="text-sm text-gray-600">Сабаб: {{ $agreement->reason }}</p>
-                    </div>
-                    <div>
-                        <a href="{{ route('additional-agreements.show', $agreement) }}"
-                           class="text-blue-600 hover:text-blue-900">Батафсил</a>
-                    </div>
-                </div>
-            </div>
-            @endforeach
-        </div>
-        @else
-        <p class="text-gray-500 text-center py-4">Қўшимча келишувлар мавжуд эмас</p>
-        @endif
-    </div>
-
-    <!-- Тақсимотлар -->
-    <div class="bg-white shadow rounded-lg p-6">
-        <h2 class="text-xl font-bold mb-4">Тақсимотлар</h2>
-
-        @if($contract->distributions->count() > 0)
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Категория</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Сумма</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Сана</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ҳолат</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Яратди</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @foreach($contract->distributions as $distribution)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-2">{{ $distribution->category_label }}</td>
-                        <td class="px-4 py-2 font-semibold">{{ number_format($distribution->allocated_amount, 0, '.', ' ') }}</td>
-                        <td class="px-4 py-2">{{ $distribution->distribution_date->format('d.m.Y') }}</td>
-                        <td class="px-4 py-2">
-                            <span class="px-2 py-1 text-xs rounded bg-{{ $distribution->status_color }}-100 text-{{ $distribution->status_color }}-800">
-                                {{ $distribution->status_label }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-2 text-sm">{{ $distribution->creator?->name ?? '-' }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-        @else
-        <p class="text-gray-500 text-center py-4">Тақсимотлар мавжуд эмас</p>
-        @endif
     </div>
 </div>
 
-<!-- График яратиш модали -->
-<div id="scheduleModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <h3 class="text-lg font-bold mb-4">Тўлов графиги яратиш</h3>
-        <form action="{{ route('contracts.generate-schedule', $contract) }}" method="POST">
+{{-- ============================================ --}}
+{{-- MODAL 1: ADD SCHEDULE ITEM                  --}}
+{{-- Opens when clicking "+ Қўшиш" button        --}}
+{{-- ============================================ --}}
+<div id="addScheduleModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-md w-full">
+        <div class="flex items-center justify-between px-6 py-4 border-b">
+            <h3 class="text-lg font-bold">График қўшиш</h3>
+            <button onclick="closeAddScheduleModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form action="{{ route('contracts.add-schedule-item', $lot->contract ?? 0) }}" method="POST" class="p-6 space-y-4">
             @csrf
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-2">Даврийлик</label>
-                <select name="frequency" required class="w-full border rounded px-3 py-2">
-                    <option value="monthly">Ойлик</option>
-                    <option value="quarterly">Чораклик</option>
-                    <option value="yearly">Йиллик</option>
-                </select>
+            <div>
+                <label class="block text-sm font-medium mb-2">Тўлов санаси <span class="text-red-500">*</span></label>
+                <input type="date" name="planned_date" required class="w-full border rounded px-3 py-2">
             </div>
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-2">Бошланиш санаси</label>
-                <input type="date" name="start_date" required class="w-full border rounded px-3 py-2">
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Тўлов суммаси (сўм) <span class="text-red-500">*</span></label>
+                <input type="number" step="0.01" name="planned_amount" required class="w-full border rounded px-3 py-2" placeholder="0.00">
             </div>
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-2">Тўловлар сони</label>
-                <input type="number" name="number_of_payments" min="1" max="120" required class="w-full border rounded px-3 py-2">
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Муддат (deadline)</label>
+                <input type="date" name="deadline_date" class="w-full border rounded px-3 py-2">
             </div>
-            <div class="flex justify-end gap-2">
-                <button type="button" onclick="document.getElementById('scheduleModal').classList.add('hidden')"
-                        class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
-                    Бекор қилиш
+
+            <div class="flex gap-2">
+                <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    Қўшиш
                 </button>
-                <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
-                    Яратиш
+                <button type="button" onclick="closeAddScheduleModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded">
+                    Бекор
                 </button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Статус ўзгартириш модали -->
-<div id="statusModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <h3 class="text-lg font-bold mb-4">Шартнома статусини ўзгартириш</h3>
-        <form action="{{ route('contracts.update', $contract) }}" method="POST">
+{{-- ============================================ --}}
+{{-- MODAL 2: RECORD PAYMENT                     --}}
+{{-- Opens when clicking "Тўлов" button          --}}
+{{-- ============================================ --}}
+<div id="paymentModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-md w-full">
+        <div class="flex items-center justify-between px-6 py-4 border-b">
+            <h3 class="text-lg font-bold">Тўлов қўшиш</h3>
+            <button onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form id="paymentForm" method="POST" class="p-6 space-y-4">
             @csrf
             @method('PUT')
-            <input type="hidden" name="status_only" value="1">
 
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-2">Статус</label>
-                <select name="status" required class="w-full border rounded px-3 py-2">
-                    <option value="draft" {{ $contract->status === 'draft' ? 'selected' : '' }}>Қоралама</option>
-                    <option value="active" {{ $contract->status === 'active' ? 'selected' : '' }}>Фаол</option>
-                    <option value="completed" {{ $contract->status === 'completed' ? 'selected' : '' }}>Якунланган</option>
-                    <option value="cancelled" {{ $contract->status === 'cancelled' ? 'selected' : '' }}>Бекор қилинган</option>
-                </select>
-            </div>
-
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-2">Сабаби (мажбурий эмас)</label>
-                <textarea name="status_reason" rows="3" class="w-full border rounded px-3 py-2" placeholder="Статус ўзгартириш сабабини кўрсатинг"></textarea>
-            </div>
-
-            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-3 mb-4">
-                <p class="text-xs text-yellow-700">
-                    <strong>Диққат:</strong> Тўлов графиги мавжуд бўлган шартномаларни таҳрирлаш имкони йўқ. Фақат статусни ўзгартириш мумкин.
-                </p>
-            </div>
-
-            <div class="flex justify-end gap-2">
-                <button type="button" onclick="document.getElementById('statusModal').classList.add('hidden')"
-                        class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
-                    Бекор қилиш
-                </button>
-                <button type="submit" class="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
-                    Сақлаш
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Тўлов қўшиш модали -->
-<div id="paymentModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <h3 class="text-lg font-bold mb-4">Тўлов қўшиш</h3>
-        <form id="paymentForm" method="POST">
-            @csrf
-            @method('PUT')
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-2">Тўлов санаси</label>
+            <div>
+                <label class="block text-sm font-medium mb-2">Тўлов санаси <span class="text-red-500">*</span></label>
                 <input type="date" name="actual_date" id="paymentDate" required class="w-full border rounded px-3 py-2">
             </div>
-            <div class="mb-4">
-                <label class="block text-sm font-medium mb-2">Тўланган сумма</label>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Тўланган сумма (сўм) <span class="text-red-500">*</span></label>
                 <input type="number" step="0.01" name="actual_amount" id="paymentAmount" required class="w-full border rounded px-3 py-2">
             </div>
-            <div class="mb-4">
+
+            <div>
                 <label class="block text-sm font-medium mb-2">Изоҳ</label>
                 <textarea name="note" rows="2" class="w-full border rounded px-3 py-2"></textarea>
             </div>
-            <div class="flex justify-end gap-2">
-                <button type="button" onclick="document.getElementById('paymentModal').classList.add('hidden')"
-                        class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
-                    Бекор қилиш
-                </button>
-                <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+
+            <div class="flex gap-2">
+                <button type="submit" class="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                     Сақлаш
+                </button>
+                <button type="button" onclick="closePaymentModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded">
+                    Бекор
                 </button>
             </div>
         </form>
     </div>
 </div>
 
+{{-- ============================================ --}}
+{{-- JAVASCRIPT FUNCTIONS                        --}}
+{{-- ============================================ --}}
 <script>
-function openPaymentModal(scheduleId, plannedDate, currentAmount) {
+// Open/Close Add Schedule Modal
+function openAddScheduleModal() {
+    document.getElementById('addScheduleModal').classList.remove('hidden');
+}
+
+function closeAddScheduleModal() {
+    document.getElementById('addScheduleModal').classList.add('hidden');
+}
+
+// Open/Close Payment Modal
+function openPaymentModal(scheduleId, plannedDate, plannedAmount) {
     const form = document.getElementById('paymentForm');
     form.action = `/payment-schedules/${scheduleId}`;
     document.getElementById('paymentDate').value = plannedDate;
-    document.getElementById('paymentAmount').value = currentAmount;
+    document.getElementById('paymentAmount').value = plannedAmount;
     document.getElementById('paymentModal').classList.remove('hidden');
 }
+
+function closePaymentModal() {
+    document.getElementById('paymentModal').classList.add('hidden');
+}
 </script>
+
+{{-- Hide buttons when printing --}}
+<style>
+@media print {
+    button, .no-print {
+        display: none !important;
+    }
+}
+</style>
 @endsection

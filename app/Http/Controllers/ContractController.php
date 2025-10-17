@@ -4,16 +4,46 @@ namespace App\Http\Controllers;
 
 use App\Models\Contract;
 use App\Models\Lot;
+use App\Models\PaymentSchedule;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ContractController extends Controller
 {
-    public function index()
+    public function __construct()
     {
-        $contracts = Contract::with(['lot', 'creator', 'updater'])
-            ->latest()
-            ->paginate(20);
+        $this->middleware('auth');
+    }
+
+    public function index(Request $request)
+    {
+        $query = Contract::with(['lot.tuman', 'creator']);
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by payment type
+        if ($request->filled('payment_type')) {
+            $query->where('payment_type', $request->payment_type);
+        }
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('contract_number', 'like', "%{$search}%")
+                    ->orWhereHas('lot', function ($lotQuery) use ($search) {
+                        $lotQuery->where('lot_number', 'like', "%{$search}%")
+                            ->orWhere('winner_name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $contracts = $query->orderBy('created_at', 'desc')->paginate(20);
 
         return view('contracts.index', compact('contracts'));
     }
@@ -21,44 +51,89 @@ class ContractController extends Controller
     public function create(Request $request)
     {
         $lotId = $request->get('lot_id');
-        $lot = null;
 
-        if ($lotId) {
-            $lot = Lot::findOrFail($lotId);
+        if (!$lotId) {
+            return redirect()->route('lots.index')
+                ->with('error', 'Лот танланмаган');
         }
 
-        $lots = Lot::select('id', 'lot_number', 'address')
-            ->orderBy('lot_number')
-            ->get();
+        $lot = Lot::with(['tuman', 'mahalla'])->findOrFail($lotId);
 
-        return view('contracts.create', compact('lots', 'lot'));
+        // Check if contract already exists
+        if ($lot->contract) {
+            return redirect()->route('contracts.show', $lot->contract)
+                ->with('error', 'Бу лот учун шартнома мавжуд');
+        }
+
+        // Check access
+        $user = Auth::user();
+        if ($user->role === 'district_user' && $lot->tuman_id !== $user->tuman_id) {
+            abort(403, 'Рухсат йўқ');
+        }
+
+        // Auto-fill contract number suggestion
+        $lastContract = Contract::orderBy('id', 'desc')->first();
+        $nextNumber = $lastContract ? ((int)filter_var($lastContract->contract_number, FILTER_SANITIZE_NUMBER_INT)) + 1 : 1;
+        $suggestedNumber = 'Ш-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+
+        return view('contracts.create', compact('lot', 'suggestedNumber'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'lot_id' => 'required|exists:lots,id',
-            'contract_number' => 'required|unique:contracts,contract_number',
+            'contract_number' => 'required|string|max:255|unique:contracts,contract_number',
             'contract_date' => 'required|date',
-            'payment_type' => 'required|in:muddatli,muddatsiz',
             'contract_amount' => 'required|numeric|min:0',
-            'note' => 'nullable|string',
+            'payment_type' => 'required|in:muddatli,muddatsiz',
+            'paid_amount' => 'nullable|numeric|min:0',
+            'status' => 'required|in:active,completed,cancelled',
+            'note' => 'nullable|string|max:1000',
         ]);
 
-        $contract = Contract::create($validated);
+        DB::beginTransaction();
+        try {
+            // Create contract
+            $contract = Contract::create([
+                'lot_id' => $validated['lot_id'],
+                'contract_number' => $validated['contract_number'],
+                'contract_date' => $validated['contract_date'],
+                'contract_amount' => $validated['contract_amount'],
+                'paid_amount' => $validated['paid_amount'] ?? 0,
+                'payment_type' => $validated['payment_type'],
+                'status' => $validated['status'],
+                'note' => $validated['note'] ?? null,
+            ]);
 
-        return redirect()
-            ->route('contracts.show', $contract)
-            ->with('success', 'Шартнома муваффақиятли яратилди!');
+            // Update lot
+            $lot = Lot::find($validated['lot_id']);
+            $lot->contract_signed = true;
+            $lot->contract_date = $validated['contract_date'];
+            $lot->contract_number = $validated['contract_number'];
+            $lot->save();
+
+            DB::commit();
+
+            return redirect()->route('lot.show', $contract)
+                ->with('success', 'Шартнома муваффақиятли яратилди');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()
+                ->with('error', 'Хатолик: ' . $e->getMessage());
+        }
     }
 
     public function show(Contract $contract)
     {
         $contract->load([
-            'lot',
-            'paymentSchedules' => fn($q) => $q->orderBy('payment_number'),
-            'additionalAgreements' => fn($q) => $q->latest(),
-            'distributions' => fn($q) => $q->with(['paymentSchedule', 'creator'])->latest(),
+            'lot.tuman',
+            'lot.mahalla',
+            'paymentSchedules' => function ($query) {
+                $query->orderBy('payment_number');
+            },
+            'distributions',
+            'additionalAgreements',
             'creator',
             'updater'
         ]);
@@ -68,144 +143,180 @@ class ContractController extends Controller
 
     public function edit(Contract $contract)
     {
-        return view('contracts.edit', compact('contract'));
+        // Check if contract has payment schedules
+        if ($contract->paymentSchedules()->count() > 0) {
+            return redirect()->route('contracts.show', $contract)
+                ->with('error', 'Тўлов графиги бор шартномани таҳрирлаб бўлмайди. Фақат статусни ўзгартириш мумкин.');
+        }
+
+        $lot = $contract->lot;
+
+        return view('contracts.edit', compact('contract', 'lot'));
     }
 
     public function update(Request $request, Contract $contract)
     {
-        // Check if this is a status-only update
-        if ($request->has('status_only') && $request->status_only == '1') {
-            // Only validate and update status
+        // Check if only updating status
+        if ($request->has('status_only')) {
             $validated = $request->validate([
                 'status' => 'required|in:draft,active,completed,cancelled',
                 'status_reason' => 'nullable|string|max:1000',
             ]);
 
-            try {
-                DB::beginTransaction();
+            $contract->update([
+                'status' => $validated['status'],
+                'note' => $validated['status_reason'] ?
+                    ($contract->note ? $contract->note . "\n\nСтатус ўзгартирилди: " . $validated['status_reason'] : $validated['status_reason'])
+                    : $contract->note,
+            ]);
 
-                $contract->status = $validated['status'];
-
-                // If there's a status reason, append it to notes
-                if (!empty($validated['status_reason'])) {
-                    $timestamp = now()->format('d.m.Y H:i');
-                    $user = auth()->user()->name;
-                    $statusLabel = $contract->status_label;
-
-                    $statusNote = "\n\n[{$timestamp}] {$user} статусни '{$statusLabel}' га ўзгартирди.\nСабаби: {$validated['status_reason']}";
-                    $contract->note = ($contract->note ?? '') . $statusNote;
-                }
-
-                $contract->save();
-
-                DB::commit();
-
-                return redirect()
-                    ->route('contracts.show', $contract)
-                    ->with('success', 'Шартнома статуси муваффақиятли янгиланди!');
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return redirect()
-                    ->back()
-                    ->with('error', 'Статусни янгилашда хатолик: ' . $e->getMessage());
-            }
+            return redirect()->route('contracts.show', $contract)
+                ->with('success', 'Шартнома статуси янгиланди');
         }
 
-        // Check if contract has payment schedules - prevent full edit if it does
+        // Full update - only if no payment schedules
         if ($contract->paymentSchedules()->count() > 0) {
-            return redirect()
-                ->back()
-                ->with('error', 'Тўлов графиги мавжуд бўлган шартномани таҳрирлаш мумкин эмас. Фақат статусни ўзгартириш мумкин.');
+            return redirect()->route('contracts.show', $contract)
+                ->with('error', 'Тўлов графиги бор шартномани таҳрирлаб бўлмайди');
         }
 
-        // Regular full update validation
         $validated = $request->validate([
             'contract_number' => 'required|string|max:255|unique:contracts,contract_number,' . $contract->id,
             'contract_date' => 'required|date',
-            'payment_type' => 'required|in:bir_martalik,muddatli',
             'contract_amount' => 'required|numeric|min:0',
-            'status' => 'required|in:draft,active,completed,cancelled',
-            'note' => 'nullable|string',
+            'payment_type' => 'required|in:muddatli,muddatsiz',
+            'paid_amount' => 'nullable|numeric|min:0',
+            'status' => 'required|in:active,completed,cancelled',
+            'note' => 'nullable|string|max:1000',
         ]);
 
-        try {
-            DB::beginTransaction();
+        $contract->update($validated);
 
-            $contract->update($validated);
+        // Update lot
+        $contract->lot->update([
+            'contract_number' => $validated['contract_number'],
+            'contract_date' => $validated['contract_date'],
+        ]);
 
-            DB::commit();
-
-            return redirect()
-                ->route('contracts.show', $contract)
-                ->with('success', 'Шартнома муваффақиятли янгиланди!');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()
-                ->back()
-                ->withInput()
-                ->with('error', 'Янгилашда хатолик: ' . $e->getMessage());
-        }
+        return redirect()->route('contracts.show', $contract)
+            ->with('success', 'Шартнома янгиланди');
     }
 
     public function destroy(Contract $contract)
     {
-        $contract->delete();
+        $user = Auth::user();
 
-        return redirect()
-            ->route('contracts.index')
-            ->with('success', 'Шартнома ўчирилди!');
+        if ($user->role !== 'admin') {
+            abort(403, 'Рухсат йўқ');
+        }
+
+        if ($contract->paymentSchedules()->count() > 0 || $contract->distributions()->count() > 0) {
+            return back()->with('error', 'Тўлов графиги ёки тақсимоти бор шартномани ўчириб бўлмайди');
+        }
+
+        $lotId = $contract->lot_id;
+
+        DB::beginTransaction();
+        try {
+            // Update lot
+            $lot = Lot::find($lotId);
+            $lot->contract_signed = false;
+            $lot->contract_date = null;
+            $lot->contract_number = null;
+            $lot->save();
+
+            $contract->delete();
+
+            DB::commit();
+
+            return redirect()->route('lots.show', $lotId)
+                ->with('success', 'Шартнома ўчирилди');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Хатолик: ' . $e->getMessage());
+        }
     }
 
     public function generateSchedule(Request $request, Contract $contract)
     {
-        if (!$contract->isMuddatli()) {
-            return back()->with('error', 'Фақат муддатли шартномалар учун график яратилади!');
-        }
-
         $validated = $request->validate([
             'frequency' => 'required|in:monthly,quarterly,yearly',
             'start_date' => 'required|date',
             'number_of_payments' => 'required|integer|min:1|max:120',
         ]);
 
+        if ($contract->paymentSchedules()->count() > 0) {
+            return back()->with('error', 'График аллақачон мавжуд');
+        }
+
         DB::beginTransaction();
         try {
-            $contract->paymentSchedules()->delete();
-
-            $amount = $contract->contract_amount;
+            $startDate = Carbon::parse($validated['start_date']);
             $numberOfPayments = $validated['number_of_payments'];
-            $paymentAmount = $amount / $numberOfPayments;
-            $startDate = \Carbon\Carbon::parse($validated['start_date']);
+            $remainingAmount = $contract->contract_amount - $contract->paid_amount;
+            $paymentAmount = $remainingAmount / $numberOfPayments;
+
+            $frequencyMap = [
+                'monthly' => 1,
+                'quarterly' => 3,
+                'yearly' => 12,
+            ];
+            $monthsIncrement = $frequencyMap[$validated['frequency']];
 
             for ($i = 1; $i <= $numberOfPayments; $i++) {
-                $plannedDate = clone $startDate;
+                $plannedDate = $startDate->copy()->addMonths($monthsIncrement * ($i - 1));
+                $deadlineDate = $plannedDate->copy()->addDays(10); // 10 days grace period
 
-                switch ($validated['frequency']) {
-                    case 'monthly':
-                        $plannedDate->addMonths($i - 1);
-                        $deadlineDate = (clone $plannedDate)->endOfMonth();
-                        break;
-                    case 'quarterly':
-                        $plannedDate->addMonths(($i - 1) * 3);
-                        $deadlineDate = (clone $plannedDate)->addMonths(3)->endOfMonth();
-                        break;
-                    case 'yearly':
-                        $plannedDate->addYears($i - 1);
-                        $deadlineDate = (clone $plannedDate)->endOfYear();
-                        break;
-                }
-
-                $contract->paymentSchedules()->create([
+                PaymentSchedule::create([
+                    'contract_id' => $contract->id,
                     'payment_number' => $i,
                     'planned_date' => $plannedDate,
                     'deadline_date' => $deadlineDate,
                     'planned_amount' => $paymentAmount,
-                    'status' => 'pending',
+                    'actual_amount' => 0,
+                    'status' => PaymentSchedule::STATUS_PENDING,
                 ]);
             }
 
             DB::commit();
-            return back()->with('success', 'Тўлов графиги яратилди!');
+
+            return redirect()->route('contracts.show', $contract)
+                ->with('success', 'Тўлов графиги яратилди');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Хатолик: ' . $e->getMessage());
+        }
+    }
+
+    public function addScheduleItem(Request $request, Contract $contract)
+    {
+        $validated = $request->validate([
+            'planned_date' => 'required|date',
+            'planned_amount' => 'required|numeric|min:0',
+            'deadline_date' => 'nullable|date|after_or_equal:planned_date',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Get next payment number
+            $nextNumber = $contract->paymentSchedules()->max('payment_number') + 1;
+
+            // Create schedule item
+            PaymentSchedule::create([
+                'contract_id' => $contract->id,
+                'payment_number' => $nextNumber,
+                'planned_date' => $validated['planned_date'],
+                'deadline_date' => $validated['deadline_date'] ?? Carbon::parse($validated['planned_date'])->addDays(10),
+                'planned_amount' => $validated['planned_amount'],
+                'actual_amount' => 0,
+                'difference' => -$validated['planned_amount'],
+                'status' => PaymentSchedule::STATUS_PENDING,
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('lots.show', $contract->lot_id)
+                ->with('success', 'График қўшилди');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Хатолик: ' . $e->getMessage());

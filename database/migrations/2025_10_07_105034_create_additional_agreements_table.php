@@ -14,18 +14,18 @@ return new class extends Migration
         Schema::create('additional_agreements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('contract_id')->constrained()->onDelete('cascade');
-            $table->string('agreement_number');
+            $table->string('agreement_number')->unique();
             $table->date('agreement_date');
-            $table->decimal('new_amount', 15, 2);
-            $table->text('reason')->nullable();
+            $table->decimal('new_amount', 20, 2)->comment('Positive for increase, negative for decrease');
+            $table->text('reason');
             $table->text('note')->nullable();
-
-            $table->foreignId('created_by')->nullable()->constrained('users');
-            $table->foreignId('updated_by')->nullable()->constrained('users');
+            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
             $table->softDeletes();
 
-            $table->unique(['contract_id', 'agreement_number']);
+            $table->index('contract_id');
+            $table->index('agreement_date');
         });
     }
 

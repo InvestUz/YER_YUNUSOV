@@ -313,11 +313,48 @@ class ExcelDataSeeder extends Seeder
 
     private function importDistributions($lot, $row)
     {
-        // Based on your Excel structure:
-        // Columns 36-39: Allocated amounts (Тақсимот)
-        // Columns 40-43: Distributed amounts (Тақсимланган)
-        // Columns 44-47: Remaining amounts (Қолдиқ)
+        // Check if lot has a contract first
+        if (!$lot->contract) {
+            // Create a contract automatically if distributions exist
+            $hasDistributions = false;
+            $categories = [
+                'local_budget' => [36, 40, 44],
+                'development_fund' => [37, 41, 45],
+                'new_uzbekistan' => [38, 42, 46],
+                'district_authority' => [39, 43, 47],
+            ];
 
+            foreach ($categories as $category => $indices) {
+                $allocatedAmount = $this->parseDecimal($row[$indices[0]] ?? 0);
+                $distributedAmount = $this->parseDecimal($row[$indices[1]] ?? 0);
+
+                if ($allocatedAmount > 0 || $distributedAmount > 0) {
+                    $hasDistributions = true;
+                    break;
+                }
+            }
+
+            if ($hasDistributions && $lot->contract_signed) {
+                // Auto-create contract for this lot
+                $contract = \App\Models\Contract::create([
+                    'lot_id' => $lot->id,
+                    'contract_number' => $lot->contract_number ?? 'AUTO-' . $lot->lot_number,
+                    'contract_date' => $lot->contract_date ?? $lot->auction_date ?? now(),
+                    'contract_amount' => $lot->sold_price ?? 0,
+                    'paid_amount' => $lot->paid_amount ?? 0,
+                    'payment_type' => $lot->payment_type ?? 'muddatsiz',
+                    'status' => 'active',
+                    'created_by' => 1, // Admin user
+                    'updated_by' => 1,
+                ]);
+            } else {
+                return; // No contract and no distributions, skip
+            }
+        }
+
+        $contract = $lot->contract;
+
+        // Now import distributions linked to contract
         $categories = [
             'local_budget' => [36, 40, 44],
             'development_fund' => [37, 41, 45],
@@ -331,11 +368,16 @@ class ExcelDataSeeder extends Seeder
             $remainingAmount = $this->parseDecimal($row[$indices[2]] ?? 0);
 
             if ($allocatedAmount > 0 || $distributedAmount > 0 || $remainingAmount > 0) {
-                Distribution::create([
-                    'lot_id' => $lot->id,
+                \App\Models\Distribution::create([
+                    'contract_id' => $contract->id, // Use contract_id, not lot_id
+                    'payment_schedule_id' => null,
                     'category' => $category,
-                    'allocated_amount' => $distributedAmount, // Already distributed
-                    'remaining_amount' => $remainingAmount,
+                    'allocated_amount' => $distributedAmount, // Already distributed amount
+                    'distribution_date' => $lot->contract_date ?? now(),
+                    'status' => $distributedAmount > 0 ? 'distributed' : 'pending',
+                    'note' => "Импортировано из Excel",
+                    'created_by' => 1,
+                    'updated_by' => 1,
                 ]);
             }
         }
@@ -343,12 +385,52 @@ class ExcelDataSeeder extends Seeder
 
     private function importPaymentSchedules($lot, $row)
     {
+        // Only create payment schedules for installment payment types
+        if ($lot->payment_type !== 'muddatli') {
+            return;
+        }
+
+        // Check if lot has a contract
+        if (!$lot->contract && $lot->contract_signed) {
+            // Auto-create contract
+            $contract = \App\Models\Contract::create([
+                'lot_id' => $lot->id,
+                'contract_number' => $lot->contract_number ?? 'AUTO-' . $lot->lot_number,
+                'contract_date' => $lot->contract_date ?? $lot->auction_date ?? now(),
+                'contract_amount' => $lot->sold_price ?? 0,
+                'paid_amount' => $lot->paid_amount ?? 0,
+                'payment_type' => 'muddatli',
+                'status' => 'active',
+                'created_by' => 1,
+                'updated_by' => 1,
+            ]);
+        }
+
+        if (!$lot->contract) {
+            return; // Still no contract, skip
+        }
+
+        $contract = $lot->contract;
+
         // Payment schedules start from column 49 (index 48)
         $years = [2024, 2025, 2026, 2027, 2028, 2029];
-        $monthsRu = ['август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
-                     'январь', 'февраль', 'март', 'аперль', 'май', 'июнь', 'июль'];
+        $monthsRu = [
+            'август',
+            'сентябрь',
+            'октябрь',
+            'ноябрь',
+            'декабрь',
+            'январь',
+            'февраль',
+            'март',
+            'аперль',
+            'май',
+            'июнь',
+            'июль'
+        ];
 
         $colIndex = 49;
+        $paymentNumber = 1;
 
         foreach ($years as $yearIndex => $year) {
             foreach ($monthsRu as $monthIndex => $monthName) {
@@ -361,26 +443,29 @@ class ExcelDataSeeder extends Seeder
 
                 if ($amount > 0) {
                     // Calculate correct month number (1-12)
-                    // August=8, September=9, ..., December=12, January=1, ..., July=7
                     $monthNum = ($monthIndex < 5) ? ($monthIndex + 8) : ($monthIndex - 4);
-
-                    // Adjust year for January-July (they belong to next year)
                     $actualYear = ($monthIndex < 5) ? $year : ($year + 1);
 
                     try {
-                        PaymentSchedule::create([
-                            'lot_id' => $lot->id,
-                            'year' => $actualYear,
-                            'month' => $monthName,
-                            'payment_date' => date('Y-m-d', strtotime("{$actualYear}-{$monthNum}-01")),
+                        $plannedDate = date('Y-m-d', strtotime("{$actualYear}-{$monthNum}-01"));
+                        $deadlineDate = date('Y-m-d', strtotime("{$actualYear}-{$monthNum}-10"));
+
+                        \App\Models\PaymentSchedule::create([
+                            'contract_id' => $contract->id,
+                            'payment_number' => $paymentNumber++,
+                            'planned_date' => $plannedDate,
+                            'deadline_date' => $deadlineDate,
                             'planned_amount' => $amount,
                             'actual_amount' => 0,
                             'difference' => -$amount,
-                            'payment_frequency' => 'monthly',
+                            'status' => 'pending',
+                            'created_by' => 1,
+                            'updated_by' => 1,
                         ]);
                     } catch (\Exception $e) {
                         Log::warning("Failed to create payment schedule", [
                             'lot_id' => $lot->id,
+                            'contract_id' => $contract->id,
                             'year' => $actualYear,
                             'month' => $monthName,
                             'error' => $e->getMessage()
@@ -391,7 +476,6 @@ class ExcelDataSeeder extends Seeder
             }
         }
     }
-
     private function findTumanId($tumanName)
     {
         $tumanName = trim($tumanName);
@@ -582,7 +666,8 @@ class ExcelDataSeeder extends Seeder
     }
 }
 
-function transliterate($text) {
+function transliterate($text)
+{
     $cyrillic = ['а', 'б', 'в', 'г', 'д', 'е', 'ё', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ', 'ъ', 'ы', 'ь', 'э', 'ю', 'я', 'ў', 'қ', 'ғ', 'ҳ'];
     $latin = ['a', 'b', 'v', 'g', 'd', 'e', 'yo', 'zh', 'z', 'i', 'y', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'f', 'h', 'ts', 'ch', 'sh', 'sch', '', 'y', '', 'e', 'yu', 'ya', 'o', 'q', 'g', 'h'];
     return str_replace($cyrillic, $latin, mb_strtolower($text));
