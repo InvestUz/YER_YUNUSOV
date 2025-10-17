@@ -296,24 +296,27 @@ class MonitoringService
         $payments = [];
 
         foreach ($years as $year) {
-            $query = PaymentSchedule::whereHas('lot', function ($q) use ($tumanId) {
+            $query = PaymentSchedule::whereHas('contract.lot', function ($q) use ($tumanId, $filters) {
                 $q->where('tuman_id', $tumanId);
-            })->whereYear('payment_date', $year);
 
-            // Apply filters to payment schedules
-            if (!empty($filters['yangi_uzbekiston'])) {
-                $query->whereHas('lot', function ($q) use ($filters) {
+                // Apply filters
+                if (!empty($filters['yangi_uzbekiston'])) {
                     $q->where('yangi_uzbekiston', $filters['yangi_uzbekiston']);
-                });
-            }
+                }
+                if (!empty($filters['payment_type'])) {
+                    $q->where('payment_type', $filters['payment_type']);
+                }
+                if (!empty($filters['contract_signed'])) {
+                    $q->where('contract_signed', $filters['contract_signed']);
+                }
+            })->whereYear('planned_date', $year);
 
             $amount = $query->sum('planned_amount');
-            $payments[$year] = $amount / 1000000000;
+            $payments[$year] = $amount / 1000000000; // Convert to billions
         }
 
         return $payments;
     }
-
     private function getCurrentPeriodPayment($lot)
     {
         $currentDate = now();

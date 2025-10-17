@@ -58,6 +58,11 @@ class PaymentSchedule extends Model
         });
     }
 
+
+    public function lot()
+    {
+        return $this->belongsTo(Lot::class, 'lot_id');
+    }
     public function contract()
     {
         return $this->belongsTo(Contract::class);
@@ -97,7 +102,7 @@ class PaymentSchedule extends Model
     public function isOverdue()
     {
         return $this->status === self::STATUS_OVERDUE ||
-               ($this->deadline_date < now() && $this->actual_amount < $this->planned_amount);
+            ($this->deadline_date < now() && $this->actual_amount < $this->planned_amount);
     }
 
     public function getStatusLabelAttribute()
@@ -123,7 +128,7 @@ class PaymentSchedule extends Model
     public function scopeOverdue($query)
     {
         return $query->where('deadline_date', '<', now())
-                    ->where('status', '!=', self::STATUS_PAID);
+            ->where('status', '!=', self::STATUS_PAID);
     }
 
     public function scopePending($query)

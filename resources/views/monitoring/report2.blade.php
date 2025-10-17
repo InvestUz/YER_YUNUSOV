@@ -1,643 +1,569 @@
 @extends('layouts.app')
 
-@section('title', 'Свод-2 - Toshkent Invest')
+@section('title', 'Свод-2 - Тақсимот')
 
 @push('styles')
-    <style>
-        @media print {
-            .no-print {
-                display: none !important;
-            }
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
 
-            body {
-                background: white;
-            }
+    body {
+        background: #f5f5f5;
+        font-family: 'Times New Roman', Times, serif;
+    }
 
-            .table-wrapper {
-                box-shadow: none;
-                border: 1px solid #000;
-            }
-        }
+    .report-wrapper {
+        max-width: 100%;
+        padding: 15px;
+    }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+    /* Header */
+    .report-header {
+        background: white;
+        border: 1px solid #d1d5db;
+        padding: 20px;
+        margin-bottom: 15px;
+    }
+
+    .report-header h1 {
+        font-size: 16px;
+        font-weight: bold;
+        color: #1f2937;
+        margin-bottom: 8px;
+        text-align: center;
+        text-transform: uppercase;
+    }
+
+    .report-header p {
+        font-size: 13px;
+        color: #4b5563;
+        text-align: center;
+    }
+
+    /* Table Container */
+    .table-container {
+        background: white;
+        border: 2px solid #6b7280;
+        overflow-x: auto;
+        margin-bottom: 15px;
+    }
+
+    /* Main Table */
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10px;
+        min-width: 2800px;
+    }
+
+    .report-table th,
+    .report-table td {
+        border: 1px solid #6b7280;
+        padding: 6px 8px;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    /* Header Styles */
+    .report-table thead th {
+        background: #e5e7eb;
+        font-weight: bold;
+        color: #1f2937;
+        font-size: 9px;
+        line-height: 1.4;
+    }
+
+    .report-table thead .main-title {
+        background: #d1d5db;
+        font-size: 12px;
+        padding: 10px;
+    }
+
+    .report-table thead .group-header {
+        background: #dbeafe;
+        font-size: 10px;
+    }
+
+    /* Sticky Columns */
+    .sticky-num {
+        position: sticky;
+        left: 0;
+        background: #f9fafb;
+        z-index: 20;
+        min-width: 50px;
+        font-weight: 600;
+        border-right: 2px solid #374151 !important;
+    }
+
+    .sticky-district {
+        position: sticky;
+        left: 50px;
+        background: #f9fafb;
+        z-index: 20;
+        text-align: left;
+        padding-left: 12px !important;
+        min-width: 180px;
+        font-weight: 600;
+        border-right: 2px solid #374151 !important;
+    }
+
+    thead .sticky-num,
+    thead .sticky-district {
+        background: #e5e7eb;
+        z-index: 25;
+    }
+
+    /* Body Rows */
+    .report-table tbody td {
+        color: #374151;
+        font-size: 10px;
+    }
+
+    .report-table tbody tr:hover td {
+        background: #f3f4f6;
+    }
+
+    .report-table tbody tr:hover .sticky-num,
+    .report-table tbody tr:hover .sticky-district {
+        background: #dbeafe;
+    }
+
+    /* Clickable Counts */
+    .count-link {
+        color: #2563eb;
+        cursor: pointer;
+        font-weight: 600;
+        text-decoration: underline;
+    }
+
+    .count-link:hover {
+        color: #1d4ed8;
+    }
+
+    /* Total Row */
+    .total-row td {
+        background: #fef3c7 !important;
+        font-weight: bold;
+        border: 2px solid #1f2937 !important;
+        font-size: 11px;
+    }
+
+    .total-row .sticky-num,
+    .total-row .sticky-district {
+        background: #fde68a !important;
+    }
+
+    /* Section Dividers */
+    .section-divider {
+        border-right: 2px solid #374151 !important;
+    }
+
+    /* Right Align Numbers */
+    .text-right {
+        text-align: right !important;
+        padding-right: 10px !important;
+    }
+
+    /* Filters */
+    .filter-section {
+        background: white;
+        border: 1px solid #d1d5db;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .filter-group label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 5px;
+    }
+
+    .filter-group input,
+    .filter-group select {
+        width: 100%;
+        padding: 7px 10px;
+        border: 1px solid #d1d5db;
+        font-size: 12px;
+        font-family: 'Times New Roman', Times, serif;
+        border-radius: 4px;
+    }
+
+    .filter-group input:focus,
+    .filter-group select:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 8px 20px;
+        font-size: 12px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        font-family: 'Times New Roman', Times, serif;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: #2563eb;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #1d4ed8;
+    }
+
+    .btn-secondary {
+        background: #6b7280;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #4b5563;
+    }
+
+    .btn-success {
+        background: #059669;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #047857;
+    }
+
+    .btn-reset {
+        background: #f3f4f6;
+        color: #374151;
+        border: 1px solid #d1d5db;
+    }
+
+    .btn-reset:hover {
+        background: #e5e7eb;
+    }
+
+    /* Actions */
+    .actions-row {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    /* Scrollbar */
+    .table-container::-webkit-scrollbar {
+        height: 12px;
+    }
+
+    .table-container::-webkit-scrollbar-track {
+        background: #f3f4f6;
+    }
+
+    .table-container::-webkit-scrollbar-thumb {
+        background: #9ca3af;
+        border-radius: 6px;
+    }
+
+    .table-container::-webkit-scrollbar-thumb:hover {
+        background: #6b7280;
+    }
+
+    /* Print */
+    @media print {
+        .no-print {
+            display: none !important;
         }
 
         body {
-            background: #fafafa;
-            font-family: 'Times New Roman', Times, serif;
-            color: #1a1a1a;
-        }
-
-        .report-container {
-            padding: 20px;
-            max-width: 100%;
-        }
-
-        .header-section {
-            background: #ffffff;
-            padding: 25px 35px;
-            margin-bottom: 20px;
-            border-left: 4px solid #2c5282;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-        }
-
-        .header-section h1 {
-            margin: 0 0 10px 0;
-            font-size: 19px;
-            color: #1a1a1a;
-            font-weight: 700;
-            line-height: 1.5;
-            letter-spacing: 0.2px;
-        }
-
-        .header-section p {
-            margin: 0;
-            color: #525252;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .filter-section {
-            background: #ffffff;
-            border: 1px solid #d4d4d4;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-        }
-
-        .filter-row {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-
-        .filter-group label {
-            display: block;
-            font-size: 12px;
-            font-weight: 600;
-            color: #2a2a2a;
-            margin-bottom: 5px;
-        }
-
-        .filter-group input,
-        .filter-group select {
-            width: 100%;
-            padding: 7px 10px;
-            border: 1px solid #d4d4d4;
-            font-size: 13px;
-            background: #ffffff;
-            font-family: 'Times New Roman', Times, serif;
-            color: #1a1a1a;
-            transition: border-color 0.2s;
-        }
-
-        .filter-group input:focus,
-        .filter-group select:focus {
-            outline: none;
-            border-color: #2c5282;
-            box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.08);
-        }
-
-        .btn-filter {
-            padding: 8px 22px;
-            border: none;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: 'Times New Roman', Times, serif;
-        }
-
-        .btn-search {
-            background: #2c5282;
-            color: white;
-        }
-
-        .btn-search:hover {
-            background: #1e3a5f;
-        }
-
-        .btn-reset {
-            background: #f5f5f5;
-            color: #3a3a3a;
-            border: 1px solid #d4d4d4;
-        }
-
-        .btn-reset:hover {
-            background: #e8e8e8;
-        }
-
-        .report-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .table-wrapper {
             background: white;
-            border: 1px solid #9ca3af;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-            overflow-x: auto;
-            margin-bottom: 20px;
         }
 
         .report-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-            min-width: 2800px;
-            font-family: 'Times New Roman', Times, serif;
+            font-size: 8px;
         }
 
-        .report-table th {
-            background: #f5f5f5;
-            color: #1a1a1a;
-            font-weight: 700;
-            padding: 11px 9px;
-            text-align: center;
-            border: 1px solid #9ca3af;
-            font-size: 12px;
-            line-height: 1.4;
-        }
-
-        .report-table th.header-main {
-            background: #e8edf3;
-            font-size: 12px;
-            font-weight: 700;
-            color: #2c5282;
-        }
-
-        .report-table td {
-            padding: 9px 11px;
-            text-align: center;
-            border: 1px solid #9ca3af;
-            font-size: 13px;
-            color: #1a1a1a;
-        }
-
-        .report-table tbody tr:nth-child(even) {
-            background: #fafafa;
-        }
-
-        .report-table tbody tr:hover {
-            background: #f0f4f8;
-        }
-
-        .sticky-col-number {
-            position: sticky;
-            left: 0;
-            background: #ebebeb;
-            z-index: 10;
-            font-weight: 600;
-            min-width: 70px;
-        }
-
-        .sticky-col-district {
-            position: sticky;
-            left: 70px;
-            background: #ebebeb;
-            z-index: 10;
-            font-weight: 700;
-            box-shadow: 2px 0 3px rgba(0, 0, 0, 0.06);
-            text-align: left;
-            padding-left: 16px !important;
-            min-width: 200px;
-        }
-
-        .report-table tbody tr:nth-child(even) .sticky-col-number,
-        .report-table tbody tr:nth-child(even) .sticky-col-district {
-            background: #e0e0e0;
-        }
-
-        .report-table tbody tr:hover .sticky-col-number,
-        .report-table tbody tr:hover .sticky-col-district {
-            background: #dae3ec;
-        }
-
-        .row-number {
-            text-align: center;
-            font-weight: 600;
-            color: #3a3a3a;
-        }
-
-        .district-name {
-            color: #2c5282;
-            font-weight: 600;
-        }
-
-        .count-cell {
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-
-        .count-cell a {
-            color: #2c5282;
-            text-decoration: none;
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-
-        .count-cell:hover {
-            background: #d6e3f0 !important;
-        }
-
-        .count-cell a:hover {
-            text-decoration: underline;
-        }
-
-        .amount-cell {
-            font-weight: 700;
-            color: #047857;
-        }
-
-        .total-row td {
-            background: #e8f5e9 !important;
-            font-weight: 800;
-            border: 1px solid #6b7280 !important;
-            padding: 13px 11px !important;
-            font-size: 14px;
-            color: #065f46;
-        }
-
-        .total-row .sticky-col-number,
-        .total-row .sticky-col-district {
-            background: #d1f0d4 !important;
-            box-shadow: 2px 0 3px rgba(0, 0, 0, 0.08);
-        }
-
-        .section-divider {
-            border-right: 2px solid #6b7280 !important;
-        }
-
-        .table-wrapper::-webkit-scrollbar {
-            height: 12px;
-        }
-
-        .table-wrapper::-webkit-scrollbar-track {
-            background: #f5f5f5;
-            border: 1px solid #d4d4d4;
-        }
-
-        .table-wrapper::-webkit-scrollbar-thumb {
-            background: #9ca3af;
-            border-radius: 6px;
-            border: 2px solid #f5f5f5;
-        }
-
-        .table-wrapper::-webkit-scrollbar-thumb:hover {
-            background: #6b7280;
-        }
-
-        .report-note {
-            background: #f9fafb;
-            border-left: 3px solid #2c5282;
-            padding: 16px 22px;
-            margin-top: 15px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-        }
-
-        .report-note h4 {
-            font-size: 13px;
-            font-weight: 700;
-            color: #1a1a1a;
-            margin-bottom: 7px;
-        }
-
-        .report-note p {
-            font-size: 12px;
-            color: #3a3a3a;
-            line-height: 1.6;
-        }
-
-        .text-right {
-            text-align: right !important;
-        }
-    </style>
-@endpush
-
-@section('content')
-    <div class="report-container">
-
-        <!-- Header -->
-        <div class="header-section no-print">
-            <h1>ТОШКЕНТ ШАҲРИДА АУКЦИОН САВДОЛАРИДА СОТИЛГАН ЕР УЧАСТКАЛАРИ ТЎҒРИСИДА ЙИҒМА МАЪЛУМОТ</h1>
-            <p>Свод - 2 | Ҳисобот даври: {{ $filters['date_from'] ?? '01.01.2023' }} -
-                {{ $filters['date_to'] ?? date('d.m.Y') }}</p>
-
-{{-- Add this navigation section to your monitoring layout --}}
-
-<style>
-    .report-nav {
-        display: flex;
-        gap: 12px;
-        margin-bottom: 20px;
-        padding: 15px;
-        background: #ffffff;
-        border: 1px solid #d4d4d4;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-    }
-
-    .report-nav-btn {
-        flex: 1;
-        padding: 12px 24px;
-        background: #ffffff;
-        border: 2px solid #d4d4d4;
-        color: #2c5282;
-        text-decoration: none;
-        font-size: 14px;
-        font-weight: 600;
-        font-family: 'Times New Roman', Times, serif;
-        text-align: center;
-        transition: all 0.2s;
-        position: relative;
-        cursor: pointer;
-    }
-
-    .report-nav-btn:hover {
-        background: #f0f4f8;
-        border-color: #2c5282;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(44, 82, 130, 0.15);
-    }
-
-    .report-nav-btn.active {
-        background: #2c5282;
-        color: #ffffff;
-        border-color: #2c5282;
-        box-shadow: 0 2px 6px rgba(44, 82, 130, 0.25);
-    }
-
-    .report-nav-btn.active::after {
-        content: '';
-        position: absolute;
-        bottom: -2px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 0;
-        height: 0;
-        border-left: 8px solid transparent;
-        border-right: 8px solid transparent;
-        border-bottom: 8px solid #2c5282;
-    }
-
-    .report-nav-btn .btn-label {
-        display: block;
-        font-size: 11px;
-        opacity: 0.8;
-        margin-top: 2px;
-    }
-
-    @media print {
-        .report-nav {
-            display: none !important;
+        .sticky-num,
+        .sticky-district {
+            position: static;
         }
     }
 </style>
+@endpush
 
-@include('monitoring.partials.navigation')
-        </div>
+@section('content')
+<div class="report-wrapper">
 
-        <!-- Report Table -->
-        <div class="table-wrapper">
-            <table class="report-table">
-                <thead>
-                    <tr>
-                        <th rowspan="3" style="width: 70px;">Т/Р</th>
-                        <th rowspan="3" style="min-width: 200px;">Ҳудудлар</th>
-                        <th colspan="4" class="section-divider header-main">Сотилган ер участкалар</th>
-                        <th rowspan="3" class="section-divider">Аукцион хизмат ҳақи<br>(млрд сўм)</th>
-                        <th colspan="2" class="section-divider header-main">Чегирма берилганлар</th>
-                        <th rowspan="3" class="section-divider">Давактивга тўланган<br>маблағ<br>(млрд сўм)</th>
-                        <th rowspan="3" class="section-divider">Аукционга чиқариш<br>харажати<br>(млрд сўм)</th>
-                        <th colspan="8" class="section-divider header-main">Тақсимоти (млрд сўм)</th>
-                        <th colspan="3" class="header-main">Келгусида тушадиган маблағлар (млрд сўм)</th>
-                    </tr>
-                    <tr>
-                        <th rowspan="2">сони</th>
-                        <th rowspan="2">майдони<br>(га)</th>
-                        <th rowspan="2">бошланғич<br>нархи<br>(млрд сўм)</th>
-                        <th rowspan="2" class="section-divider">сотилган<br>нархи<br>(млрд сўм)</th>
-                        <th rowspan="2">сони</th>
-                        <th rowspan="2" class="section-divider">қиймати<br>(млрд сўм)</th>
-                        <th colspan="4" class="section-divider">шундан, амалда</th>
-                        <th colspan="4" class="section-divider">шундан</th>
-                        <th rowspan="2">2025 йилда</th>
-                        <th rowspan="2">2026 йилда</th>
-                        <th rowspan="2">2027 йилда</th>
-                    </tr>
-                    <tr>
-                        <th>Маҳаллий<br>бюджет</th>
-                        <th>Жамғарма</th>
-                        <th>Янги<br>Ўзбекистон</th>
-                        <th class="section-divider">Туман<br>ҳокимияти</th>
-                        <th>Маҳаллий<br>бюджет</th>
-                        <th>Жамғарма</th>
-                        <th>Янги<br>Ўзбекистон</th>
-                        <th class="section-divider">Туман<br>ҳокимияти</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- ЖАМИ row first -->
-                    <tr class="total-row">
-                        <td class="sticky-col-number">№</td>
-                        <td class="sticky-col-district">ЖАМИ:</td>
-                        <td class="count-cell" onclick="openDetails('sold', 'all', 0)">
-                            <a href="javascript:void(0)">{{ $data['totals']['count'] }}</a>
-                        </td>
-                        <td>{{ number_format($data['totals']['area'], 2) }}</td>
-                        <td>{{ number_format($data['totals']['initial_price'], 1) }}</td>
-                        <td class="section-divider amount-cell">
-                            {{ number_format($data['totals']['sold_price'], 1) }}</td>
-                        <td class="section-divider amount-cell">
-                            {{ number_format($data['totals']['auction_fee'], 1) }}</td>
-                        <td class="count-cell" onclick="openDetails('discount', 'all', 0)">
-                            <a href="javascript:void(0)">{{ $data['totals']['discount_count'] }}</a>
-                        </td>
-                        <td class="section-divider amount-cell">
-                            {{ number_format($data['totals']['discount_amount'], 1) }}</td>
-                        <td class="section-divider amount-cell">
-                            {{ number_format($data['totals']['davaktiv_amount'], 1) }}</td>
-                        <td class="section-divider amount-cell">
-                            {{ number_format($data['totals']['auction_expenses'], 1) }}</td>
-                        <td>{{ number_format($data['totals']['distributions']['local_budget_allocated'], 1) }}</td>
-                        <td>{{ number_format($data['totals']['distributions']['development_fund_allocated'], 1) }}</td>
-                        <td>{{ number_format($data['totals']['distributions']['new_uzbekistan_allocated'], 1) }}</td>
-                        <td class="section-divider">
-                            {{ number_format($data['totals']['distributions']['district_authority_allocated'], 1) }}</td>
-                        <td>{{ number_format($data['totals']['distributions']['local_budget_remaining'], 1) }}</td>
-                        <td>{{ number_format($data['totals']['distributions']['development_fund_remaining'], 1) }}</td>
-                        <td>{{ number_format($data['totals']['distributions']['new_uzbekistan_remaining'], 1) }}</td>
-                        <td class="section-divider">
-                            {{ number_format($data['totals']['distributions']['district_authority_remaining'], 1) }}</td>
-                        <td>{{ number_format($data['totals']['future_payments'][2025] ?? 0, 1) }}</td>
-                        <td>{{ number_format($data['totals']['future_payments'][2026] ?? 0, 1) }}</td>
-                        <td>{{ number_format($data['totals']['future_payments'][2027] ?? 0, 1) }}</td>
-                    </tr>
-
-                    @foreach ($data['data'] as $index => $row)
-                        <tr>
-                            <td class="sticky-col-number row-number">{{ $index + 1 }}</td>
-                            <td class="sticky-col-district district-name">{{ $row['tuman'] }}</td>
-
-                            <td class="count-cell"
-                                onclick="openDetails('sold', '{{ $row['tuman'] }}', {{ $index + 1 }})">
-                                <a href="javascript:void(0)">{{ $row['count'] }}</a>
-                            </td>
-                            <td class="text-right">{{ number_format($row['area'], 2) }}</td>
-                            <td class="text-right">{{ number_format($row['initial_price'], 1) }}</td>
-                            <td class="amount-cell section-divider text-right">
-                                {{ number_format($row['sold_price'], 1) }}</td>
-
-                            <td class="section-divider text-right">{{ number_format($row['auction_fee'], 1) }}</td>
-
-                            <td class="count-cell"
-                                onclick="openDetails('discount', '{{ $row['tuman'] }}', {{ $index + 1 }})">
-                                <a href="javascript:void(0)">{{ $row['discount_count'] }}</a>
-                            </td>
-                            <td class="section-divider text-right">
-                                {{ number_format($row['discount_amount'], 1) }}</td>
-
-                            <td class="section-divider amount-cell text-right">
-                                {{ number_format($row['davaktiv_amount'], 1) }}</td>
-                            <td class="section-divider text-right">{{ number_format($row['auction_expenses'], 1) }}</td>
-
-                            <td class="text-right">
-                                {{ number_format($row['distributions']['local_budget_allocated'], 1) }}</td>
-                            <td class="text-right">
-                                {{ number_format($row['distributions']['development_fund_allocated'], 1) }}</td>
-                            <td class="text-right">
-                                {{ number_format($row['distributions']['new_uzbekistan_allocated'], 1) }}</td>
-                            <td class="section-divider text-right">
-                                {{ number_format($row['distributions']['district_authority_allocated'], 1) }}</td>
-
-                            <td class="text-right">
-                                {{ number_format($row['distributions']['local_budget_remaining'], 1) }}</td>
-                            <td class="text-right">
-                                {{ number_format($row['distributions']['development_fund_remaining'], 1) }}</td>
-                            <td class="text-right">
-                                {{ number_format($row['distributions']['new_uzbekistan_remaining'], 1) }}</td>
-                            <td class="section-divider text-right">
-                                {{ number_format($row['distributions']['district_authority_remaining'], 1) }}</td>
-
-                            <td class="text-right">{{ number_format($row['future_payments'][2025] ?? 0, 1) }}</td>
-                            <td class="text-right">{{ number_format($row['future_payments'][2026] ?? 0, 1) }}</td>
-                            <td class="text-right">{{ number_format($row['future_payments'][2027] ?? 0, 1) }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Filters -->
-        <div class="filter-section no-print">
-            <form method="GET" action="{{ route('monitoring.report2') }}">
-                <div class="filter-row">
-                    <div class="filter-group">
-                        <label>Бошланиш санаси:</label>
-                        <input type="date" name="date_from" value="{{ $filters['date_from'] ?? '2023-01-01' }}">
-                    </div>
-                    <div class="filter-group">
-                        <label>Тугаш санаси:</label>
-                        <input type="date" name="date_to" value="{{ $filters['date_to'] ?? date('Y-m-d') }}">
-                    </div>
-                    <div class="filter-group">
-                        <label>Субъект тури:</label>
-                        <select name="subject_type">
-                            <option value="">Барчаси</option>
-                            <option value="legal" {{ ($filters['subject_type'] ?? '') === 'legal' ? 'selected' : '' }}>
-                                Юридик шахс</option>
-                            <option value="individual"
-                                {{ ($filters['subject_type'] ?? '') === 'individual' ? 'selected' : '' }}>Жисмоний шахс
-                            </option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Иқтисодий зона:</label>
-                        <select name="zone">
-                            <option value="">Барчаси</option>
-                            <option value="1" {{ ($filters['zone'] ?? '') === '1' ? 'selected' : '' }}>1-зона
-                            </option>
-                            <option value="2" {{ ($filters['zone'] ?? '') === '2' ? 'selected' : '' }}>2-зона
-                            </option>
-                            <option value="3" {{ ($filters['zone'] ?? '') === '3' ? 'selected' : '' }}>3-зона
-                            </option>
-                            <option value="4" {{ ($filters['zone'] ?? '') === '4' ? 'selected' : '' }}>4-зона
-                            </option>
-                            <option value="5" {{ ($filters['zone'] ?? '') === '5' ? 'selected' : '' }}>5-зона
-                            </option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Бош режа зонаси:</label>
-                        <select name="master_plan_zone">
-                            <option value="">Барчаси</option>
-                            <option value="реновация"
-                                {{ ($filters['master_plan_zone'] ?? '') === 'реновация' ? 'selected' : '' }}>Реновация
-                            </option>
-                            <option value="реконструкция"
-                                {{ ($filters['master_plan_zone'] ?? '') === 'реконструкция' ? 'selected' : '' }}>
-                                Реконструкция</option>
-                            <option value="консервация"
-                                {{ ($filters['master_plan_zone'] ?? '') === 'консервация' ? 'selected' : '' }}>Консервация
-                            </option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Хусусият:</label>
-                        <select name="yangi_uzbekiston">
-                            <option value="">Барчаси</option>
-                            <option value="1" {{ ($filters['yangi_uzbekiston'] ?? '') === '1' ? 'selected' : '' }}>
-                                Янги Ўзбекистон</option>
-                        </select>
-                    </div>
-                </div>
-                <div style="display: flex; justify-content: flex-end; gap: 12px;">
-                    <button type="submit" class="btn-filter btn-search">Қидириш</button>
-                    <a href="{{ route('monitoring.report2') }}" class="btn-filter btn-reset"
-                        style="display: inline-block; text-decoration: none; text-align: center;">Тозалаш</a>
-                </div>
-            </form>
-        </div>
-
-        <!-- Actions -->
-        <div class="report-actions no-print">
-            <button onclick="exportToExcel()" class="btn-filter" style="background: #059669; color: white;">Excel
-                форматда юклаш</button>
-            <button onclick="window.print()" class="btn-filter" style="background: #2563eb; color: white;">Чоп
-                этиш</button>
-        </div>
-
-        <!-- Report Note -->
-        <div class="report-note no-print">
-            <h4>Эслатма:</h4>
-            <p>Ушбу ҳисобот давлат органлари учун мўлжалланган. Барча маълумотлар расмий манбалардан олинган ва автоматик
-                равишда янгиланади. Маблағлар миллиард сўм ҳисобида кўрсатилган. Тақсимот: Маҳаллий бюджет, Жамғарма, Янги
-                Ўзбекистон дирекцияси, Туман ҳокимияти.</p>
-        </div>
+    {{-- Header --}}
+    <div class="report-header">
+        <h1>Тошкент шаҳрида аукцион савдоларида сотилган ер участкалари тўғрисида йиғма маълумот</h1>
+        <p>СВОД - 2 (ТАҚСИМОТ) | Ҳисобот даври: {{ $filters['date_from'] ?? '01.01.2023' }} - {{ $filters['date_to'] ?? date('d.m.Y') }}</p>
     </div>
+
+    {{-- Navigation --}}
+    @include('monitoring.partials.navigation')
+
+    {{-- Filters --}}
+    <div class="filter-section no-print">
+        <form method="GET" action="{{ route('monitoring.report2') }}">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label>Бошланиш санаси:</label>
+                    <input type="date" name="date_from" value="{{ $filters['date_from'] ?? '2023-01-01' }}">
+                </div>
+                <div class="filter-group">
+                    <label>Тугаш санаси:</label>
+                    <input type="date" name="date_to" value="{{ $filters['date_to'] ?? date('Y-m-d') }}">
+                </div>
+                <div class="filter-group">
+                    <label>Субъект тури:</label>
+                    <select name="subject_type">
+                        <option value="">Барчаси</option>
+                        <option value="legal" {{ ($filters['subject_type'] ?? '') === 'legal' ? 'selected' : '' }}>Юридик</option>
+                        <option value="individual" {{ ($filters['subject_type'] ?? '') === 'individual' ? 'selected' : '' }}>Жисмоний</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Иқтисодий зонаси:</label>
+                    <select name="zone">
+                        <option value="">Барчаси</option>
+                        @for($i = 1; $i <= 5; $i++)
+                            <option value="{{ $i }}" {{ ($filters['zone'] ?? '') == $i ? 'selected' : '' }}>{{ $i }}-зона</option>
+                            @endfor
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Бош режа зонаси:</label>
+                    <select name="master_plan_zone">
+                        <option value="">Барчаси</option>
+                        <option value="реновация" {{ ($filters['master_plan_zone'] ?? '') === 'реновация' ? 'selected' : '' }}>реновация</option>
+                        <option value="реконструкция" {{ ($filters['master_plan_zone'] ?? '') === 'реконструкция' ? 'selected' : '' }}>реконструкция</option>
+                        <option value="консервация" {{ ($filters['master_plan_zone'] ?? '') === 'консервация' ? 'selected' : '' }}>консервация</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Ҳусусияти:</label>
+                    <select name="yangi_uzbekiston">
+                        <option value="">Барчаси</option>
+                        <option value="1" {{ ($filters['yangi_uzbekiston'] ?? '') === '1' ? 'selected' : '' }}>Янги Ўзбекистон</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="submit" class="btn btn-primary">Қидириш</button>
+                <a href="{{ route('monitoring.report2') }}" class="btn btn-reset" style="text-decoration: none;">Тозалаш</a>
+            </div>
+        </form>
+    </div>
+
+    {{-- Actions --}}
+    <div class="actions-row no-print">
+        <button onclick="exportToExcel()" class="btn btn-success">Excel</button>
+        <button onclick="window.print()" class="btn btn-secondary">Чоп этиш</button>
+    </div>
+
+    {{-- Table --}}
+    <div class="table-container">
+        <table class="report-table">
+            <thead>
+                <!-- Main Title Row -->
+                <tr>
+                    <th colspan="27" class="main-title">
+                        Тошкент шаҳрида аукцион савдоларида сотилган ер участкалари тўғрисида<br>
+                        ЙИҒМА МАЪЛУМОТ (Свод - 2)
+                    </th>
+                </tr>
+
+                <!-- First Level: Main Groups -->
+                <tr>
+                    <th rowspan="3" class="sticky-num">Т/р</th>
+                    <th rowspan="3" class="sticky-district">Ҳудудлар</th>
+                    <th colspan="5" class="group-header section-divider">Сотилган ер участкалар</th>
+                    <th colspan="15" class="group-header section-divider">шундан,</th>
+                    <th colspan="5" class="group-header">Аукционда сотилган бирок, шартнома тузиш</th>
+                </tr>
+
+                <!-- Second Level: Sub Groups -->
+                <tr>
+                    <!-- Сотилган ер участкалар -->
+                    <th rowspan="2">сони</th>
+                    <th rowspan="2">майдони<br>(га)</th>
+                    <th rowspan="2">бошланич<br>нарҳи<br>(млрд сўм)</th>
+                    <th rowspan="2">сотилган<br>нарҳи<br>(млрд сўм)</th>
+                    <th rowspan="2" class="section-divider">Аукцион<br>ҳизмат<br>ҳаки<br>(млрд сўм)</th>
+
+                    <!-- шундан -->
+                    <th rowspan="2">Чегирма<br>берилганлар<br>сони</th>
+                    <th rowspan="2">Чегирма<br>қилмати<br>(млрд сўм)</th>
+                    <th rowspan="2">Давактив<br>мабладr<br>(млрд сўм)</th>
+                    <th rowspan="2">Аукцион<br>ҳаражати<br>(млрд сўм)</th>
+
+                    <th colspan="4">Тасдиқоти (Тақсимот)<br>(млрд сўм)</th>
+                    <th colspan="4">Қолдиқ (амалда)</th>
+
+                    <th rowspan="2">Келгусида<br>тўланадиган<br>жами<br>(млрд сўм)</th>
+                    <th colspan="3" class="section-divider">шундан</th>
+
+                    <!-- Аукционда сотилган бирок -->
+                    <th rowspan="2">сони</th>
+                    <th rowspan="2">майдони<br>(га)</th>
+                    <th rowspan="2">бошланич<br>нарҳи<br>(млрд сўм)</th>
+                    <th rowspan="2">сотилган<br>нарҳи<br>(млрд сўм)</th>
+                </tr>
+
+                <!-- Third Level: Detailed Columns -->
+                <tr>
+                    <!-- Тақсимот columns -->
+                    <th>Маҳаллий<br>бюджет</th>
+                    <th>Ҳамжарма<br>фонди</th>
+                    <th>Янги<br>Ўзбекистон</th>
+                    <th>Туман<br>ҳокимлиги</th>
+
+                    <!-- Қолдиқ columns -->
+                    <th>Маҳаллий<br>бюджет</th>
+                    <th>Ҳамжарма<br>фонди</th>
+                    <th>Янги<br>Ўзбекистон</th>
+                    <th>Туман<br>ҳокимлиги</th>
+
+                    <!-- Future payments breakdown -->
+                    <th>2025 йилда</th>
+                    <th>2026 йилда</th>
+                    <th class="section-divider">2027 йилда</th>
+                </tr>
+            </thead>
+
+  <tbody>
+    @forelse($data as $row)
+    @php
+        $futureTotal = ($row['future_payments'][2025] ?? 0) + 
+                       ($row['future_payments'][2026] ?? 0) + 
+                       ($row['future_payments'][2027] ?? 0);
+        $isTotal = false;
+    @endphp
+    <tr>
+        <td class="sticky-num">{{ $loop->iteration }}</td>
+        <td class="sticky-district">{{ $row['tuman'] }}</td>
+        
+        <!-- Сотилган ер участкалар -->
+        <td class="text-right">{{ $row['count'] }}</td>
+        <td class="text-right">{{ number_format($row['area'], 2) }}</td>
+        <td class="text-right">{{ number_format($row['initial_price'], 2) }}</td>
+        <td class="text-right">{{ number_format($row['sold_price'], 2) }}</td>
+        <td class="text-right section-divider">{{ number_format($row['auction_fee'], 2) }}</td>
+        
+        <!-- шундан -->
+        <td class="text-right">{{ $row['discount_count'] }}</td>
+        <td class="text-right">{{ number_format($row['discount_amount'], 2) }}</td>
+        <td class="text-right">{{ number_format($row['davaktiv_amount'], 2) }}</td>
+        <td class="text-right">{{ number_format($row['auction_expenses'], 2) }}</td>
+        
+        <!-- Тақсимот -->
+        <td class="text-right">{{ number_format($row['distributions']['local_budget_allocated'], 2) }}</td>
+        <td class="text-right">{{ number_format($row['distributions']['development_fund_allocated'], 2) }}</td>
+        <td class="text-right">{{ number_format($row['distributions']['new_uzbekistan_allocated'], 2) }}</td>
+        <td class="text-right">{{ number_format($row['distributions']['district_authority_allocated'], 2) }}</td>
+        
+        <!-- Қолдиқ -->
+        <td class="text-right">{{ number_format($row['distributions']['local_budget_remaining'], 2) }}</td>
+        <td class="text-right">{{ number_format($row['distributions']['development_fund_remaining'], 2) }}</td>
+        <td class="text-right">{{ number_format($row['distributions']['new_uzbekistan_remaining'], 2) }}</td>
+        <td class="text-right">{{ number_format($row['distributions']['district_authority_remaining'], 2) }}</td>
+        
+        <!-- Future Payments -->
+        <td class="text-right">{{ number_format($futureTotal, 2) }}</td>
+        <td class="text-right">{{ number_format($row['future_payments'][2025], 2) }}</td>
+        <td class="text-right">{{ number_format($row['future_payments'][2026], 2) }}</td>
+        <td class="text-right section-divider">{{ number_format($row['future_payments'][2027], 2) }}</td>
+        
+        <!-- Аукционда сотилган бирок -->
+        <td class="text-right">{{ $row['unsigned_count'] ?? 0 }}</td>
+        <td class="text-right">{{ number_format($row['unsigned_area'] ?? 0, 2) }}</td>
+        <td class="text-right">{{ number_format($row['unsigned_initial_price'] ?? 0, 2) }}</td>
+        <td class="text-right">{{ number_format($row['unsigned_sold_price'] ?? 0, 2) }}</td>
+    </tr>
+    @empty
+    <tr>
+        <td colspan="27" style="text-align: center; padding: 20px; color: #6b7280;">
+            Маълумотлар топилмади
+        </td>
+    </tr>
+    @endforelse
+    
+    {{-- Totals Row --}}
+    @if(isset($totals))
+    @php
+        $totalFuture = ($totals['future_payments'][2025] ?? 0) + 
+                       ($totals['future_payments'][2026] ?? 0) + 
+                       ($totals['future_payments'][2027] ?? 0);
+    @endphp
+    <tr class="total-row">
+        <td class="sticky-num"></td>
+        <td class="sticky-district">жами:</td>
+        
+        <td class="text-right">{{ $totals['count'] }}</td>
+        <td class="text-right">{{ number_format($totals['area'], 2) }}</td>
+        <td class="text-right">{{ number_format($totals['initial_price'], 2) }}</td>
+        <td class="text-right">{{ number_format($totals['sold_price'], 2) }}</td>
+        <td class="text-right section-divider">{{ number_format($totals['auction_fee'], 2) }}</td>
+        
+        <td class="text-right">{{ $totals['discount_count'] }}</td>
+        <td class="text-right">{{ number_format($totals['discount_amount'], 2) }}</td>
+        <td class="text-right">{{ number_format($totals['davaktiv_amount'], 2) }}</td>
+        <td class="text-right">{{ number_format($totals['auction_expenses'], 2) }}</td>
+        
+        <td class="text-right">{{ number_format($totals['distributions']['local_budget_allocated'], 2) }}</td>
+        <td class="text-right">{{ number_format($totals['distributions']['development_fund_allocated'], 2) }}</td>
+        <td class="text-right">{{ number_format($totals['distributions']['new_uzbekistan_allocated'], 2) }}</td>
+        <td class="text-right">{{ number_format($totals['distributions']['district_authority_allocated'], 2) }}</td>
+        
+        <td class="text-right">{{ number_format($totals['distributions']['local_budget_remaining'], 2) }}</td>
+        <td class="text-right">{{ number_format($totals['distributions']['development_fund_remaining'], 2) }}</td>
+        <td class="text-right">{{ number_format($totals['distributions']['new_uzbekistan_remaining'], 2) }}</td>
+        <td class="text-right">{{ number_format($totals['distributions']['district_authority_remaining'], 2) }}</td>
+        
+        <td class="text-right">{{ number_format($totalFuture, 2) }}</td>
+        <td class="text-right">{{ number_format($totals['future_payments'][2025], 2) }}</td>
+        <td class="text-right">{{ number_format($totals['future_payments'][2026], 2) }}</td>
+        <td class="text-right section-divider">{{ number_format($totals['future_payments'][2027], 2) }}</td>
+        
+        <td class="text-right">{{ $totals['unsigned_count'] ?? 0 }}</td>
+        <td class="text-right">{{ number_format($totals['unsigned_area'] ?? 0, 2) }}</td>
+        <td class="text-right">{{ number_format($totals['unsigned_initial_price'] ?? 0, 2) }}</td>
+        <td class="text-right">{{ number_format($totals['unsigned_sold_price'] ?? 0, 2) }}</td>
+    </tr>
+    @endif
+</tbody>
+        </table>
+    </div>
+
+</div>
 @endsection
 
 @push('scripts')
-    <script>
-        function exportToExcel() {
-            const params = new URLSearchParams(new FormData(document.querySelector('form'))).toString();
-            window.location.href = '{{ route('monitoring.report2') }}?export=excel&' + params;
-        }
+<script>
+    function exportToExcel() {
+        const params = new URLSearchParams(new FormData(document.querySelector('form'))).toString();
+        window.location.href = '{{ route('monitoring.report2') }}?export=excel&' + params;
+    }
 
-        function openDetails(category, district, districtId) {
-            const form = document.querySelector('form');
-            const formData = new FormData(form);
-            const params = new URLSearchParams(formData).toString();
-            const detailUrl =
-                `/monitoring/report2/details?category=${category}&district=${encodeURIComponent(district)}&district_id=${districtId}&${params}`;
-            window.location.href = detailUrl;
-        }
-    </script>
+    function openDetails(category, district, districtId) {
+        const form = document.querySelector('form');
+        const formData = new FormData(form);
+        const params = new URLSearchParams(formData).toString();
+        window.location.href = `/monitoring/report2/details?category=${category}&district=${encodeURIComponent(district)}&district_id=${districtId}&${params}`;
+    }
+</script>
 @endpush

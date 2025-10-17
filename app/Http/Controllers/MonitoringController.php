@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Tuman;
 use App\Services\MonitoringService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -227,7 +228,11 @@ class MonitoringController extends Controller
     public function report2(Request $request)
     {
         $filters = $this->getFilters($request);
-        $data = $this->monitoringService->getReport2($filters);
+        $result = $this->monitoringService->getReport2($filters);
+
+        // Extract the data array
+        $data = $result['data'] ?? [];
+        $totals = $result['totals'] ?? [];
 
         // Handle Excel export
         if ($request->input('export') === 'excel') {
@@ -235,388 +240,388 @@ class MonitoringController extends Controller
         }
 
         if ($request->ajax()) {
-            return response()->json($data);
+            return response()->json($result);
         }
 
-        return view('monitoring.report2', compact('data', 'filters'));
+        return view('monitoring.report2', compact('data', 'totals', 'filters'));
     }
 
-public function report2Details(Request $request)
-{
-    $category = $request->input('category');
-    $district = $request->input('district');
-    $districtId = $request->input('district_id');
-    $filters = $this->getFilters($request);
+    public function report2Details(Request $request)
+    {
+        $category = $request->input('category');
+        $district = $request->input('district');
+        $districtId = $request->input('district_id');
+        $filters = $this->getFilters($request);
 
-    // Category names in Uzbek
-    $categoryNames = [
-        'sold' => 'Сотилган ер участкалар',
-        'discount' => 'Чегирма берилган участкалар',
-    ];
+        // Category names in Uzbek
+        $categoryNames = [
+            'sold' => 'Сотилган ер участкалар',
+            'discount' => 'Чегирма берилган участкалар',
+        ];
 
-    $categoryName = $categoryNames[$category] ?? 'Ер участкалар';
-    $districtName = $district === 'all' ? 'Барча туманлар' : $district;
+        $categoryName = $categoryNames[$category] ?? 'Ер участкалар';
+        $districtName = $district === 'all' ? 'Барча туманлар' : $district;
 
-    // Build query
-    $query = \App\Models\Lot::query();
+        // Build query
+        $query = \App\Models\Lot::query();
 
-    // Apply district filter
-    if ($district !== 'all') {
-        $tuman = \App\Models\Tuman::where('name_uz', $district)->first();
-        if ($tuman) {
-            $query->where('tuman_id', $tuman->id);
+        // Apply district filter
+        if ($district !== 'all') {
+            $tuman = \App\Models\Tuman::where('name_uz', $district)->first();
+            if ($tuman) {
+                $query->where('tuman_id', $tuman->id);
+            }
         }
-    }
 
-    // Only sold lots with contracts
-    $query->where('contract_signed', true)->where('lot_status', 'sold');
+        // Only sold lots with contracts
+        $query->where('contract_signed', true)->where('lot_status', 'sold');
 
-    // Apply date filters
-    if (!empty($filters['date_from'])) {
-        $query->where('auction_date', '>=', $filters['date_from']);
-    }
-    if (!empty($filters['date_to'])) {
-        $query->where('auction_date', '<=', $filters['date_to']);
-    }
-
-    // Apply other filters
-    if (!empty($filters['subject_type'])) {
-        $query->where('winner_type', $filters['subject_type']);
-    }
-    if (!empty($filters['zone'])) {
-        $query->where('zone', $filters['zone']);
-    }
-    if (!empty($filters['master_plan_zone'])) {
-        $query->where('master_plan_zone', $filters['master_plan_zone']);
-    }
-    if (isset($filters['yangi_uzbekiston'])) {
-        $query->where('yangi_uzbekiston', $filters['yangi_uzbekiston']);
-    }
-
-    // Apply category-specific filters
-    switch ($category) {
-        case 'discount':
-            $query->where('discount', '>', 0);
-            break;
-        case 'sold':
-        default:
-            // No additional filters for total sold
-            break;
-    }
-
-    // Clone query for stats
-    $statsQuery = clone $query;
-
-    // Get lots with pagination
-    $lots = $query->with(['tuman', 'mahalla', 'distributions'])
-        ->orderBy('auction_date', 'desc')
-        ->paginate(50);
-
-    // Calculate statistics
-    $stats = [
-        'count' => $statsQuery->count(),
-        'total_area' => $statsQuery->sum('land_area'),
-        'total_initial_price' => $statsQuery->sum('initial_price') / 1000000000,
-        'total_sold_price' => $statsQuery->sum('sold_price') / 1000000000,
-        'total_auction_fee' => $statsQuery->sum('auction_fee') / 1000000000,
-        'total_discount' => $statsQuery->sum('discount') / 1000000000,
-    ];
-
-    // Handle Excel export
-    if ($request->input('export') === 'excel') {
-        return $this->exportReport2DetailsToExcel($lots->items(), $categoryName, $districtName);
-    }
-
-    return view('monitoring.report-details', compact(
-        'lots',
-        'categoryName',
-        'districtName',
-        'category',
-        'stats',
-        'filters'
-    ));
-}
-
-/**
- * Show detailed information for Report 3 (Svod-3)
- */
-public function report3Details(Request $request)
-{
-    $category = $request->input('category');
-    $district = $request->input('district');
-    $districtId = $request->input('district_id');
-    $filters = $this->getFilters($request);
-    $currentDate = $filters['current_date'] ?? now();
-
-    // Category names in Uzbek
-    $categoryNames = [
-        'installment_total' => 'Бўлиб тўлаш шарти билан сотилган участкалар',
-        'fully_paid' => 'Тўлиқ тўланган участкалар',
-        'under_monitoring' => 'Назоратдаги участкалар',
-        'overdue' => 'Муддат ўтган участкалар',
-    ];
-
-    $categoryName = $categoryNames[$category] ?? 'Ер участкалар';
-    $districtName = $district === 'all' ? 'Барча туманлар' : $district;
-
-    // Build query
-    $query = \App\Models\Lot::query();
-
-    // Apply district filter
-    if ($district !== 'all') {
-        $tuman = \App\Models\Tuman::where('name_uz', $district)->first();
-        if ($tuman) {
-            $query->where('tuman_id', $tuman->id);
+        // Apply date filters
+        if (!empty($filters['date_from'])) {
+            $query->where('auction_date', '>=', $filters['date_from']);
         }
+        if (!empty($filters['date_to'])) {
+            $query->where('auction_date', '<=', $filters['date_to']);
+        }
+
+        // Apply other filters
+        if (!empty($filters['subject_type'])) {
+            $query->where('winner_type', $filters['subject_type']);
+        }
+        if (!empty($filters['zone'])) {
+            $query->where('zone', $filters['zone']);
+        }
+        if (!empty($filters['master_plan_zone'])) {
+            $query->where('master_plan_zone', $filters['master_plan_zone']);
+        }
+        if (isset($filters['yangi_uzbekiston'])) {
+            $query->where('yangi_uzbekiston', $filters['yangi_uzbekiston']);
+        }
+
+        // Apply category-specific filters
+        switch ($category) {
+            case 'discount':
+                $query->where('discount', '>', 0);
+                break;
+            case 'sold':
+            default:
+                // No additional filters for total sold
+                break;
+        }
+
+        // Clone query for stats
+        $statsQuery = clone $query;
+
+        // Get lots with pagination
+        $lots = $query->with(['tuman', 'mahalla', 'distributions'])
+            ->orderBy('auction_date', 'desc')
+            ->paginate(50);
+
+        // Calculate statistics
+        $stats = [
+            'count' => $statsQuery->count(),
+            'total_area' => $statsQuery->sum('land_area'),
+            'total_initial_price' => $statsQuery->sum('initial_price') / 1000000000,
+            'total_sold_price' => $statsQuery->sum('sold_price') / 1000000000,
+            'total_auction_fee' => $statsQuery->sum('auction_fee') / 1000000000,
+            'total_discount' => $statsQuery->sum('discount') / 1000000000,
+        ];
+
+        // Handle Excel export
+        if ($request->input('export') === 'excel') {
+            return $this->exportReport2DetailsToExcel($lots->items(), $categoryName, $districtName);
+        }
+
+        return view('monitoring.report-details', compact(
+            'lots',
+            'categoryName',
+            'districtName',
+            'category',
+            'stats',
+            'filters'
+        ));
     }
 
-    // Installment payment lots only (muddatli)
-    $query->where('payment_type', 'muddatli');
+    /**
+     * Show detailed information for Report 3 (Svod-3)
+     */
+    public function report3Details(Request $request)
+    {
+        $category = $request->input('category');
+        $district = $request->input('district');
+        $districtId = $request->input('district_id');
+        $filters = $this->getFilters($request);
+        $currentDate = $filters['current_date'] ?? now();
 
-    // Apply date filters
-    if (!empty($filters['date_from'])) {
-        $query->where('auction_date', '>=', $filters['date_from']);
-    }
-    if (!empty($filters['date_to'])) {
-        $query->where('auction_date', '<=', $filters['date_to']);
-    }
+        // Category names in Uzbek
+        $categoryNames = [
+            'installment_total' => 'Бўлиб тўлаш шарти билан сотилган участкалар',
+            'fully_paid' => 'Тўлиқ тўланган участкалар',
+            'under_monitoring' => 'Назоратдаги участкалар',
+            'overdue' => 'Муддат ўтган участкалар',
+        ];
 
-    // Apply other filters
-    if (!empty($filters['subject_type'])) {
-        $query->where('winner_type', $filters['subject_type']);
-    }
-    if (!empty($filters['zone'])) {
-        $query->where('zone', $filters['zone']);
-    }
-    if (isset($filters['yangi_uzbekiston'])) {
-        $query->where('yangi_uzbekiston', $filters['yangi_uzbekiston']);
-    }
+        $categoryName = $categoryNames[$category] ?? 'Ер участкалар';
+        $districtName = $district === 'all' ? 'Барча туманлар' : $district;
 
-    // Apply category-specific filters
-    $lotsQuery = clone $query;
+        // Build query
+        $query = \App\Models\Lot::query();
 
-    switch ($category) {
-        case 'fully_paid':
-            // Lots where total actual payments >= sold price
-            $lotsQuery->whereExists(function($q) {
-                $q->selectRaw('1')
-                  ->from('payment_schedules')
-                  ->whereColumn('payment_schedules.lot_id', 'lots.id')
-                  ->groupBy('payment_schedules.lot_id')
-                  ->havingRaw('SUM(payment_schedules.actual_amount) >= lots.sold_price');
-            });
-            break;
+        // Apply district filter
+        if ($district !== 'all') {
+            $tuman = \App\Models\Tuman::where('name_uz', $district)->first();
+            if ($tuman) {
+                $query->where('tuman_id', $tuman->id);
+            }
+        }
 
-        case 'under_monitoring':
-            // Lots where contract signed and payments ongoing but not fully paid
-            $lotsQuery->where('contract_signed', true)
-                ->whereExists(function($q) {
+        // Installment payment lots only (muddatli)
+        $query->where('payment_type', 'muddatli');
+
+        // Apply date filters
+        if (!empty($filters['date_from'])) {
+            $query->where('auction_date', '>=', $filters['date_from']);
+        }
+        if (!empty($filters['date_to'])) {
+            $query->where('auction_date', '<=', $filters['date_to']);
+        }
+
+        // Apply other filters
+        if (!empty($filters['subject_type'])) {
+            $query->where('winner_type', $filters['subject_type']);
+        }
+        if (!empty($filters['zone'])) {
+            $query->where('zone', $filters['zone']);
+        }
+        if (isset($filters['yangi_uzbekiston'])) {
+            $query->where('yangi_uzbekiston', $filters['yangi_uzbekiston']);
+        }
+
+        // Apply category-specific filters
+        $lotsQuery = clone $query;
+
+        switch ($category) {
+            case 'fully_paid':
+                // Lots where total actual payments >= sold price
+                $lotsQuery->whereExists(function ($q) {
                     $q->selectRaw('1')
-                      ->from('payment_schedules')
-                      ->whereColumn('payment_schedules.lot_id', 'lots.id')
-                      ->groupBy('payment_schedules.lot_id')
-                      ->havingRaw('SUM(payment_schedules.actual_amount) < lots.sold_price');
+                        ->from('payment_schedules')
+                        ->whereColumn('payment_schedules.lot_id', 'lots.id')
+                        ->groupBy('payment_schedules.lot_id')
+                        ->havingRaw('SUM(payment_schedules.actual_amount) >= lots.sold_price');
                 });
-            break;
+                break;
 
-        case 'overdue':
-            // Lots with overdue payments
-            $lotsQuery->whereExists(function($q) use ($currentDate) {
-                $q->selectRaw('1')
-                  ->from('payment_schedules')
-                  ->whereColumn('payment_schedules.lot_id', 'lots.id')
-                  ->where('payment_schedules.payment_date', '<', $currentDate)
-                  ->whereRaw('payment_schedules.actual_amount < payment_schedules.planned_amount');
-            });
-            break;
+            case 'under_monitoring':
+                // Lots where contract signed and payments ongoing but not fully paid
+                $lotsQuery->where('contract_signed', true)
+                    ->whereExists(function ($q) {
+                        $q->selectRaw('1')
+                            ->from('payment_schedules')
+                            ->whereColumn('payment_schedules.lot_id', 'lots.id')
+                            ->groupBy('payment_schedules.lot_id')
+                            ->havingRaw('SUM(payment_schedules.actual_amount) < lots.sold_price');
+                    });
+                break;
 
-        case 'installment_total':
-        default:
-            // All installment lots - no additional filter
-            break;
-    }
+            case 'overdue':
+                // Lots with overdue payments
+                $lotsQuery->whereExists(function ($q) use ($currentDate) {
+                    $q->selectRaw('1')
+                        ->from('payment_schedules')
+                        ->whereColumn('payment_schedules.lot_id', 'lots.id')
+                        ->where('payment_schedules.payment_date', '<', $currentDate)
+                        ->whereRaw('payment_schedules.actual_amount < payment_schedules.planned_amount');
+                });
+                break;
 
-    // Clone for stats
-    $statsQuery = clone $lotsQuery;
-
-    // Get lots with pagination
-    $lots = $lotsQuery->with(['tuman', 'mahalla', 'paymentSchedules'])
-        ->orderBy('auction_date', 'desc')
-        ->paginate(50);
-
-    // Calculate statistics
-    $stats = [
-        'count' => $statsQuery->count(),
-        'total_area' => $statsQuery->sum('land_area'),
-        'total_initial_price' => $statsQuery->sum('initial_price') / 1000000000,
-        'total_sold_price' => $statsQuery->sum('sold_price') / 1000000000,
-    ];
-
-    // Calculate payment statistics for overdue category
-    if ($category === 'overdue') {
-        $lotIds = $statsQuery->pluck('id');
-
-        if ($lotIds->isNotEmpty()) {
-            $paymentStats = \App\Models\PaymentSchedule::whereIn('lot_id', $lotIds)
-                ->where('payment_date', '<=', $currentDate)
-                ->selectRaw('SUM(planned_amount) as total_planned, SUM(actual_amount) as total_actual')
-                ->first();
-
-            $stats['total_planned_payment'] = ($paymentStats->total_planned ?? 0) / 1000000000;
-            $stats['total_actual_payment'] = ($paymentStats->total_actual ?? 0) / 1000000000;
-            $stats['percentage'] = $stats['total_planned_payment'] > 0
-                ? round(($stats['total_actual_payment'] / $stats['total_planned_payment']) * 100, 1)
-                : 0;
+            case 'installment_total':
+            default:
+                // All installment lots - no additional filter
+                break;
         }
+
+        // Clone for stats
+        $statsQuery = clone $lotsQuery;
+
+        // Get lots with pagination
+        $lots = $lotsQuery->with(['tuman', 'mahalla', 'paymentSchedules'])
+            ->orderBy('auction_date', 'desc')
+            ->paginate(50);
+
+        // Calculate statistics
+        $stats = [
+            'count' => $statsQuery->count(),
+            'total_area' => $statsQuery->sum('land_area'),
+            'total_initial_price' => $statsQuery->sum('initial_price') / 1000000000,
+            'total_sold_price' => $statsQuery->sum('sold_price') / 1000000000,
+        ];
+
+        // Calculate payment statistics for overdue category
+        if ($category === 'overdue') {
+            $lotIds = $statsQuery->pluck('id');
+
+            if ($lotIds->isNotEmpty()) {
+                $paymentStats = \App\Models\PaymentSchedule::whereIn('lot_id', $lotIds)
+                    ->where('payment_date', '<=', $currentDate)
+                    ->selectRaw('SUM(planned_amount) as total_planned, SUM(actual_amount) as total_actual')
+                    ->first();
+
+                $stats['total_planned_payment'] = ($paymentStats->total_planned ?? 0) / 1000000000;
+                $stats['total_actual_payment'] = ($paymentStats->total_actual ?? 0) / 1000000000;
+                $stats['percentage'] = $stats['total_planned_payment'] > 0
+                    ? round(($stats['total_actual_payment'] / $stats['total_planned_payment']) * 100, 1)
+                    : 0;
+            }
+        }
+
+        // Handle Excel export
+        if ($request->input('export') === 'excel') {
+            return $this->exportReport3DetailsToExcel($lots->items(), $categoryName, $districtName);
+        }
+
+        return view('monitoring.report-details', compact(
+            'lots',
+            'categoryName',
+            'districtName',
+            'category',
+            'stats',
+            'filters',
+            'currentDate'
+        ));
     }
 
-    // Handle Excel export
-    if ($request->input('export') === 'excel') {
-        return $this->exportReport3DetailsToExcel($lots->items(), $categoryName, $districtName);
-    }
+    /**
+     * Export Report 2 details to Excel
+     */
+    private function exportReport2DetailsToExcel($lots, $categoryName, $districtName)
+    {
+        $filename = 'svod2_details_' . date('Y-m-d_H-i-s') . '.csv';
 
-    return view('monitoring.report-details', compact(
-        'lots',
-        'categoryName',
-        'districtName',
-        'category',
-        'stats',
-        'filters',
-        'currentDate'
-    ));
-}
+        $headers = [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
 
-/**
- * Export Report 2 details to Excel
- */
-private function exportReport2DetailsToExcel($lots, $categoryName, $districtName)
-{
-    $filename = 'svod2_details_' . date('Y-m-d_H-i-s') . '.csv';
+        $callback = function () use ($lots, $categoryName, $districtName) {
+            $file = fopen('php://output', 'w');
 
-    $headers = [
-        'Content-Type' => 'text/csv; charset=utf-8',
-        'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-    ];
+            // Add BOM for UTF-8
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-    $callback = function () use ($lots, $categoryName, $districtName) {
-        $file = fopen('php://output', 'w');
-
-        // Add BOM for UTF-8
-        fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
-
-        // Headers
-        fputcsv($file, [
-            '№',
-            'Участка рақами',
-            'Туман',
-            'Манзил',
-            'Майдони (га)',
-            'Зона',
-            'Бошланғич нарх (млрд сўм)',
-            'Сотилган нарх (млрд сўм)',
-            'Аукцион ҳақи (млрд сўм)',
-            'Чегирма (млрд сўм)',
-            'Эгаси',
-            'Субъект тури',
-            'Аукцион санаси',
-            'Янги Ўзбекистон'
-        ]);
-
-        // Data
-        $index = 1;
-        foreach ($lots as $lot) {
+            // Headers
             fputcsv($file, [
-                $index++,
-                $lot->lot_number ?? 'N/A',
-                $lot->tuman->name_uz ?? '',
-                $lot->address ?? '',
-                number_format($lot->land_area, 2),
-                $lot->zone ?? '',
-                number_format($lot->initial_price / 1000000000, 1),
-                number_format($lot->sold_price / 1000000000, 1),
-                number_format($lot->auction_fee / 1000000000, 1),
-                number_format($lot->discount / 1000000000, 1),
-                $lot->winner_name ?? '',
-                $lot->winner_type === 'legal' ? 'Юридик' : 'Жисмоний',
-                $lot->auction_date ? \Carbon\Carbon::parse($lot->auction_date)->format('d.m.Y') : '',
-                $lot->yangi_uzbekiston ? 'Ҳа' : 'Йўқ'
+                '№',
+                'Участка рақами',
+                'Туман',
+                'Манзил',
+                'Майдони (га)',
+                'Зона',
+                'Бошланғич нарх (млрд сўм)',
+                'Сотилган нарх (млрд сўм)',
+                'Аукцион ҳақи (млрд сўм)',
+                'Чегирма (млрд сўм)',
+                'Эгаси',
+                'Субъект тури',
+                'Аукцион санаси',
+                'Янги Ўзбекистон'
             ]);
-        }
 
-        fclose($file);
-    };
+            // Data
+            $index = 1;
+            foreach ($lots as $lot) {
+                fputcsv($file, [
+                    $index++,
+                    $lot->lot_number ?? 'N/A',
+                    $lot->tuman->name_uz ?? '',
+                    $lot->address ?? '',
+                    number_format($lot->land_area, 2),
+                    $lot->zone ?? '',
+                    number_format($lot->initial_price / 1000000000, 1),
+                    number_format($lot->sold_price / 1000000000, 1),
+                    number_format($lot->auction_fee / 1000000000, 1),
+                    number_format($lot->discount / 1000000000, 1),
+                    $lot->winner_name ?? '',
+                    $lot->winner_type === 'legal' ? 'Юридик' : 'Жисмоний',
+                    $lot->auction_date ? \Carbon\Carbon::parse($lot->auction_date)->format('d.m.Y') : '',
+                    $lot->yangi_uzbekiston ? 'Ҳа' : 'Йўқ'
+                ]);
+            }
 
-    return response()->stream($callback, 200, $headers);
-}
+            fclose($file);
+        };
 
-/**
- * Export Report 3 details to Excel
- */
-private function exportReport3DetailsToExcel($lots, $categoryName, $districtName)
-{
-    $filename = 'svod3_details_' . date('Y-m-d_H-i-s') . '.csv';
+        return response()->stream($callback, 200, $headers);
+    }
 
-    $headers = [
-        'Content-Type' => 'text/csv; charset=utf-8',
-        'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-    ];
+    /**
+     * Export Report 3 details to Excel
+     */
+    private function exportReport3DetailsToExcel($lots, $categoryName, $districtName)
+    {
+        $filename = 'svod3_details_' . date('Y-m-d_H-i-s') . '.csv';
 
-    $callback = function () use ($lots, $categoryName, $districtName) {
-        $file = fopen('php://output', 'w');
+        $headers = [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
 
-        // Add BOM for UTF-8
-        fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+        $callback = function () use ($lots, $categoryName, $districtName) {
+            $file = fopen('php://output', 'w');
 
-        // Headers
-        fputcsv($file, [
-            '№',
-            'Участка рақами',
-            'Туман',
-            'Манзил',
-            'Майдони (га)',
-            'Зона',
-            'Бошланғич нарх (млрд сўм)',
-            'Сотилган нарх (млрд сўм)',
-            'Бўлиб тўлаш муддати (ой)',
-            'Режадаги тўлов (млрд сўм)',
-            'Амалдаги тўлов (млрд сўм)',
-            'Фоиз (%)',
-            'Эгаси',
-            'Субъект тури',
-            'Аукцион санаси'
-        ]);
+            // Add BOM for UTF-8
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-        // Data
-        $index = 1;
-        foreach ($lots as $lot) {
-            $totalPlanned = $lot->paymentSchedules->sum('planned_amount');
-            $totalActual = $lot->paymentSchedules->sum('actual_amount');
-            $percentage = $totalPlanned > 0 ? round(($totalActual / $totalPlanned) * 100, 1) : 0;
-
+            // Headers
             fputcsv($file, [
-                $index++,
-                $lot->lot_number ?? 'N/A',
-                $lot->tuman->name_uz ?? '',
-                $lot->address ?? '',
-                number_format($lot->land_area, 2),
-                $lot->zone ?? '',
-                number_format($lot->initial_price / 1000000000, 1),
-                number_format($lot->sold_price / 1000000000, 1),
-                $lot->installment_months ?? 0,
-                number_format($totalPlanned / 1000000000, 1),
-                number_format($totalActual / 1000000000, 1),
-                number_format($percentage, 1),
-                $lot->winner_name ?? '',
-                $lot->winner_type === 'legal' ? 'Юридик' : 'Жисмоний',
-                $lot->auction_date ? \Carbon\Carbon::parse($lot->auction_date)->format('d.m.Y') : ''
+                '№',
+                'Участка рақами',
+                'Туман',
+                'Манзил',
+                'Майдони (га)',
+                'Зона',
+                'Бошланғич нарх (млрд сўм)',
+                'Сотилган нарх (млрд сўм)',
+                'Бўлиб тўлаш муддати (ой)',
+                'Режадаги тўлов (млрд сўм)',
+                'Амалдаги тўлов (млрд сўм)',
+                'Фоиз (%)',
+                'Эгаси',
+                'Субъект тури',
+                'Аукцион санаси'
             ]);
-        }
 
-        fclose($file);
-    };
+            // Data
+            $index = 1;
+            foreach ($lots as $lot) {
+                $totalPlanned = $lot->paymentSchedules->sum('planned_amount');
+                $totalActual = $lot->paymentSchedules->sum('actual_amount');
+                $percentage = $totalPlanned > 0 ? round(($totalActual / $totalPlanned) * 100, 1) : 0;
 
-    return response()->stream($callback, 200, $headers);
-}
+                fputcsv($file, [
+                    $index++,
+                    $lot->lot_number ?? 'N/A',
+                    $lot->tuman->name_uz ?? '',
+                    $lot->address ?? '',
+                    number_format($lot->land_area, 2),
+                    $lot->zone ?? '',
+                    number_format($lot->initial_price / 1000000000, 1),
+                    number_format($lot->sold_price / 1000000000, 1),
+                    $lot->installment_months ?? 0,
+                    number_format($totalPlanned / 1000000000, 1),
+                    number_format($totalActual / 1000000000, 1),
+                    number_format($percentage, 1),
+                    $lot->winner_name ?? '',
+                    $lot->winner_type === 'legal' ? 'Юридик' : 'Жисмоний',
+                    $lot->auction_date ? \Carbon\Carbon::parse($lot->auction_date)->format('d.m.Y') : ''
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
     private function exportReport2ToExcel($data, $filters)
     {
         $filename = 'svod2_' . date('Y-m-d_H-i-s') . '.csv';
