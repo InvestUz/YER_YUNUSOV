@@ -12,29 +12,28 @@
     @include('lots.partials.breadcrumb', ['lot' => $lot])
 
     {{-- Main Content Container --}}
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 2xl:px-20 py-8 max-w-full lg:max-w-7xl xl:max-w-8xl 2xl:max-w-[1600px]">
 
         {{-- Page Header with Quick Actions --}}
         @include('lots.partials.page-header', ['lot' => $lot])
 
         {{-- Main Grid Layout --}}
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 xl:gap-10 mt-6">
 
             {{-- Left Column (2/3 width) --}}
-            <div class="lg:col-span-2 space-y-6">
+            <div class="lg:col-span-2 space-y-8">
                 @include('lots.partials.image-gallery', ['lot' => $lot])
                 @include('lots.partials.lot-information', ['lot' => $lot])
                 @include('lots.partials.payment-schedule', ['lot' => $lot])
                 @include('lots.partials.distribution-table', ['lot' => $lot]) 
-                
             </div>
 
             {{-- Right Column (1/3 width) - Sidebar --}}
-            <div class="space-y-6">
+            <aside class="space-y-8 sticky top-24 self-start">
                 @include('lots.partials.contract-card', ['lot' => $lot])
                 @include('lots.partials.location-map', ['lot' => $lot])
                 @include('lots.partials.system-info', ['lot' => $lot])
-            </div>
+            </aside>
 
         </div>
     </div>
