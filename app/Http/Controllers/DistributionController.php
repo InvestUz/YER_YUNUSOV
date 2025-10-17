@@ -36,13 +36,8 @@ class DistributionController extends Controller
         $totalDistributed = $existingDistributions->sum('allocated_amount');
         $remainingAmount = $paymentSchedule->actual_amount - $totalDistributed;
 
-        // Distribution categories
-        $categories = [
-            Distribution::CATEGORY_LOCAL_BUDGET => 'Маҳаллий бюджет',
-            Distribution::CATEGORY_DEVELOPMENT_FUND => 'Тошкент шаҳрини ривожлантириш жамғармаси',
-            Distribution::CATEGORY_NEW_UZBEKISTAN => 'Янги Ўзбекистон',
-            Distribution::CATEGORY_DISTRICT_AUTHORITY => 'Туман ҳокимияти',
-        ];
+        // Distribution categories - Updated to use new constants
+        $categories = Distribution::getCategories();
 
         return view('distributions.create', compact(
             'paymentSchedule',
@@ -58,12 +53,7 @@ class DistributionController extends Controller
         $validated = $request->validate([
             'payment_schedule_id' => 'required|exists:payment_schedules,id',
             'distributions' => 'required|array|min:1',
-            'distributions.*.category' => 'required|in:' . implode(',', [
-                Distribution::CATEGORY_LOCAL_BUDGET,
-                Distribution::CATEGORY_DEVELOPMENT_FUND,
-                Distribution::CATEGORY_NEW_UZBEKISTAN,
-                Distribution::CATEGORY_DISTRICT_AUTHORITY,
-            ]),
+            'distributions.*.category' => 'required|in:' . implode(',', array_keys(Distribution::getCategories())),
             'distributions.*.allocated_amount' => 'required|numeric|min:0',
             'distributions.*.distribution_date' => 'required|date',
             'distributions.*.note' => 'nullable|string|max:500',
@@ -98,8 +88,9 @@ class DistributionController extends Controller
 
             DB::commit();
 
-            return redirect()->route('contracts.show', $paymentSchedule->contract_id)
+            return redirect()->back()
                 ->with('success', 'Тақсимот муваффақиятли қўшилди');
+
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withInput()
@@ -117,12 +108,8 @@ class DistributionController extends Controller
             ->sum('allocated_amount');
         $availableAmount = $paymentSchedule->actual_amount - $totalDistributed;
 
-        $categories = [
-            Distribution::CATEGORY_LOCAL_BUDGET => 'Маҳаллий бюджет',
-            Distribution::CATEGORY_DEVELOPMENT_FUND => 'Тошкент шаҳрини ривожлантириш жамғармаси',
-            Distribution::CATEGORY_NEW_UZBEKISTAN => 'Янги Ўзбекистон',
-            Distribution::CATEGORY_DISTRICT_AUTHORITY => 'Туман ҳокимияти',
-        ];
+        // Get all categories
+        $categories = Distribution::getCategories();
 
         return view('distributions.edit', compact('distribution', 'availableAmount', 'categories'));
     }
@@ -130,12 +117,7 @@ class DistributionController extends Controller
     public function update(Request $request, Distribution $distribution)
     {
         $validated = $request->validate([
-            'category' => 'required|in:' . implode(',', [
-                Distribution::CATEGORY_LOCAL_BUDGET,
-                Distribution::CATEGORY_DEVELOPMENT_FUND,
-                Distribution::CATEGORY_NEW_UZBEKISTAN,
-                Distribution::CATEGORY_DISTRICT_AUTHORITY,
-            ]),
+            'category' => 'required|in:' . implode(',', array_keys(Distribution::getCategories())),
             'allocated_amount' => 'required|numeric|min:0',
             'distribution_date' => 'required|date',
             'status' => 'required|in:' . implode(',', [
@@ -159,7 +141,7 @@ class DistributionController extends Controller
 
         $distribution->update($validated);
 
-        return redirect()->route('contracts.show', $distribution->contract_id)
+        return redirect()->back()
             ->with('success', 'Тақсимот янгиланди');
     }
 
@@ -172,7 +154,7 @@ class DistributionController extends Controller
         $contractId = $distribution->contract_id;
         $distribution->delete();
 
-        return redirect()->route('contracts.show', $contractId)
+        return redirect()->back()
             ->with('success', 'Тақсимот ўчирилди');
     }
 }

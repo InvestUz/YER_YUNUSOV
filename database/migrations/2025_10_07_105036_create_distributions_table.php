@@ -17,10 +17,14 @@ return new class extends Migration
             $table->foreignId('payment_schedule_id')->nullable()->constrained()->onDelete('cascade');
             $table->foreignId('additional_agreement_id')->nullable()->constrained()->onDelete('set null');
             $table->enum('category', [
-                'local_budget',
+                'city_budget',
                 'development_fund',
+                'shaykhontohur_budget',
                 'new_uzbekistan',
-                'district_authority'
+                'yangikhayot_technopark',
+                'ksz_directorates',
+                'tashkent_city_directorate',
+                'district_budgets'
             ]);
             $table->decimal('allocated_amount', 20, 2);
             $table->date('distribution_date');

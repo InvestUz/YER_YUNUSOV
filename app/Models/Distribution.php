@@ -24,10 +24,15 @@ class Distribution extends Model
         'allocated_amount' => 'decimal:2',
     ];
 
-    const CATEGORY_LOCAL_BUDGET = 'local_budget';
+    // All Distribution Categories
+    const CATEGORY_CITY_BUDGET = 'city_budget';
     const CATEGORY_DEVELOPMENT_FUND = 'development_fund';
+    const CATEGORY_SHAYKHONTOHUR_BUDGET = 'shaykhontohur_budget';
     const CATEGORY_NEW_UZBEKISTAN = 'new_uzbekistan';
-    const CATEGORY_DISTRICT_AUTHORITY = 'district_authority';
+    const CATEGORY_YANGIKHAYOT_TECHNOPARK = 'yangikhayot_technopark';
+    const CATEGORY_KSZ_DIRECTORATES = 'ksz_directorates';
+    const CATEGORY_TASHKENT_CITY_DIRECTORATE = 'tashkent_city_directorate';
+    const CATEGORY_DISTRICT_BUDGETS = 'district_budgets';
 
     const STATUS_PENDING = 'pending';
     const STATUS_DISTRIBUTED = 'distributed';
@@ -72,14 +77,23 @@ class Distribution extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
-    public function getCategoryLabelAttribute()
+    public static function getCategories()
     {
         return [
-            self::CATEGORY_LOCAL_BUDGET => 'Маҳаллий бюджет',
-            self::CATEGORY_DEVELOPMENT_FUND => 'Тошкент шаҳрини ривожлантириш жамғармаси',
-            self::CATEGORY_NEW_UZBEKISTAN => 'Янги Ўзбекистон',
-            self::CATEGORY_DISTRICT_AUTHORITY => 'Туман ҳокимияти',
-        ][$this->category] ?? $this->category;
+            self::CATEGORY_CITY_BUDGET => 'Тошкент шаҳар бюджети',
+            self::CATEGORY_DEVELOPMENT_FUND => 'Жамғармага',
+            self::CATEGORY_SHAYKHONTOHUR_BUDGET => 'Шайхонтоҳур тумани бюжетига',
+            self::CATEGORY_NEW_UZBEKISTAN => 'Янги Ўзбекистон дирекцияссига',
+            self::CATEGORY_YANGIKHAYOT_TECHNOPARK => 'Янгиҳаёт индустриал технопакига',
+            self::CATEGORY_KSZ_DIRECTORATES => 'КСЗ дирекцияларига',
+            self::CATEGORY_TASHKENT_CITY_DIRECTORATE => 'Тошкент сити дирекцияси',
+            self::CATEGORY_DISTRICT_BUDGETS => 'Туманлар бюжетига',
+        ];
+    }
+
+    public function getCategoryLabelAttribute()
+    {
+        return self::getCategories()[$this->category] ?? $this->category;
     }
 
     public function getStatusLabelAttribute()

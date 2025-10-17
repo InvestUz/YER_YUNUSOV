@@ -9,7 +9,7 @@
         {{-- SUCCESS/ERROR MESSAGES                    --}}
         {{-- ========================================== --}}
         @if (session('success'))
-            <div class="max-w-7xl mx-auto px-6 py-3">
+            <div class="px-4 sm:px-6 lg:px-8 py-3">
                 <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
                     <span class="block sm:inline">{{ session('success') }}</span>
                     <button onclick="this.parentElement.parentElement.remove()"
@@ -25,7 +25,7 @@
         @endif
 
         @if (session('error'))
-            <div class="max-w-7xl mx-auto px-6 py-3">
+            <div class="px-4 sm:px-6 lg:px-8 py-3">
                 <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
                     <span class="block sm:inline">{{ session('error') }}</span>
                     <button onclick="this.parentElement.parentElement.remove()"
@@ -41,7 +41,7 @@
         @endif
 
         @if (session('info'))
-            <div class="max-w-7xl mx-auto px-6 py-3">
+            <div class="px-4 sm:px-6 lg:px-8 py-3">
                 <div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative">
                     <span class="block sm:inline">{{ session('info') }}</span>
                     <button onclick="this.parentElement.parentElement.remove()"
@@ -57,7 +57,7 @@
         @endif
 
         @if (session('warning'))
-            <div class="max-w-7xl mx-auto px-6 py-3">
+            <div class="px-4 sm:px-6 lg:px-8 py-3">
                 <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative">
                     <span class="block sm:inline">{{ session('warning') }}</span>
                     <button onclick="this.parentElement.parentElement.remove()"
@@ -73,7 +73,7 @@
         @endif
 
         @if ($errors->any())
-            <div class="max-w-7xl mx-auto px-6 py-3">
+            <div class="px-4 sm:px-6 lg:px-8 py-3">
                 <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
                     <strong class="font-bold">Хатолик!</strong>
                     <ul class="mt-2 list-disc list-inside text-sm">
@@ -97,7 +97,7 @@
         {{-- BREADCRUMB                                --}}
         {{-- ========================================== --}}
         <div class="bg-white border-b-2 border-gray-300">
-            <div class="max-w-7xl mx-auto px-6 py-3">
+            <div class="px-4 sm:px-6 lg:px-8 py-3">
                 <nav class="flex items-center gap-2 text-sm text-gray-600">
                     <a href="{{ route('lots.index') }}" class="hover:text-gray-900">Асосий</a>
                     <span>/</span>
@@ -111,14 +111,14 @@
         {{-- ========================================== --}}
         {{-- MAIN CONTENT                              --}}
         {{-- ========================================== --}}
-        <div class="max-w-7xl mx-auto px-6 py-8">
+        <div class="px-4 sm:px-6 lg:px-8 py-6">
 
             {{-- PAGE HEADER --}}
-            <div class="bg-white border border-gray-300 shadow-sm mb-6 p-6">
-                <h1 class="text-xl font-bold text-gray-900 mb-2">
+            <div class="bg-white border border-gray-300 shadow-sm mb-6 p-4 sm:p-6">
+                <h1 class="text-lg sm:text-xl font-bold text-gray-900 mb-2">
                     Уникал № {{ $lot->unique_number }}
                 </h1>
-                <div class="flex items-center gap-4 text-sm text-gray-600">
+                <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                     @if ($lot->tuman)
                         <span>Туман: <strong class="text-gray-900">{{ $lot->tuman->name_uz }}</strong></span>
                     @endif
@@ -126,38 +126,38 @@
                         <span>Мфй: <strong class="text-gray-900">{{ $lot->mahalla->name }}</strong></span>
                     @endif
                     @if ($lot->lot_status)
-                        <span class="border-l pl-4">Ҳолат: <strong
+                        <span class="border-l pl-2 sm:pl-4">Ҳолат: <strong
                                 class="text-gray-900">{{ $lot->lot_status }}</strong></span>
                     @endif
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
                 {{-- ========================================== --}}
-                {{-- LEFT COLUMN - MAIN CONTENT                --}}
+                {{-- LEFT COLUMN - MAIN CONTENT (3 columns)   --}}
                 {{-- ========================================== --}}
-                <div class="lg:col-span-2 space-y-6">
+                <div class="lg:col-span-3 space-y-6">
 
                     {{-- IMAGE GALLERY --}}
                     <div class="bg-white border border-gray-300 shadow-sm">
-                        <div class="relative bg-gray-200" style="height: 450px;">
+                        <div class="relative bg-gray-200" style="height: 500px;">
                             @if ($lot->images && $lot->images->count() > 0)
                                 <img id="mainImage" src="{{ $lot->primary_image_url }}" alt="Лот {{ $lot->lot_number }}"
                                     class="w-full h-full object-contain bg-gray-100">
 
                                 @if ($lot->images->count() > 1)
                                     <button onclick="previousImage()"
-                                        class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/95 hover:bg-white border border-gray-300 flex items-center justify-center shadow-md">
-                                        <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor"
+                                        class="absolute left-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/95 hover:bg-white border border-gray-300 flex items-center justify-center shadow-lg rounded-full">
+                                        <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M15 19l-7-7 7-7" />
                                         </svg>
                                     </button>
                                     <button onclick="nextImage()"
-                                        class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/95 hover:bg-white border border-gray-300 flex items-center justify-center shadow-md">
-                                        <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/95 hover:bg-white border border-gray-300 flex items-center justify-center shadow-lg rounded-full">
+                                        <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M9 5l7 7-7 7" />
@@ -182,7 +182,7 @@
                         @if ($lot->images && $lot->images->count() > 1)
                             <div class="flex gap-2 p-3 bg-gray-50 border-t border-gray-300 overflow-x-auto">
                                 @foreach ($lot->images as $index => $image)
-                                    <div class="flex-shrink-0 w-20 h-20 border-2 cursor-pointer {{ $index === 0 ? 'border-gray-700' : 'border-gray-300' }} hover:border-gray-700"
+                                    <div class="flex-shrink-0 w-24 h-24 border-2 cursor-pointer {{ $index === 0 ? 'border-gray-700' : 'border-gray-300' }} hover:border-gray-700 transition-colors"
                                         onclick="showImage({{ $index }})" id="thumb-{{ $index }}">
                                         <img src="{{ $image->url }}" alt="Thumbnail {{ $index + 1 }}"
                                             class="w-full h-full object-cover">
@@ -194,35 +194,35 @@
                         {{-- Stats Bar --}}
                         <div
                             class="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-300 text-sm text-gray-600">
-                            <div class="flex items-center gap-6">
+                            <div class="flex items-center gap-4 sm:gap-6">
                                 <div class="flex items-center gap-1">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
-                                    <span>{{ $totalViewsCount ?? 0 }}</span>
+                                    <span class="font-medium">{{ $totalViewsCount ?? 0 }}</span>
                                 </div>
                                 <div class="flex items-center gap-1">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                     </svg>
-                                    <span>{{ $messagesCount ?? 0 }}</span>
+                                    <span class="font-medium">{{ $messagesCount ?? 0 }}</span>
                                 </div>
-                                <div class="flex items-center gap-1 cursor-pointer hover:text-red-600"
+                                <div class="flex items-center gap-1 cursor-pointer hover:text-red-600 transition-colors"
                                     onclick="toggleLike()">
-                                    <svg class="w-4 h-4 {{ isset($hasLiked) && $hasLiked ? 'fill-red-600 text-red-600' : '' }}"
+                                    <svg class="w-5 h-5 {{ isset($hasLiked) && $hasLiked ? 'fill-red-600 text-red-600' : '' }}"
                                         fill="{{ isset($hasLiked) && $hasLiked ? 'currentColor' : 'none' }}"
                                         stroke="currentColor" viewBox="0 0 24 24" id="likeIcon">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                     </svg>
-                                    <span id="likeCount">{{ $likesCount ?? 0 }}</span>
+                                    <span id="likeCount" class="font-medium">{{ $likesCount ?? 0 }}</span>
                                 </div>
                             </div>
-                            <div class="text-xs text-gray-500">
+                            <div class="text-xs text-gray-500 hidden sm:block">
                                 Янгиланди: {{ $lot->updated_at->format('d.m.Y H:i') }}
                             </div>
                         </div>

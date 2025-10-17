@@ -61,7 +61,7 @@ class ContractController extends Controller
 
         // Check if contract already exists
         if ($lot->contract) {
-            return redirect()->route('contracts.show', $lot->contract)
+            return redirect()->back()
                 ->with('error', 'Бу лот учун шартнома мавжуд');
         }
 
