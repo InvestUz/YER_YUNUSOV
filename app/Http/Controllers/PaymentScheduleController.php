@@ -54,7 +54,7 @@ class PaymentScheduleController extends Controller
 
             DB::commit();
 
-            return redirect()->route('contracts.show', $contract)
+            return redirect()->back()
                 ->with('success', 'Тўлов маълумотлари янгиланди');
 
         } catch (\Exception $e) {

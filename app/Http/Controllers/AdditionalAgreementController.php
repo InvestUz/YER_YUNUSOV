@@ -52,7 +52,7 @@ class AdditionalAgreementController extends Controller
 
             DB::commit();
 
-            return redirect()->route('contracts.show', $contract)
+            return redirect()->back()
                 ->with('success', 'Қўшимча келишув яратилди');
         } catch (\Exception $e) {
             DB::rollBack();

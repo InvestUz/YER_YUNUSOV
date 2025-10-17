@@ -94,12 +94,10 @@ class ContractController extends Controller
             'status' => 'required|in:active,completed,cancelled',
             'note' => 'nullable|string|max:1000',
 
-            // For muddatli payment
-            'schedule_frequency' => 'required_if:payment_type,muddatli|in:monthly,quarterly,yearly',
-            'first_payment_date' => 'required_if:payment_type,muddatli|date',
-            'number_of_payments' => 'required_if:payment_type,muddatli|integer|min:1|max:120',
+            // REMOVED: schedule_frequency, first_payment_date, number_of_payments
+            // Payment schedule will be added manually later
 
-            // For muddatsiz payment
+            // For muddatsiz payment only
             'one_time_payment_amount' => 'required_if:payment_type,muddatsiz|numeric|min:0',
             'one_time_payment_date' => 'required_if:payment_type,muddatsiz|date',
         ]);
@@ -120,12 +118,9 @@ class ContractController extends Controller
 
             // Handle payment schedule based on type
             if ($validated['payment_type'] === 'muddatli') {
-                // Muddatli - Create payment schedule
-                $this->createPaymentSchedule($contract, [
-                    'frequency' => $validated['schedule_frequency'],
-                    'start_date' => $validated['first_payment_date'],
-                    'number_of_payments' => $validated['number_of_payments'],
-                ]);
+                // Muddatli - NO automatic schedule creation
+                // User will manually add payment schedule rows using "+ Қўшиш" button
+                // DO NOTHING HERE - schedule will be added via addScheduleItem method
             } else {
                 // Muddatsiz - Create single payment record
                 PaymentSchedule::create([
@@ -151,12 +146,48 @@ class ContractController extends Controller
 
             DB::commit();
 
-            return redirect()->route('lots.show', $lot->id)
-                ->with('success', 'Шартнома муваффақиятли яратилди');
+            return redirect()->back()
+                ->with('success', 'Шартнома муваффақиятли яратилди. Муддатли тўлов учун "+ Қўшиш" тугмаси орқали график қўшинг.');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withInput()
                 ->with('error', 'Хатолик: ' . $e->getMessage());
+        }
+    }
+
+    // Method to manually add schedule items (should already exist)
+    public function addScheduleItem(Request $request, Contract $contract)
+    {
+        $validated = $request->validate([
+            'planned_date' => 'required|date',
+            'planned_amount' => 'required|numeric|min:0',
+            'deadline_date' => 'nullable|date',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Get next payment number
+            $lastPayment = $contract->paymentSchedules()->orderBy('payment_number', 'desc')->first();
+            $paymentNumber = $lastPayment ? $lastPayment->payment_number + 1 : 1;
+
+            // Create payment schedule item
+            PaymentSchedule::create([
+                'contract_id' => $contract->id,
+                'payment_number' => $paymentNumber,
+                'planned_date' => $validated['planned_date'],
+                'deadline_date' => $validated['deadline_date'] ?? $validated['planned_date'],
+                'planned_amount' => $validated['planned_amount'],
+                'actual_amount' => 0,
+                'status' => PaymentSchedule::STATUS_PENDING,
+            ]);
+
+            DB::commit();
+
+            return redirect()->back()
+                ->with('success', 'График қатори муваффақиятли қўшилди');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Хатолик: ' . $e->getMessage());
         }
     }
 
@@ -348,7 +379,7 @@ class ContractController extends Controller
 
             DB::commit();
 
-            return redirect()->route('lots.show', $lotId)
+            return redirect()->back()
                 ->with('success', 'Шартнома ўчирилди');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -401,41 +432,6 @@ class ContractController extends Controller
 
             return redirect()->back()
                 ->with('success', 'Тўлов графиги яратилди');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Хатолик: ' . $e->getMessage());
-        }
-    }
-
-    public function addScheduleItem(Request $request, Contract $contract)
-    {
-        $validated = $request->validate([
-            'planned_date' => 'required|date',
-            'planned_amount' => 'required|numeric|min:0',
-            'deadline_date' => 'nullable|date|after_or_equal:planned_date',
-        ]);
-
-        DB::beginTransaction();
-        try {
-            // Get next payment number
-            $nextNumber = $contract->paymentSchedules()->max('payment_number') + 1;
-
-            // Create schedule item
-            PaymentSchedule::create([
-                'contract_id' => $contract->id,
-                'payment_number' => $nextNumber,
-                'planned_date' => $validated['planned_date'],
-                'deadline_date' => $validated['deadline_date'] ?? Carbon::parse($validated['planned_date'])->addDays(10),
-                'planned_amount' => $validated['planned_amount'],
-                'actual_amount' => 0,
-                'difference' => -$validated['planned_amount'],
-                'status' => PaymentSchedule::STATUS_PENDING,
-            ]);
-
-            DB::commit();
-
-            return redirect()->back()
-                ->with('success', 'График қўшилди');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Хатолик: ' . $e->getMessage());

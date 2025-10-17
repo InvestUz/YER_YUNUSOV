@@ -25,6 +25,8 @@
                 @include('lots.partials.image-gallery', ['lot' => $lot])
                 @include('lots.partials.lot-information', ['lot' => $lot])
                 @include('lots.partials.payment-schedule', ['lot' => $lot])
+                @include('lots.partials.distribution-table', ['lot' => $lot]) 
+                
             </div>
 
             {{-- Right Column (1/3 width) - Sidebar --}}
