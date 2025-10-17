@@ -55,8 +55,8 @@
     .report-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 10px;
-        min-width: 2400px;
+        font-size: 12px;
+        min-width: 1800px;
     }
 
     .report-table th,
@@ -64,7 +64,6 @@
         border: 1px solid #6b7280;
         padding: 6px 8px;
         text-align: center;
-        vertical-align: middle;
     }
 
     /* Header Styles */
@@ -72,63 +71,49 @@
         background: #e5e7eb;
         font-weight: bold;
         color: #1f2937;
-        font-size: 9px;
-        line-height: 1.4;
+        font-size: 11px;
+        line-height: 1.3;
     }
 
-    .report-table thead .main-title {
+    .report-table thead th.main-header {
         background: #d1d5db;
         font-size: 12px;
-        padding: 10px;
-    }
-
-    .report-table thead .group-header {
-        background: #dbeafe;
-        font-size: 10px;
     }
 
     /* Sticky Columns */
     .sticky-num {
         position: sticky;
         left: 0;
-        background: #f9fafb;
-        z-index: 20;
+        background: #f3f4f6;
+        z-index: 10;
         min-width: 50px;
         font-weight: 600;
-        border-right: 2px solid #374151 !important;
     }
 
     .sticky-district {
         position: sticky;
         left: 50px;
-        background: #f9fafb;
-        z-index: 20;
+        background: #f3f4f6;
+        z-index: 10;
         text-align: left;
         padding-left: 12px !important;
         min-width: 180px;
         font-weight: 600;
-        border-right: 2px solid #374151 !important;
-    }
-
-    thead .sticky-num,
-    thead .sticky-district {
-        background: #e5e7eb;
-        z-index: 25;
     }
 
     /* Body Rows */
     .report-table tbody td {
         color: #374151;
-        font-size: 10px;
+        font-size: 12px;
     }
 
     .report-table tbody tr:hover td {
-        background: #f3f4f6;
+        background: #f9fafb;
     }
 
     .report-table tbody tr:hover .sticky-num,
     .report-table tbody tr:hover .sticky-district {
-        background: #dbeafe;
+        background: #e5e7eb;
     }
 
     /* Clickable Counts */
@@ -136,58 +121,28 @@
         color: #2563eb;
         cursor: pointer;
         font-weight: 600;
-        text-decoration: underline;
     }
 
     .count-link:hover {
-        color: #1d4ed8;
+        text-decoration: underline;
     }
 
     /* Total Row */
     .total-row td {
-        background: #fef3c7 !important;
+        background: #dbeafe !important;
         font-weight: bold;
-        border: 2px solid #1f2937 !important;
-        font-size: 11px;
+        border: 1px solid #1f2937 !important;
+        font-size: 13px;
     }
 
     .total-row .sticky-num,
     .total-row .sticky-district {
-        background: #fde68a !important;
+        background: #bfdbfe !important;
     }
 
     /* Section Dividers */
     .section-divider {
         border-right: 2px solid #374151 !important;
-    }
-
-    /* Right Align Numbers */
-    .text-right {
-        text-align: right !important;
-        padding-right: 10px !important;
-    }
-
-    /* Amount Cells */
-    .amount-cell {
-        font-weight: 600;
-        color: #047857;
-    }
-
-    /* Percentage Cells */
-    .percentage-cell {
-        font-weight: 700;
-    }
-
-    .percentage-good {
-        color: #047857;
-    }
-
-    .percentage-warning {
-        color: #d97706;
-    }
-
-    .percentage-danger {
-        color: #dc2626;
     }
 
     /* Filters */
@@ -200,9 +155,9 @@
 
     .filter-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        margin-bottom: 15px;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin-bottom: 12px;
     }
 
     .filter-group label {
@@ -210,36 +165,32 @@
         font-size: 11px;
         font-weight: 600;
         color: #374151;
-        margin-bottom: 5px;
+        margin-bottom: 4px;
     }
 
     .filter-group input,
     .filter-group select {
         width: 100%;
-        padding: 7px 10px;
+        padding: 6px 8px;
         border: 1px solid #d1d5db;
         font-size: 12px;
         font-family: 'Times New Roman', Times, serif;
-        border-radius: 4px;
     }
 
     .filter-group input:focus,
     .filter-group select:focus {
         outline: none;
         border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
 
     /* Buttons */
     .btn {
-        padding: 8px 20px;
+        padding: 7px 18px;
         font-size: 12px;
         font-weight: 600;
         border: none;
         cursor: pointer;
         font-family: 'Times New Roman', Times, serif;
-        border-radius: 4px;
-        transition: all 0.2s;
     }
 
     .btn-primary {
@@ -289,7 +240,7 @@
 
     /* Scrollbar */
     .table-container::-webkit-scrollbar {
-        height: 12px;
+        height: 10px;
     }
 
     .table-container::-webkit-scrollbar-track {
@@ -298,30 +249,23 @@
 
     .table-container::-webkit-scrollbar-thumb {
         background: #9ca3af;
-        border-radius: 6px;
+        border-radius: 4px;
     }
 
     .table-container::-webkit-scrollbar-thumb:hover {
         background: #6b7280;
     }
 
-    /* Print */
+    /* Print Styles */
     @media print {
         .no-print {
             display: none !important;
         }
-
         body {
             background: white;
         }
-
-        .report-table {
-            font-size: 8px;
-        }
-
-        .sticky-num,
-        .sticky-district {
-            position: static;
+        .table-container {
+            border: 1px solid #000;
         }
     }
 </style>
@@ -454,7 +398,7 @@
                 <!-- ЖАМИ row first -->
                 @if(isset($data['totals']))
                 <tr class="total-row">
-                    <td class="sticky-num"></td>
+                    <td class="sticky-num">№</td>
                     <td class="sticky-district">ЖАМИ:</td>
 
                     <td class="count-link" onclick="openDetails('installment_total', 'all', 0)">{{ $data['totals']['total']['count'] }}</td>
