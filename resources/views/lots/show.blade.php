@@ -12,8 +12,7 @@
     @include('lots.partials.breadcrumb', ['lot' => $lot])
 
     {{-- Main Content Container --}}
-<div class="mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 2xl:px-20 py-8 max-w-full lg:max-w-7xl xl:max-w-8xl 2xl:max-w-[1600px]">
-
+<div class="mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 2xl:px-20 py-8 max-w-full lg:max-w-7xl xl:max-w-8xl 2xl:max-w-[2200px]">
         {{-- Page Header with Quick Actions --}}
         @include('lots.partials.page-header', ['lot' => $lot])
 

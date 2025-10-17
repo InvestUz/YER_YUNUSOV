@@ -130,16 +130,10 @@
     <div class="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 z-30">
         <!-- Logo -->
         <div class="flex items-center gap-3 px-6 py-5 border-b border-gray-200">
-            <div class="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-lg">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
-                    </path>
-                </svg>
-            </div>
+         
             <div>
-                <h1 class="text-lg font-bold text-gray-900">Toshkent Invest</h1>
-                <p class="text-xs text-gray-500">ERP Tizimi</p>
+                <div class="w-40 d-flex m-auto"><img src="https://toshkentinvest.uz/assets/frontend/tild6238-3031-4265-a564-343037346231/tic_logo_blue.png" alt=""></div>
+                <p class="text-xs text-gray-500">Yerlarni monitoring qilish tizimi</p>
             </div>
         </div>
 
