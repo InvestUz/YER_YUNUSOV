@@ -11,8 +11,115 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
+        /* Global Font Enforcement */
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            font-size: 14px !important;
+            line-height: 1.5 !important;
+            color: #374151 !important;
+        }
+
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Inter', sans-serif !important;
+            font-weight: 600 !important;
+            line-height: 1.3 !important;
+            color: #1f2937 !important;
+        }
+
+        h1 {
+            font-size: 24px !important;
+        }
+
+        h2 {
+            font-size: 20px !important;
+        }
+
+        h3 {
+            font-size: 18px !important;
+        }
+
+        h4 {
+            font-size: 16px !important;
+        }
+
+        h5 {
+            font-size: 14px !important;
+        }
+
+        h6 {
+            font-size: 12px !important;
+        }
+
+        /* Paragraphs */
+        p {
+            font-family: 'Inter', sans-serif !important;
+            font-size: 14px !important;
+            line-height: 1.6 !important;
+            color: #4b5563 !important;
+        }
+
+        /* Links */
+        a {
+            font-family: 'Inter', sans-serif !important;
+            font-size: 14px !important;
+            text-decoration: none !important;
+        }
+
+        /* Buttons */
+        button, .btn, input[type="submit"], input[type="button"] {
+            font-family: 'Inter', sans-serif !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+        }
+
+        /* Inputs */
+        input, textarea, select {
+            font-family: 'Inter', sans-serif !important;
+            font-size: 14px !important;
+            color: #374151 !important;
+        }
+
+        /* Tables */
+        table, th, td {
+            font-family: 'Inter', sans-serif !important;
+            font-size: 13px !important;
+        }
+
+        th {
+            font-weight: 600 !important;
+            color: #1f2937 !important;
+        }
+
+        td {
+            color: #4b5563 !important;
+        }
+
+        /* Labels */
+        label {
+            font-family: 'Inter', sans-serif !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            color: #374151 !important;
+        }
+
+        /* Small text */
+        small, .text-xs, .text-sm {
+            font-family: 'Inter', sans-serif !important;
+        }
+
+        /* Ensure spans inherit */
+        span {
+            font-family: 'Inter', sans-serif !important;
+        }
+
+        /* Divs */
+        div {
+            font-family: 'Inter', sans-serif !important;
         }
     </style>
     @stack('styles')
@@ -70,8 +177,6 @@
                 </svg>
                 <span>Инфографика</span>
             </a>
-
-
         </nav>
 
         <!-- User Info -->
