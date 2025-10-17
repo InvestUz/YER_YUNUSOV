@@ -161,33 +161,52 @@ class MonitoringService
 
             $query = $this->applyFilters($query, $filters);
 
-            $lots = $query->with('paymentSchedules')->get();
+            // Fix: Load payment schedules through contract
+            $lots = $query->with(['contract.paymentSchedules'])->get();
 
             // Fully paid
             $fullyPaid = $lots->filter(function ($lot) {
-                return $lot->paymentSchedules->sum('actual_amount') >= $lot->sold_price;
+                $totalPaid = $lot->contract?->paymentSchedules->sum('actual_amount') ?? 0;
+                return $totalPaid >= $lot->sold_price;
             });
 
             // Under monitoring (not fully paid)
             $underMonitoring = $lots->filter(function ($lot) {
-                return $lot->paymentSchedules->sum('actual_amount') < $lot->sold_price;
+                $totalPaid = $lot->contract?->paymentSchedules->sum('actual_amount') ?? 0;
+                return $totalPaid < $lot->sold_price;
             });
 
             // Overdue
             $overdue = $underMonitoring->filter(function ($lot) use ($currentDate) {
-                return $lot->paymentSchedules->where('payment_date', '<', $currentDate)
-                    ->where('actual_amount', '<', 'planned_amount')->count() > 0;
+                if (!$lot->contract || !$lot->contract->paymentSchedules) {
+                    return false;
+                }
+
+                return $lot->contract->paymentSchedules
+                    ->where('planned_date', '<', $currentDate)
+                    ->filter(function ($schedule) {
+                        return ($schedule->actual_amount ?? 0) < $schedule->planned_amount;
+                    })
+                    ->count() > 0;
             });
 
             // Calculate payment percentages
             $totalPlanned = $underMonitoring->sum(function ($lot) use ($currentDate) {
-                return $lot->paymentSchedules
-                    ->where('payment_date', '<=', $currentDate)
+                if (!$lot->contract || !$lot->contract->paymentSchedules) {
+                    return 0;
+                }
+
+                return $lot->contract->paymentSchedules
+                    ->where('planned_date', '<=', $currentDate)
                     ->sum('planned_amount');
             });
 
             $totalActual = $underMonitoring->sum(function ($lot) {
-                return $lot->paymentSchedules->sum('actual_amount');
+                if (!$lot->contract || !$lot->contract->paymentSchedules) {
+                    return 0;
+                }
+
+                return $lot->contract->paymentSchedules->sum('actual_amount');
             });
 
             $paymentPercentage = $totalPlanned > 0 ? ($totalActual / $totalPlanned) * 100 : 0;
@@ -412,32 +431,65 @@ class MonitoringService
     private function calculateTotals3($data)
     {
         $totals = [
-            'total' => ['count' => 0, 'area' => 0, 'initial_price' => 0, 'sold_price' => 0],
-            'fully_paid' => ['count' => 0, 'area' => 0, 'initial_price' => 0, 'sold_price' => 0],
-            'under_monitoring' => ['count' => 0, 'area' => 0, 'initial_price' => 0, 'sold_price' => 0],
-            'overdue' => ['count' => 0, 'area' => 0, 'planned_payment' => 0, 'actual_payment' => 0],
+            'total' => [
+                'count' => 0,
+                'area' => 0,
+                'initial_price' => 0,
+                'sold_price' => 0,
+            ],
+            'fully_paid' => [
+                'count' => 0,
+                'area' => 0,
+                'initial_price' => 0,
+                'sold_price' => 0,
+            ],
+            'under_monitoring' => [
+                'count' => 0,
+                'area' => 0,
+                'initial_price' => 0,
+                'sold_price' => 0,
+            ],
+            'overdue' => [
+                'count' => 0,
+                'area' => 0,
+                'planned_payment' => 0,
+                'actual_payment' => 0,
+                'percentage' => 0,
+            ],
         ];
 
         foreach ($data as $row) {
-            foreach (['total', 'fully_paid', 'under_monitoring'] as $key) {
-                $totals[$key]['count'] += $row[$key]['count'];
-                $totals[$key]['area'] += $row[$key]['area'];
-                $totals[$key]['initial_price'] += $row[$key]['initial_price'];
-                $totals[$key]['sold_price'] += $row[$key]['sold_price'];
-            }
+            // Total
+            $totals['total']['count'] += $row['total']['count'];
+            $totals['total']['area'] += $row['total']['area'];
+            $totals['total']['initial_price'] += $row['total']['initial_price'];
+            $totals['total']['sold_price'] += $row['total']['sold_price'];
+
+            // Fully Paid
+            $totals['fully_paid']['count'] += $row['fully_paid']['count'];
+            $totals['fully_paid']['area'] += $row['fully_paid']['area'];
+            $totals['fully_paid']['initial_price'] += $row['fully_paid']['initial_price'];
+            $totals['fully_paid']['sold_price'] += $row['fully_paid']['sold_price'];
+
+            // Under Monitoring
+            $totals['under_monitoring']['count'] += $row['under_monitoring']['count'];
+            $totals['under_monitoring']['area'] += $row['under_monitoring']['area'];
+            $totals['under_monitoring']['initial_price'] += $row['under_monitoring']['initial_price'];
+            $totals['under_monitoring']['sold_price'] += $row['under_monitoring']['sold_price'];
+
+            // Overdue
             $totals['overdue']['count'] += $row['overdue']['count'];
             $totals['overdue']['area'] += $row['overdue']['area'];
             $totals['overdue']['planned_payment'] += $row['overdue']['planned_payment'];
             $totals['overdue']['actual_payment'] += $row['overdue']['actual_payment'];
         }
 
+        // Calculate total percentage
         if ($totals['overdue']['planned_payment'] > 0) {
             $totals['overdue']['percentage'] = round(
                 ($totals['overdue']['actual_payment'] / $totals['overdue']['planned_payment']) * 100,
                 1
             );
-        } else {
-            $totals['overdue']['percentage'] = 0;
         }
 
         return $totals;
