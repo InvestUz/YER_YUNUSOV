@@ -115,7 +115,7 @@ class ContractController extends Controller
 
             DB::commit();
 
-            return redirect()->route('lot.show', $contract)
+            return redirect()->back()
                 ->with('success', 'Шартнома муваффақиятли яратилди');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -145,7 +145,7 @@ class ContractController extends Controller
     {
         // Check if contract has payment schedules
         if ($contract->paymentSchedules()->count() > 0) {
-            return redirect()->route('contracts.show', $contract)
+            return redirect()->back()
                 ->with('error', 'Тўлов графиги бор шартномани таҳрирлаб бўлмайди. Фақат статусни ўзгартириш мумкин.');
         }
 
@@ -170,13 +170,13 @@ class ContractController extends Controller
                     : $contract->note,
             ]);
 
-            return redirect()->route('contracts.show', $contract)
+            return redirect()->back()
                 ->with('success', 'Шартнома статуси янгиланди');
         }
 
         // Full update - only if no payment schedules
         if ($contract->paymentSchedules()->count() > 0) {
-            return redirect()->route('contracts.show', $contract)
+            return redirect()->back()
                 ->with('error', 'Тўлов графиги бор шартномани таҳрирлаб бўлмайди');
         }
 
@@ -198,7 +198,7 @@ class ContractController extends Controller
             'contract_date' => $validated['contract_date'],
         ]);
 
-        return redirect()->route('contracts.show', $contract)
+        return redirect()->back()
             ->with('success', 'Шартнома янгиланди');
     }
 
@@ -280,7 +280,7 @@ class ContractController extends Controller
 
             DB::commit();
 
-            return redirect()->route('contracts.show', $contract)
+            return redirect()->back()
                 ->with('success', 'Тўлов графиги яратилди');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -315,7 +315,7 @@ class ContractController extends Controller
 
             DB::commit();
 
-            return redirect()->route('lots.show', $contract->lot_id)
+            return redirect()->back()
                 ->with('success', 'График қўшилди');
         } catch (\Exception $e) {
             DB::rollBack();
