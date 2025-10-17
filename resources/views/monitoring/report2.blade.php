@@ -285,64 +285,7 @@
     {{-- Navigation --}}
     @include('monitoring.partials.navigation')
 
-    {{-- Filters --}}
-    <div class="filter-section no-print">
-        <form method="GET" action="{{ route('monitoring.report2') }}">
-            <div class="filter-grid">
-                <div class="filter-group">
-                    <label>Бошланиш санаси:</label>
-                    <input type="date" name="date_from" value="{{ $filters['date_from'] ?? '2023-01-01' }}">
-                </div>
-                <div class="filter-group">
-                    <label>Тугаш санаси:</label>
-                    <input type="date" name="date_to" value="{{ $filters['date_to'] ?? date('Y-m-d') }}">
-                </div>
-                <div class="filter-group">
-                    <label>Субъект тури:</label>
-                    <select name="subject_type">
-                        <option value="">Барчаси</option>
-                        <option value="legal" {{ ($filters['subject_type'] ?? '') === 'legal' ? 'selected' : '' }}>Юридик</option>
-                        <option value="individual" {{ ($filters['subject_type'] ?? '') === 'individual' ? 'selected' : '' }}>Жисмоний</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Иқтисодий зонаси:</label>
-                    <select name="zone">
-                        <option value="">Барчаси</option>
-                        @for($i = 1; $i <= 5; $i++)
-                            <option value="{{ $i }}" {{ ($filters['zone'] ?? '') == $i ? 'selected' : '' }}>{{ $i }}-зона</option>
-                            @endfor
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Бош режа зонаси:</label>
-                    <select name="master_plan_zone">
-                        <option value="">Барчаси</option>
-                        <option value="реновация" {{ ($filters['master_plan_zone'] ?? '') === 'реновация' ? 'selected' : '' }}>реновация</option>
-                        <option value="реконструкция" {{ ($filters['master_plan_zone'] ?? '') === 'реконструкция' ? 'selected' : '' }}>реконструкция</option>
-                        <option value="консервация" {{ ($filters['master_plan_zone'] ?? '') === 'консервация' ? 'selected' : '' }}>консервация</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label>Ҳусусияти:</label>
-                    <select name="yangi_uzbekiston">
-                        <option value="">Барчаси</option>
-                        <option value="1" {{ ($filters['yangi_uzbekiston'] ?? '') === '1' ? 'selected' : '' }}>Янги Ўзбекистон</option>
-                    </select>
-                </div>
-            </div>
-            <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="submit" class="btn btn-primary">Қидириш</button>
-                <a href="{{ route('monitoring.report2') }}" class="btn btn-reset" style="text-decoration: none;">Тозалаш</a>
-            </div>
-        </form>
-    </div>
-
-    {{-- Actions --}}
-    <div class="actions-row no-print">
-        <button onclick="exportToExcel()" class="btn btn-success">Excel</button>
-        <button onclick="window.print()" class="btn btn-secondary">Чоп этиш</button>
-    </div>
+   
 
     {{-- Table --}}
     <div class="table-container">
@@ -516,6 +459,65 @@
     @endif
 </tbody>
         </table>
+    </div>
+
+     {{-- Filters --}}
+    <div class="filter-section no-print">
+        <form method="GET" action="{{ route('monitoring.report2') }}">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label>Бошланиш санаси:</label>
+                    <input type="date" name="date_from" value="{{ $filters['date_from'] ?? '2023-01-01' }}">
+                </div>
+                <div class="filter-group">
+                    <label>Тугаш санаси:</label>
+                    <input type="date" name="date_to" value="{{ $filters['date_to'] ?? date('Y-m-d') }}">
+                </div>
+                <div class="filter-group">
+                    <label>Субъект тури:</label>
+                    <select name="subject_type">
+                        <option value="">Барчаси</option>
+                        <option value="legal" {{ ($filters['subject_type'] ?? '') === 'legal' ? 'selected' : '' }}>Юридик</option>
+                        <option value="individual" {{ ($filters['subject_type'] ?? '') === 'individual' ? 'selected' : '' }}>Жисмоний</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Иқтисодий зонаси:</label>
+                    <select name="zone">
+                        <option value="">Барчаси</option>
+                        @for($i = 1; $i <= 5; $i++)
+                            <option value="{{ $i }}" {{ ($filters['zone'] ?? '') == $i ? 'selected' : '' }}>{{ $i }}-зона</option>
+                            @endfor
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Бош режа зонаси:</label>
+                    <select name="master_plan_zone">
+                        <option value="">Барчаси</option>
+                        <option value="реновация" {{ ($filters['master_plan_zone'] ?? '') === 'реновация' ? 'selected' : '' }}>реновация</option>
+                        <option value="реконструкция" {{ ($filters['master_plan_zone'] ?? '') === 'реконструкция' ? 'selected' : '' }}>реконструкция</option>
+                        <option value="консервация" {{ ($filters['master_plan_zone'] ?? '') === 'консервация' ? 'selected' : '' }}>консервация</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Ҳусусияти:</label>
+                    <select name="yangi_uzbekiston">
+                        <option value="">Барчаси</option>
+                        <option value="1" {{ ($filters['yangi_uzbekiston'] ?? '') === '1' ? 'selected' : '' }}>Янги Ўзбекистон</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="submit" class="btn btn-primary">Қидириш</button>
+                <a href="{{ route('monitoring.report2') }}" class="btn btn-reset" style="text-decoration: none;">Тозалаш</a>
+            </div>
+        </form>
+    </div>
+
+    {{-- Actions --}}
+    <div class="actions-row no-print">
+        <button onclick="exportToExcel()" class="btn btn-success">Excel</button>
+        <button onclick="window.print()" class="btn btn-secondary">Чоп этиш</button>
     </div>
 
 </div>
