@@ -79,6 +79,7 @@ class ContractController extends Controller
         return view('contracts.create', compact('lot', 'suggestedNumber'));
     }
 
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -86,10 +87,21 @@ class ContractController extends Controller
             'contract_number' => 'required|string|max:255|unique:contracts,contract_number',
             'contract_date' => 'required|date',
             'contract_amount' => 'required|numeric|min:0',
+            'buyer_name' => 'required|string|max:255',
+            'buyer_phone' => 'nullable|string|max:50',
+            'buyer_inn' => 'nullable|string|max:50',
             'payment_type' => 'required|in:muddatli,muddatsiz',
-            'paid_amount' => 'nullable|numeric|min:0',
             'status' => 'required|in:active,completed,cancelled',
             'note' => 'nullable|string|max:1000',
+
+            // For muddatli payment
+            'schedule_frequency' => 'required_if:payment_type,muddatli|in:monthly,quarterly,yearly',
+            'first_payment_date' => 'required_if:payment_type,muddatli|date',
+            'number_of_payments' => 'required_if:payment_type,muddatli|integer|min:1|max:120',
+
+            // For muddatsiz payment
+            'one_time_payment_amount' => 'required_if:payment_type,muddatsiz|numeric|min:0',
+            'one_time_payment_date' => 'required_if:payment_type,muddatsiz|date',
         ]);
 
         DB::beginTransaction();
@@ -100,22 +112,46 @@ class ContractController extends Controller
                 'contract_number' => $validated['contract_number'],
                 'contract_date' => $validated['contract_date'],
                 'contract_amount' => $validated['contract_amount'],
-                'paid_amount' => $validated['paid_amount'] ?? 0,
                 'payment_type' => $validated['payment_type'],
                 'status' => $validated['status'],
                 'note' => $validated['note'] ?? null,
+                'paid_amount' => 0,
             ]);
+
+            // Handle payment schedule based on type
+            if ($validated['payment_type'] === 'muddatli') {
+                // Muddatli - Create payment schedule
+                $this->createPaymentSchedule($contract, [
+                    'frequency' => $validated['schedule_frequency'],
+                    'start_date' => $validated['first_payment_date'],
+                    'number_of_payments' => $validated['number_of_payments'],
+                ]);
+            } else {
+                // Muddatsiz - Create single payment record
+                PaymentSchedule::create([
+                    'contract_id' => $contract->id,
+                    'payment_number' => 1,
+                    'planned_date' => $validated['one_time_payment_date'],
+                    'deadline_date' => $validated['one_time_payment_date'],
+                    'planned_amount' => $validated['one_time_payment_amount'],
+                    'actual_amount' => 0,
+                    'status' => PaymentSchedule::STATUS_PENDING,
+                ]);
+            }
 
             // Update lot
             $lot = Lot::find($validated['lot_id']);
             $lot->contract_signed = true;
             $lot->contract_date = $validated['contract_date'];
             $lot->contract_number = $validated['contract_number'];
+            $lot->payment_type = $validated['payment_type'];
+            $lot->winner_name = $validated['buyer_name'];
+            $lot->winner_phone = $validated['buyer_phone'];
             $lot->save();
 
             DB::commit();
 
-            return redirect()->back()
+            return redirect()->route('lots.show', $lot->id)
                 ->with('success', 'Шартнома муваффақиятли яратилди');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -123,6 +159,89 @@ class ContractController extends Controller
                 ->with('error', 'Хатолик: ' . $e->getMessage());
         }
     }
+
+    private function createPaymentSchedule(Contract $contract, array $params)
+    {
+        $startDate = Carbon::parse($params['start_date']);
+        $numberOfPayments = $params['number_of_payments'];
+        $paymentAmount = $contract->contract_amount / $numberOfPayments;
+
+        $frequencyMap = [
+            'monthly' => 1,
+            'quarterly' => 3,
+            'yearly' => 12,
+        ];
+        $monthsIncrement = $frequencyMap[$params['frequency']];
+
+        for ($i = 1; $i <= $numberOfPayments; $i++) {
+            $plannedDate = $startDate->copy()->addMonths($monthsIncrement * ($i - 1));
+            $deadlineDate = $plannedDate->copy()->addDays(10); // Grace period
+
+            PaymentSchedule::create([
+                'contract_id' => $contract->id,
+                'payment_number' => $i,
+                'planned_date' => $plannedDate,
+                'deadline_date' => $deadlineDate,
+                'planned_amount' => $paymentAmount,
+                'actual_amount' => 0,
+                'status' => PaymentSchedule::STATUS_PENDING,
+            ]);
+        }
+    }
+    public function recordPayment(Request $request, PaymentSchedule $schedule)
+    {
+        $validated = $request->validate([
+            'actual_date' => 'required|date',
+            'actual_amount' => 'required|numeric|min:0',
+            'payment_method' => 'nullable|string|max:100',
+            'reference_number' => 'nullable|string|max:100',
+            'note' => 'nullable|string|max:1000',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Update payment schedule
+            $schedule->update([
+                'actual_date' => $validated['actual_date'],
+                'actual_amount' => $validated['actual_amount'],
+                'difference' => $validated['actual_amount'] - $schedule->planned_amount,
+                'note' => $validated['note'] ?? $schedule->note,
+            ]);
+
+            // Auto-update status
+            if ($schedule->actual_amount >= $schedule->planned_amount) {
+                $schedule->status = PaymentSchedule::STATUS_PAID;
+            } elseif ($schedule->actual_amount > 0) {
+                $schedule->status = PaymentSchedule::STATUS_PARTIAL;
+            }
+            $schedule->save();
+
+            // Update contract totals
+            $contract = $schedule->contract;
+            $contract->paid_amount = $contract->paymentSchedules()->sum('actual_amount');
+            $contract->remaining_amount = $contract->contract_amount - $contract->paid_amount;
+
+            // Auto-complete if fully paid
+            if ($contract->remaining_amount <= 0) {
+                $contract->status = Contract::STATUS_COMPLETED;
+            }
+            $contract->save();
+
+            // Update lot
+            $contract->lot->update([
+                'paid_amount' => $contract->paid_amount,
+            ]);
+
+            DB::commit();
+
+            return redirect()->back()
+                ->with('success', 'Тўлов маълумотлари сақланди');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Хатолик: ' . $e->getMessage());
+        }
+    }
+
 
     public function show(Contract $contract)
     {

@@ -15,23 +15,38 @@ return new class extends Migration
             $table->id();
             $table->foreignId('contract_id')->constrained()->onDelete('cascade');
             $table->foreignId('additional_agreement_id')->nullable()->constrained()->onDelete('set null');
-            $table->integer('payment_number');
-            $table->date('planned_date');
-            $table->date('deadline_date');
-            $table->decimal('planned_amount', 20, 2);
-            $table->date('actual_date')->nullable();
-            $table->decimal('actual_amount', 20, 2)->default(0);
-            $table->decimal('difference', 20, 2)->default(0);
+
+            $table->integer('payment_number'); // Тўлов тартиб рақами
+
+            // Planned (График)
+            $table->date('planned_date'); // Режа бўйича тўлов санаси
+            $table->date('deadline_date'); // Охирги тўлов муддати
+            $table->decimal('planned_amount', 15, 2); // Режа бўйича сумма
+
+            // Actual (Амал)
+            $table->date('actual_date')->nullable(); // Амалдаги тўлов санаси
+            $table->decimal('actual_amount', 15, 2)->default(0); // Амалда тўланган сумма
+            $table->decimal('difference', 15, 2)->default(0); // Фарқ (+/-)
+
+            // Status
             $table->enum('status', ['pending', 'partial', 'paid', 'overdue'])->default('pending');
+
+            // Additional fields
+            $table->string('payment_method')->nullable(); // Тўлов усули
+            $table->string('reference_number')->nullable(); // Тўлов ҳужжат рақами
             $table->text('note')->nullable();
-            $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
-            $table->foreignId('updated_by')->nullable()->constrained('users')->onDelete('set null');
+
+            // Audit fields
+            $table->foreignId('created_by')->nullable()->constrained('users');
+            $table->foreignId('updated_by')->nullable()->constrained('users');
             $table->timestamps();
             $table->softDeletes();
 
+            // Indexes
             $table->index('contract_id');
-            $table->index('status');
             $table->index('planned_date');
+            $table->index('deadline_date');
+            $table->index('status');
         });
     }
 

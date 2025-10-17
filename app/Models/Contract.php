@@ -134,4 +134,20 @@ class Contract extends Model
     {
         return $query->where('payment_type', self::PAYMENT_TYPE_ONE_TIME);
     }
+
+
+    public function getPaymentTypeTextAttribute()
+    {
+        return $this->payment_type === 'muddatli' ? 'Бўлиб тўлаш' : 'Бир йўла';
+    }
+
+    public function needsPaymentSchedule()
+    {
+        return $this->payment_type === 'muddatli';
+    }
+
+    public function isOneTimePayment()
+    {
+        return $this->payment_type === 'muddatsiz';
+    }
 }

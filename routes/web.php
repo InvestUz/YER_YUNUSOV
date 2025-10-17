@@ -44,7 +44,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/contracts/{contract}/generate-schedule', [ContractController::class, 'generateSchedule'])
         ->name('contracts.generate-schedule');
 
- Route::post('/contracts/{contract}/add-schedule-item', [ContractController::class, 'addScheduleItem'])
+    Route::post('/contracts/{contract}/add-schedule-item', [ContractController::class, 'addScheduleItem'])
         ->name('contracts.add-schedule-item');
 
     // Additional Agreements
@@ -56,6 +56,18 @@ Route::middleware('auth')->group(function () {
         ->name('additional-agreements.show');
     Route::delete('/additional-agreements/{agreement}', [AdditionalAgreementController::class, 'destroy'])
         ->name('additional-agreements.destroy');
+
+    Route::post('/contracts/{contract}/generate-schedule', [ContractController::class, 'generateSchedule'])
+        ->name('contracts.generate-schedule');
+
+
+    // Payment recording
+    Route::post('/payment-schedules/{schedule}/record-payment', [ContractController::class, 'recordPayment'])
+        ->name('payment-schedules.record-payment');
+
+    Route::put('/payment-schedules/{schedule}', [PaymentScheduleController::class, 'update'])
+        ->name('payment-schedules.update');
+
 
     // Payment Schedules
     Route::put('/payment-schedules/{schedule}', [PaymentScheduleController::class, 'update'])
