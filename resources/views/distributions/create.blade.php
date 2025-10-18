@@ -5,14 +5,33 @@
     <div class="max-w-4xl mx-auto">
         <h1 class="text-2xl font-bold mb-6">Тўловни тақсимлаш</h1>
 
+        {{-- Contract & Payment Info --}}
         <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
             <p class="text-sm"><strong>Шартнома:</strong> № {{ $paymentSchedule->contract->contract_number }}</p>
             <p class="text-sm"><strong>Тўлов:</strong> № {{ $paymentSchedule->payment_number }}</p>
-            <p class="text-sm"><strong>Тўланган сумма:</strong> {{ number_format($paymentSchedule->actual_amount, 0, '.', ' ') }} сўм</p>
-            @if($totalDistributed > 0)
-            <p class="text-sm"><strong>Тақсимланган:</strong> {{ number_format($totalDistributed, 0, '.', ' ') }} сўм</p>
-            <p class="text-sm"><strong>Қолган:</strong> <span class="font-bold text-green-600">{{ number_format($remainingAmount, 0, '.', ' ') }} сўм</span></p>
+            <p class="text-sm"><strong>Тўланған сумма:</strong> {{ number_format($paymentSchedule->actual_amount, 0, '.', ' ') }} сўм</p>
+
+            {{-- Show discount info if applicable --}}
+            @if($discountInfo['qualifies'])
+                <div class="mt-3 pt-3 border-t border-blue-200">
+                    <p class="text-sm text-blue-900 font-semibold mb-2">Чегирма маълумоти:</p>
+                    <p class="text-xs text-blue-800">• Тўланған: {{ number_format($discountInfo['paid_amount'], 0, '.', ' ') }} сўм</p>
+                    <p class="text-xs text-blue-800">• Чегирма (20%): -{{ number_format($discountInfo['discount'], 0, '.', ' ') }} сўм</p>
+                    <p class="text-xs text-blue-800">• Шартномадан (80%): {{ number_format($discountInfo['incoming_amount'], 0, '.', ' ') }} сўм</p>
+                </div>
             @endif
+
+            <div class="mt-3 pt-3 border-t border-blue-200">
+                <p class="text-sm"><strong>Тақсимланадиган сумма:</strong>
+                    <span class="text-green-600 font-bold">{{ number_format($distributableAmount, 0, '.', ' ') }} сўм</span>
+                </p>
+                @if($totalDistributed > 0)
+                    <p class="text-sm mt-1"><strong>Аллақачон тақсимланган:</strong> {{ number_format($totalDistributed, 0, '.', ' ') }} сўм</p>
+                    <p class="text-sm mt-1"><strong>Қолган:</strong>
+                        <span class="font-bold text-green-600">{{ number_format($remainingAmount, 0, '.', ' ') }} сўм</span>
+                    </p>
+                @endif
+            </div>
         </div>
 
         @if($errors->any())
@@ -31,7 +50,13 @@
             </div>
         @endif
 
-        <!-- Мавжуд тақсимотлар -->
+        @if(session('success'))
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        {{-- Existing Distributions --}}
         @if($existingDistributions->count() > 0)
         <div class="bg-white shadow rounded-lg p-6 mb-6">
             <h2 class="text-lg font-bold mb-4">Мавжуд тақсимотлар</h2>
@@ -46,6 +71,7 @@
         </div>
         @endif
 
+        {{-- Distribution Form --}}
         <form action="{{ route('distributions.store') }}" method="POST" class="bg-white shadow-md rounded px-8 pt-6 pb-8">
             @csrf
             <input type="hidden" name="payment_schedule_id" value="{{ $paymentSchedule->id }}">
@@ -65,7 +91,9 @@
                                     class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                                 <option value="">Танланг</option>
                                 @foreach($categories as $key => $label)
-                                    <option value="{{ $key }}">{{ $label }}</option>
+                                    <option value="{{ $key }}" {{ old("distributions.0.category") == $key ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -75,6 +103,7 @@
                                 Сумма (сўм) <span class="text-red-500">*</span>
                             </label>
                             <input type="number" step="0.01" name="distributions[0][allocated_amount]" required
+                                   value="{{ old('distributions.0.allocated_amount') }}"
                                    class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline amount-input"
                                    placeholder="0.00">
                         </div>
@@ -84,7 +113,7 @@
                                 Тақсимлаш санаси <span class="text-red-500">*</span>
                             </label>
                             <input type="date" name="distributions[0][distribution_date]" required
-                                   value="{{ date('Y-m-d') }}"
+                                   value="{{ old('distributions.0.distribution_date', date('Y-m-d')) }}"
                                    class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                         </div>
 
@@ -93,6 +122,7 @@
                                 Изоҳ
                             </label>
                             <input type="text" name="distributions[0][note]"
+                                   value="{{ old('distributions.0.note') }}"
                                    class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                         </div>
                     </div>
@@ -123,8 +153,8 @@
                     Сақлаш
                 </button>
                 <a href="{{ route('lots.show', $paymentSchedule->contract->lot->id) }}"
-                   class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                    Ортга қайтиш
+                   class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                    Бекор қилиш
                 </a>
             </div>
         </form>
@@ -134,6 +164,7 @@
 <script>
 let distributionCount = 1;
 const remainingAmount = {{ $remainingAmount }};
+const distributableAmount = {{ $distributableAmount }};
 const existingTotal = {{ $totalDistributed }};
 
 function addDistribution() {
@@ -144,7 +175,7 @@ function addDistribution() {
         <div class="flex justify-between items-center mb-4">
             <h3 class="font-semibold">Тақсимот ${distributionCount + 1}</h3>
             <button type="button" onclick="removeDistribution(this)"
-                    class="text-red-600 hover:text-red-900">Ўчириш</button>
+                    class="text-red-600 hover:text-red-900 font-semibold">✕ Ўчириш</button>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -212,13 +243,13 @@ function updateTotals() {
         total += value;
     });
 
-    document.getElementById('totalAmount').textContent = total.toLocaleString('uz-UZ') + ' сўм';
+    document.getElementById('totalAmount').textContent = total.toLocaleString('uz-UZ', {minimumFractionDigits: 0, maximumFractionDigits: 0}) + ' сўм';
 
     const remaining = remainingAmount - total;
     const remainingDisplay = document.getElementById('remainingDisplay');
-    remainingDisplay.textContent = remaining.toLocaleString('uz-UZ') + ' сўм';
+    remainingDisplay.textContent = remaining.toLocaleString('uz-UZ', {minimumFractionDigits: 0, maximumFractionDigits: 0}) + ' сўм';
 
-    if (remaining < 0) {
+    if (remaining < -0.01) { // Allow small rounding difference
         remainingDisplay.classList.add('text-red-600');
         remainingDisplay.classList.remove('text-green-600');
     } else {
@@ -227,6 +258,8 @@ function updateTotals() {
     }
 }
 
+// Initialize
 attachAmountListeners();
+updateTotals();
 </script>
 @endsection

@@ -80,180 +80,178 @@ class ContractController extends Controller
         return view('contracts.create', compact('lot', 'suggestedNumber'));
     }
 
-    public function store(Request $request)
-    {
-        // Determine which fields to validate based on payment type
-        $paymentType = $request->input('payment_type');
+  public function store(Request $request)
+{
+    // Determine which fields to validate based on payment type
+    $paymentType = $request->input('payment_type');
 
-        if ($paymentType === 'muddatli') {
-            $validated = $request->validate([
-                'lot_id' => 'required|exists:lots,id',
-                'payment_type' => 'required|in:muddatli,muddatsiz',
-                'contract_number' => 'required|string|max:255',
-                'contract_date' => 'required|date',
-                'contract_amount' => 'required|numeric|min:0',
-                'buyer_name' => 'required|string|max:255',
-                'buyer_phone' => 'nullable|string|max:50',
-                'buyer_inn' => 'nullable|string|max:50',
-                'status' => 'required|in:active,completed,cancelled',
-                'note' => 'nullable|string',
-                'initial_paid_amount' => 'nullable|numeric|min:0',
-                'initial_payment_date' => 'nullable|date',
-            ]);
+    if ($paymentType === 'muddatli') {
+        $validated = $request->validate([
+            'lot_id' => 'required|exists:lots,id',
+            'payment_type' => 'required|in:muddatli,muddatsiz',
+            'contract_number' => 'required|string|max:255',
+            'contract_date' => 'required|date',
+            'contract_amount' => 'required|numeric|min:0',
+            'buyer_name' => 'required|string|max:255',
+            'buyer_phone' => 'nullable|string|max:50',
+            'buyer_inn' => 'nullable|string|max:50',
+            'note' => 'nullable|string',
+            'initial_paid_amount' => 'nullable|numeric|min:0',
+            'initial_payment_date' => 'nullable|date',
+        ]);
 
-            // Additional validation: initial payment can't exceed contract amount
-            if (!empty($validated['initial_paid_amount']) && $validated['initial_paid_amount'] > $validated['contract_amount']) {
-                return back()
-                    ->withInput()
-                    ->withErrors(['initial_paid_amount' => 'Аввал тўланған сумма шартнома суммасидан кўп бўлолмайди']);
-            }
-        } else {
-            // Muddatsiz validation
-            $validated = $request->validate([
-                'lot_id' => 'required|exists:lots,id',
-                'payment_type' => 'required|in:muddatli,muddatsiz',
-                'actual_paid_amount' => 'required|numeric|min:0',
-                'actual_payment_date' => 'required|date',
-                'reference_number' => 'nullable|string|max:255',
-            ]);
-        }
-
-        DB::beginTransaction();
-        try {
-            $lot = Lot::findOrFail($validated['lot_id']);
-
-            // Check if lot already has a contract
-            if ($lot->contract_id) {
-                return back()
-                    ->withInput()
-                    ->with('error', 'Бу лот учун шартнома аллақачон мавжуд');
-            }
-
-            if ($validated['payment_type'] === 'muddatli') {
-                // ============ MUDDATLI PAYMENT ============
-                $contract = Contract::create([
-                    'lot_id' => $lot->id,
-                    'contract_number' => $validated['contract_number'],
-                    'contract_date' => $validated['contract_date'],
-                    'contract_amount' => $validated['contract_amount'],
-                    'buyer_name' => $validated['buyer_name'],
-                    'buyer_phone' => $validated['buyer_phone'] ?? null,
-                    'buyer_inn' => $validated['buyer_inn'] ?? null,
-                    'payment_type' => 'muddatli',
-                    'status' => $validated['status'] ?? 'active',
-                    'note' => $validated['note'] ?? null,
-                ]);
-
-                Log::info('Muddatli contract created', [
-                    'contract_id' => $contract->id,
-                    'lot_id' => $lot->id,
-                    'contract_number' => $contract->contract_number
-                ]);
-
-                // Update lot
-                $lot->payment_type = 'muddatli';
-                $lot->contract_id = $contract->id;
-
-                // Handle initial payment if provided
-                if (!empty($validated['initial_paid_amount']) && $validated['initial_paid_amount'] > 0) {
-                    $lot->paid_amount = $validated['initial_paid_amount'];
-                    $lot->transferred_amount = $validated['initial_paid_amount'];
-
-                    Log::info('Initial payment recorded for muddatli contract', [
-                        'lot_id' => $lot->id,
-                        'initial_paid_amount' => $validated['initial_paid_amount']
-                    ]);
-                }
-
-                $lot->save();
-                $lot->autoCalculate();
-                $lot->save();
-
-                $successMessage = 'Шартнома муваффақиятли яратилди';
-            } else {
-                // ============ MUDDATSIZ PAYMENT ============
-
-                // Update lot first
-                $lot->payment_type = 'muddatsiz';
-                $lot->paid_amount = $validated['actual_paid_amount'];
-                $lot->transferred_amount = $validated['actual_paid_amount'];
-                $lot->save();
-                $lot->autoCalculate();
-                $lot->save();
-
-                Log::info('Muddatsiz payment recorded on lot', [
-                    'lot_id' => $lot->id,
-                    'paid_amount' => $validated['actual_paid_amount']
-                ]);
-
-                // Create a "virtual" contract for muddatsiz
-                $contract = Contract::create([
-                    'lot_id' => $lot->id,
-                    'contract_number' => 'MUDDATSIZ-' . $lot->lot_number . '-' . now()->format('Ymd'),
-                    'contract_date' => $validated['actual_payment_date'],
-                    'contract_amount' => $validated['actual_paid_amount'],
-                    'buyer_name' => $lot->winner_name,
-                    'buyer_phone' => $lot->winner_phone,
-                    'payment_type' => 'muddatsiz',
-                    'status' => 'completed',
-                    'note' => 'Муддатсиз тўлов - Автоматик яратилган',
-                ]);
-
-                Log::info('Virtual contract created for muddatsiz', [
-                    'contract_id' => $contract->id,
-                    'contract_number' => $contract->contract_number
-                ]);
-
-                $lot->contract_id = $contract->id;
-                $lot->save();
-
-                // ✅ CREATE AUTOMATIC PAYMENT SCHEDULE FOR MUDDATSIZ
-                $paymentSchedule = PaymentSchedule::create([
-                    'contract_id' => $contract->id,
-                    'payment_number' => 1,
-                    'planned_date' => $validated['actual_payment_date'],
-                    'planned_amount' => $validated['actual_paid_amount'],
-                    'actual_date' => $validated['actual_payment_date'],
-                    'actual_amount' => $validated['actual_paid_amount'],
-                    'status' => 'paid',
-                    'payment_method' => 'bank_transfer',
-                    'reference_number' => $validated['reference_number'] ?? null,
-                    'note' => 'Муддатсиз тўлов - Бир марталик тўлов',
-                ]);
-
-                Log::info('Automatic payment schedule created for muddatsiz', [
-                    'payment_schedule_id' => $paymentSchedule->id,
-                    'contract_id' => $contract->id
-                ]);
-
-                $successMessage = 'Муддатсиз тўлов муваффақиятли қайд қилинди';
-            }
-
-            DB::commit();
-
-            Log::info('Contract creation completed successfully', [
-                'lot_id' => $lot->id,
-                'contract_id' => $contract->id,
-                'payment_type' => $validated['payment_type']
-            ]);
-
-            return redirect()
-                ->route('lots.show', $lot)
-                ->with('success', $successMessage);
-        } catch (\Exception $e) {
-            DB::rollback();
-
-            Log::error('Contract creation error', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'lot_id' => $validated['lot_id'] ?? null
-            ]);
-
+        // Additional validation: initial payment can't exceed contract amount
+        if (!empty($validated['initial_paid_amount']) && $validated['initial_paid_amount'] > $validated['contract_amount']) {
             return back()
                 ->withInput()
-                ->with('error', 'Хатолик юз берди: ' . $e->getMessage());
+                ->withErrors(['initial_paid_amount' => 'Аввал тўланған сумма шартнома суммасидан кўп бўлолмайди']);
         }
+
+    } else {
+        // Muddatsiz validation
+        $validated = $request->validate([
+            'lot_id' => 'required|exists:lots,id',
+            'payment_type' => 'required|in:muddatli,muddatsiz',
+            'actual_paid_amount' => 'required|numeric|min:0',
+            'actual_payment_date' => 'required|date',
+            'reference_number' => 'nullable|string|max:255',
+        ]);
     }
+
+    DB::beginTransaction();
+    try {
+        $lot = Lot::findOrFail($validated['lot_id']);
+
+        // Check if lot already has a contract
+        if ($lot->hasContract()) {
+            return back()
+                ->withInput()
+                ->with('error', 'Бу лот учун шартнома аллақачон мавжуд');
+        }
+
+        if ($validated['payment_type'] === 'muddatli') {
+            // ============ MUDDATLI PAYMENT ============
+            $contract = Contract::create([
+                'lot_id' => $lot->id,
+                'contract_number' => $validated['contract_number'],
+                'contract_date' => $validated['contract_date'],
+                'contract_amount' => $validated['contract_amount'],
+                'buyer_name' => $validated['buyer_name'],
+                'buyer_phone' => $validated['buyer_phone'] ?? null,
+                'buyer_inn' => $validated['buyer_inn'] ?? null,
+                'payment_type' => 'muddatli',
+                'status' => $validated['status'] ?? 'active',
+                'note' => $validated['note'] ?? null,
+            ]);
+
+            Log::info('Muddatli contract created', [
+                'contract_id' => $contract->id,
+                'lot_id' => $lot->id,
+                'contract_number' => $contract->contract_number
+            ]);
+
+            // Update lot
+            $lot->payment_type = 'muddatli';
+
+            // Handle initial payment if provided
+            if (!empty($validated['initial_paid_amount']) && $validated['initial_paid_amount'] > 0) {
+                $lot->paid_amount = $validated['initial_paid_amount'];
+                $lot->transferred_amount = $validated['initial_paid_amount'];
+
+                Log::info('Initial payment recorded for muddatli contract', [
+                    'lot_id' => $lot->id,
+                    'initial_paid_amount' => $validated['initial_paid_amount']
+                ]);
+            }
+
+            $lot->save();
+            $lot->autoCalculate();
+            $lot->save();
+
+            $successMessage = 'Шартнома муваффақиятли яратилди';
+
+        } else {
+            // ============ MUDDATSIZ PAYMENT ============
+
+            // Update lot first
+            $lot->payment_type = 'muddatsiz';
+            $lot->paid_amount = $validated['actual_paid_amount'];
+            $lot->transferred_amount = $validated['actual_paid_amount'];
+            $lot->save();
+            $lot->autoCalculate();
+            $lot->save();
+
+            Log::info('Muddatsiz payment recorded on lot', [
+                'lot_id' => $lot->id,
+                'paid_amount' => $validated['actual_paid_amount']
+            ]);
+
+            // Create a "virtual" contract for muddatsiz
+            $contract = Contract::create([
+                'lot_id' => $lot->id,
+                'contract_number' => 'MUDDATSIZ-' . $lot->lot_number . '-' . now()->format('Ymd'),
+                'contract_date' => $validated['actual_payment_date'],
+                'contract_amount' => $validated['actual_paid_amount'],
+                'buyer_name' => $lot->winner_name,
+                'buyer_phone' => $lot->winner_phone,
+                'payment_type' => 'muddatsiz',
+                'status' => 'completed',
+                'note' => 'Муддатсиз тўлов - Автоматик яратилган',
+            ]);
+
+            Log::info('Virtual contract created for muddatsiz', [
+                'contract_id' => $contract->id,
+                'contract_number' => $contract->contract_number
+            ]);
+
+            // ✅ CREATE AUTOMATIC PAYMENT SCHEDULE FOR MUDDATSIZ
+            $paymentSchedule = PaymentSchedule::create([
+                'contract_id' => $contract->id,
+                'payment_number' => 1,
+                'planned_date' => $validated['actual_payment_date'],
+                'planned_amount' => $validated['actual_paid_amount'],
+                'actual_date' => $validated['actual_payment_date'],
+                'actual_amount' => $validated['actual_paid_amount'],
+                'status' => 'paid',
+                'payment_method' => 'bank_transfer',
+                'reference_number' => $validated['reference_number'] ?? null,
+                'note' => 'Муддатсиз тўлов - Бир марталик тўлов',
+            ]);
+
+            Log::info('Automatic payment schedule created for muddatsiz', [
+                'payment_schedule_id' => $paymentSchedule->id,
+                'contract_id' => $contract->id
+            ]);
+
+            $successMessage = 'Муддатсиз тўлов муваффақиятли қайд қилинди';
+        }
+
+        DB::commit();
+
+        Log::info('Contract creation completed successfully', [
+            'lot_id' => $lot->id,
+            'contract_id' => $contract->id,
+            'payment_type' => $validated['payment_type']
+        ]);
+
+        return redirect()
+            ->route('lots.show', $lot)
+            ->with('success', $successMessage);
+
+    } catch (\Exception $e) {
+        DB::rollback();
+
+        Log::error('Contract creation error', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'lot_id' => $validated['lot_id'] ?? null
+        ]);
+
+        return back()
+            ->withInput()
+            ->with('error', 'Хатолик юз берди: ' . $e->getMessage());
+    }
+}
 
     public function addScheduleItem(Request $request, Contract $contract)
     {

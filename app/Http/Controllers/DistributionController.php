@@ -90,7 +90,7 @@ class DistributionController extends Controller
         $paymentSchedule = PaymentSchedule::with('contract.lot')->findOrFail($validated['payment_schedule_id']);
         $lot = $paymentSchedule->contract->lot;
 
-        // ✅ CRITICAL: Use distributable_amount from lot (handles discount)
+        // ✅ Use distributable_amount from lot (already rounded)
         $distributableAmount = $lot->distributable_amount;
 
         // Check remaining amount
@@ -106,8 +106,8 @@ class DistributionController extends Controller
             'grand_total' => $grandTotal,
         ]);
 
-        // Validate against distributable amount (not paid amount)
-        if ($grandTotal > $distributableAmount) {
+        // ✅ FIX: Allow rounding difference up to 1 som
+        if ($grandTotal > ($distributableAmount + 1)) {
             return back()->withInput()
                 ->with('error', sprintf(
                     'Тақсимот суммаси (%s сўм) тақсимланадиган суммадан (%s сўм) ошиб кетди',
@@ -140,7 +140,6 @@ class DistributionController extends Controller
 
             return redirect()->route('lots.show', $lot)
                 ->with('success', 'Тақсимот муваффақиятли қўшилди');
-
         } catch (\Exception $e) {
             DB::rollBack();
 

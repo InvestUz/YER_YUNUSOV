@@ -201,9 +201,7 @@ class Lot extends Model
      */
     public function getDistributableAmountAttribute()
     {
-        // Return 100% of incoming amount
-        // (for discount-qualified lots, incoming is already 80% after 20% discount)
-        return $this->incoming_amount;
+        return round($this->incoming_amount, 0);
     }
 
     /**
@@ -217,7 +215,7 @@ class Lot extends Model
             $totalDistributed = $this->contract->distributions->sum('allocated_amount');
         }
 
-        return max(0, $this->distributable_amount - $totalDistributed);
+        return round($this->distributable_amount - $totalDistributed, 0);
     }
 
     /**
