@@ -175,16 +175,7 @@
                         </div>
                     </div>
 
-                    {{-- Field: Бошланғич нархи --}}
-                    <div>
-                        <label class="block text-sm font-bold text-gray-900 mb-2">
-                            Бошланғич нархи (сўм) <span class="text-red-600">*</span>
-                        </label>
-                        <input type="number" step="0.01" name="initial_price" id="initial_price" required
-                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition"
-                            value="{{ old('initial_price') }}"
-                            placeholder="250000000.00">
-                    </div>
+                 
 
                     {{-- Fields: Зона, Бош режа, Янги Ўзбекистон (Grid) --}}
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -319,13 +310,6 @@
                             </select>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-bold text-gray-900 mb-2">Лот холати</label>
-                            <input type="text" name="lot_status" id="lot_status"
-                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition"
-                                value="{{ old('lot_status', 'active') }}"
-                                placeholder="active">
-                        </div>
                     </div>
 
                 </div>
@@ -361,24 +345,7 @@
                             placeholder="Yoqilg'i quyish shoxobchasi">
                     </div>
 
-                    {{-- Fields: Қурилиш майдони, Инвестиция суммаси (Grid) --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-bold text-gray-900 mb-2">Қурилиш майдони (м²)</label>
-                            <input type="number" step="0.01" name="construction_area" id="construction_area"
-                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-600 font-medium transition"
-                                value="{{ old('construction_area') }}"
-                                placeholder="500.00">
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-bold text-gray-900 mb-2">Инвестиция суммаси (сўм)</label>
-                            <input type="number" step="0.01" name="investment_amount" id="investment_amount"
-                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-600 font-medium transition"
-                                value="{{ old('investment_amount') }}"
-                                placeholder="1000000000.00">
-                        </div>
-                    </div>
+                
 
                     {{-- Fields: Latitude, Longitude (Grid) --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -554,7 +521,7 @@ function saveSection(sectionNumber) {
     
     // Validate required fields in section 1
     if (sectionNumber === 1) {
-        const requiredFields = ['lot_number', 'tuman_id', 'address', 'unique_number', 'land_area', 'initial_price'];
+        const requiredFields = ['lot_number', 'tuman_id', 'address', 'unique_number', 'land_area'];
         requiredFields.forEach(fieldName => {
             const field = document.getElementById(fieldName);
             if (!field || !field.value.trim()) {

@@ -364,31 +364,32 @@ class LotController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            // Section 1: Basic Information
             'lot_number' => 'required|string|unique:lots,lot_number',
             'tuman_id' => 'required|exists:tumans,id',
             'mahalla_id' => 'nullable|exists:mahallas,id',
             'address' => 'required|string',
             'unique_number' => 'required|string',
             'land_area' => 'required|numeric|min:0',
-            'initial_price' => 'required|numeric|min:0',
             'zone' => 'nullable|string',
             'master_plan_zone' => 'nullable|string',
             'yangi_uzbekiston' => 'boolean',
+
+            // Section 2: Auction Information
+            'auction_date' => 'nullable|date',
+            'sold_price' => 'nullable|numeric',
+            'payment_type' => 'nullable|in:muddatli,muddatli_emas',
+            'winner_name' => 'nullable|string',
+            'winner_type' => 'nullable|string',
+            'winner_phone' => 'nullable|string',
+            'basis' => 'nullable|string',
+            'auction_type' => 'nullable|in:ochiq,yopiq',
+
+            // Section 3: Additional Information
             'object_type' => 'nullable|string',
-            'construction_area' => 'nullable|numeric',
-            'investment_amount' => 'nullable|numeric',
             'latitude' => 'nullable|string',
             'longitude' => 'nullable|string',
             'location_url' => 'nullable|url',
-            'auction_date' => 'nullable|date',
-            'sold_price' => 'nullable|numeric',
-            'winner_type' => 'nullable|string',
-            'winner_name' => 'nullable|string',
-            'winner_phone' => 'nullable|string',
-            'payment_type' => 'nullable|in:muddatli,muddatli_emas',
-            'basis' => 'nullable|string',
-            'auction_type' => 'nullable|in:ochiq,yopiq',
-            'lot_status' => 'nullable|string',
         ]);
 
         // Set default values
@@ -398,6 +399,7 @@ class LotController extends Controller
         $validated['transferred_amount'] = 0;
         $validated['discount'] = 0;
 
+        // Create the lot
         $lot = Lot::create($validated);
 
         // Auto-calculate fields if sold_price exists
