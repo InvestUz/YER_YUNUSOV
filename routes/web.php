@@ -39,10 +39,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/mahallas/{tumanId}', [MahallaController::class, 'getByTuman']);
     Route::post('/mahallas', [MahallaController::class, 'store']);
 
+    // Contract routes
     Route::resource('contracts', ContractController::class);
     Route::post('/contracts/{contract}/generate-schedule', [ContractController::class, 'generateSchedule'])
         ->name('contracts.generate-schedule');
-
     Route::post('/contracts/{contract}/add-schedule-item', [ContractController::class, 'addScheduleItem'])
         ->name('contracts.add-schedule-item');
 
@@ -59,7 +59,6 @@ Route::middleware('auth')->group(function () {
     // Payment recording
     Route::post('/payment-schedules/{schedule}/record-payment', [ContractController::class, 'recordPayment'])
         ->name('payment-schedules.record-payment');
-
     Route::put('/payment-schedules/{schedule}', [PaymentScheduleController::class, 'update'])
         ->name('payment-schedules.update');
 
@@ -132,7 +131,7 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-//testparserstart
+// Test parser routes
 Route::get('/parser', [ParserController::class, 'index'])->name('parser.index');
 Route::get('/parser/parse-lots', [ParserController::class, 'parseLots'])->name('parser.parse');
 Route::get('/parser/parse-single', [ParserController::class, 'parseSingleLot'])->name('parser.single');

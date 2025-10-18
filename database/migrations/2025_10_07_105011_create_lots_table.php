@@ -35,7 +35,7 @@ return new class extends Migration
             $table->string('winner_type')->nullable();
             $table->string('winner_name')->nullable();
             $table->string('winner_phone')->nullable();
-            $table->enum('payment_type', ['muddatli', 'muddatli_emas'])->nullable();
+            $table->enum('payment_type', ['muddatli', 'muddatli_emas', 'muddatsiz'])->nullable();
             $table->string('basis')->nullable();
             $table->enum('auction_type', ['ochiq', 'yopiq'])->nullable();
             $table->string('lot_status')->default('active');
@@ -49,7 +49,7 @@ return new class extends Migration
             $table->decimal('incoming_amount', 20, 2)->default(0);
             $table->decimal('davaktiv_amount', 20, 2)->default(0);
             $table->decimal('auction_expenses', 20, 2)->default(0);
-             $table->unsignedInteger('views_count')->default(0);
+            $table->unsignedInteger('views_count')->default(0);
             $table->unsignedInteger('likes_count')->default(0);
             $table->timestamps();
             $table->softDeletes();

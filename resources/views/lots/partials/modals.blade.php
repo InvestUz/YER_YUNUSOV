@@ -145,18 +145,6 @@
                     <div class="text-sm" id="differenceMessage"></div>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium mb-2 text-gray-700">Тўлов усули</label>
-                    <select name="payment_method"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        <option value="">Танланг...</option>
-                        <option value="bank_transfer">Банк ўтказмаси</option>
-                        <option value="cash">Нақд пул</option>
-                        <option value="card">Пластик карта</option>
-                        <option value="check">Чек</option>
-                        <option value="other">Бошқа</option>
-                    </select>
-                </div>
 
                 <div>
                     <label class="block text-sm font-medium mb-2 text-gray-700">Тўлов ҳужжат рақами</label>

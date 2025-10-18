@@ -1,5 +1,4 @@
 <?php
-// app/Models/Lot.php
 
 namespace App\Models;
 
@@ -147,7 +146,6 @@ class Lot extends Model
     }
 
     // Get map embed URL
-
     public function getMapEmbedUrlAttribute()
     {
         $this->extractCoordinatesFromUrl();
@@ -164,7 +162,6 @@ class Lot extends Model
             ($lng + 0.005) . "%2C" . ($lat + 0.005) .
             "&layer=mapnik&marker={$lat}%2C{$lng}";
     }
-
 
     // Get primary image or default
     public function getPrimaryImageUrlAttribute()
@@ -184,7 +181,6 @@ class Lot extends Model
         return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"%3E%3Crect width="800" height="600" fill="%23e5e7eb"/%3E%3Cg transform="translate(400,300)"%3E%3Cpath d="M-80-60h160v120h-160z" fill="%239ca3af" opacity="0.3"/%3E%3Ccircle cx="-40" cy="-20" r="15" fill="%239ca3af" opacity="0.5"/%3E%3Cpath d="M-80 60l60-80 40 50 60-80 60 110h-220z" fill="%239ca3af" opacity="0.4"/%3E%3C/g%3E%3Ctext x="400" y="340" text-anchor="middle" font-family="Arial" font-size="16" fill="%236b7280"%3EРасм мавжуд эмас%3C/text%3E%3C/svg%3E';
     }
 
-
     // Get all images or default
     public function getAllImagesAttribute()
     {
@@ -201,6 +197,7 @@ class Lot extends Model
             return $img;
         });
     }
+
     // Increment views
     public function incrementViews()
     {
@@ -261,7 +258,7 @@ class Lot extends Model
 
     public function scopeOneTimePayment($query)
     {
-        return $query->where('payment_type', 'muddatli_emas');
+        return $query->where('payment_type', 'muddatsiz');
     }
 
     public function views()

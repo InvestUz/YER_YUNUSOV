@@ -13,25 +13,29 @@ class Contract extends Model
         'lot_id',
         'contract_number',
         'contract_date',
-        'payment_type',
         'contract_amount',
+        'initial_paid_amount',
+        'initial_payment_date',
+        'payment_type',
+        'buyer_name',
+        'buyer_phone',
+        'buyer_inn',
+        'status',
+        'note',
         'paid_amount',
         'remaining_amount',
-        'note',
-        'status',
         'created_by',
-        'updated_by'
+        'updated_by',
     ];
 
     protected $casts = [
         'contract_date' => 'date',
+        'initial_payment_date' => 'date',
         'contract_amount' => 'decimal:2',
+        'initial_paid_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'remaining_amount' => 'decimal:2',
     ];
-
-    const PAYMENT_TYPE_INSTALLMENT = 'muddatli';
-    const PAYMENT_TYPE_ONE_TIME = 'muddatsiz';
 
     const STATUS_ACTIVE = 'active';
     const STATUS_COMPLETED = 'completed';
@@ -43,15 +47,14 @@ class Contract extends Model
 
         static::creating(function ($contract) {
             $contract->created_by = auth()->id();
-            $contract->remaining_amount = $contract->contract_amount;
         });
 
         static::updating(function ($contract) {
             $contract->updated_by = auth()->id();
-            $contract->remaining_amount = $contract->contract_amount - $contract->paid_amount;
         });
     }
 
+    // Relationships
     public function lot()
     {
         return $this->belongsTo(Lot::class);
@@ -59,7 +62,7 @@ class Contract extends Model
 
     public function paymentSchedules()
     {
-        return $this->hasMany(PaymentSchedule::class);
+        return $this->hasMany(PaymentSchedule::class)->orderBy('payment_number');
     }
 
     public function additionalAgreements()
@@ -82,25 +85,16 @@ class Contract extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
-    public function isMuddatli()
-    {
-        return $this->payment_type === self::PAYMENT_TYPE_INSTALLMENT;
-    }
-
-    public function isMuddatsiz()
-    {
-        return $this->payment_type === self::PAYMENT_TYPE_ONE_TIME;
-    }
-
+    // Accessors
     public function getPaymentPercentageAttribute()
     {
         if ($this->contract_amount == 0) return 0;
         return ($this->paid_amount / $this->contract_amount) * 100;
     }
 
-    public function isCompleted()
+    public function getRemainingAmountAttribute()
     {
-        return $this->paid_amount >= $this->contract_amount;
+        return $this->contract_amount - $this->paid_amount;
     }
 
     public function getStatusLabelAttribute()
@@ -112,42 +106,67 @@ class Contract extends Model
         ][$this->status] ?? 'Номаълум';
     }
 
-    public function getPaymentTypeLabelAttribute()
+    public function getStatusColorAttribute()
     {
         return [
-            self::PAYMENT_TYPE_INSTALLMENT => 'Муддатли',
-            self::PAYMENT_TYPE_ONE_TIME => 'Муддатсиз',
-        ][$this->payment_type] ?? 'Номаълум';
+            self::STATUS_ACTIVE => 'blue',
+            self::STATUS_COMPLETED => 'green',
+            self::STATUS_CANCELLED => 'red',
+        ][$this->status] ?? 'gray';
     }
 
+    // Methods
+    public function updatePaidAmount()
+    {
+        $totalPaid = $this->paymentSchedules()->sum('actual_amount');
+        $this->paid_amount = $totalPaid;
+        $this->remaining_amount = $this->contract_amount - $totalPaid;
+
+        if ($this->remaining_amount <= 0 && $this->status !== self::STATUS_CANCELLED) {
+            $this->status = self::STATUS_COMPLETED;
+        }
+
+        $this->save();
+    }
+
+    public function isCompleted()
+    {
+        return $this->status === self::STATUS_COMPLETED;
+    }
+
+    public function isCancelled()
+    {
+        return $this->status === self::STATUS_CANCELLED;
+    }
+
+    public function isActive()
+    {
+        return $this->status === self::STATUS_ACTIVE;
+    }
+
+    // Scopes
     public function scopeActive($query)
     {
         return $query->where('status', self::STATUS_ACTIVE);
     }
 
-    public function scopeMuddatli($query)
+    public function scopeCompleted($query)
     {
-        return $query->where('payment_type', self::PAYMENT_TYPE_INSTALLMENT);
+        return $query->where('status', self::STATUS_COMPLETED);
     }
 
-    public function scopeMuddatsiz($query)
+    public function scopeCancelled($query)
     {
-        return $query->where('payment_type', self::PAYMENT_TYPE_ONE_TIME);
+        return $query->where('status', self::STATUS_CANCELLED);
     }
 
-
-    public function getPaymentTypeTextAttribute()
+    public function scopeInstallment($query)
     {
-        return $this->payment_type === 'muddatli' ? 'Бўлиб тўлаш' : 'Бир йўла';
+        return $query->where('payment_type', 'muddatli');
     }
 
-    public function needsPaymentSchedule()
+    public function scopeOneTime($query)
     {
-        return $this->payment_type === 'muddatli';
-    }
-
-    public function isOneTimePayment()
-    {
-        return $this->payment_type === 'muddatsiz';
+        return $query->where('payment_type', 'muddatsiz');
     }
 }
