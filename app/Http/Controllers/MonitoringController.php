@@ -406,8 +406,9 @@ class MonitoringController extends Controller
                 $lotsQuery->whereExists(function ($q) {
                     $q->selectRaw('1')
                         ->from('payment_schedules')
-                        ->whereColumn('payment_schedules.lot_id', 'lots.id')
-                        ->groupBy('payment_schedules.lot_id')
+                        ->join('contracts', 'contracts.id', '=', 'payment_schedules.contract_id')
+                        ->whereColumn('contracts.lot_id', 'lots.id')
+                        ->groupBy('contracts.lot_id')
                         ->havingRaw('SUM(payment_schedules.actual_amount) >= lots.sold_price');
                 });
                 break;
@@ -418,8 +419,9 @@ class MonitoringController extends Controller
                     ->whereExists(function ($q) {
                         $q->selectRaw('1')
                             ->from('payment_schedules')
-                            ->whereColumn('payment_schedules.lot_id', 'lots.id')
-                            ->groupBy('payment_schedules.lot_id')
+                            ->join('contracts', 'contracts.id', '=', 'payment_schedules.contract_id')
+                            ->whereColumn('contracts.lot_id', 'lots.id')
+                            ->groupBy('contracts.lot_id')
                             ->havingRaw('SUM(payment_schedules.actual_amount) < lots.sold_price');
                     });
                 break;
@@ -429,8 +431,9 @@ class MonitoringController extends Controller
                 $lotsQuery->whereExists(function ($q) use ($currentDate) {
                     $q->selectRaw('1')
                         ->from('payment_schedules')
-                        ->whereColumn('payment_schedules.lot_id', 'lots.id')
-                        ->where('payment_schedules.payment_date', '<', $currentDate)
+                        ->join('contracts', 'contracts.id', '=', 'payment_schedules.contract_id')
+                        ->whereColumn('contracts.lot_id', 'lots.id')
+                        ->where('payment_schedules.deadline_date', '<', $currentDate)
                         ->whereRaw('payment_schedules.actual_amount < payment_schedules.planned_amount');
                 });
                 break;
@@ -445,7 +448,7 @@ class MonitoringController extends Controller
         $statsQuery = clone $lotsQuery;
 
         // Get lots with pagination
-        $lots = $lotsQuery->with(['tuman', 'mahalla', 'paymentSchedules'])
+        $lots = $lotsQuery->with(['tuman', 'mahalla', 'contract.paymentSchedules'])
             ->orderBy('auction_date', 'desc')
             ->paginate(50);
 
@@ -462,8 +465,10 @@ class MonitoringController extends Controller
             $lotIds = $statsQuery->pluck('id');
 
             if ($lotIds->isNotEmpty()) {
-                $paymentStats = \App\Models\PaymentSchedule::whereIn('lot_id', $lotIds)
-                    ->where('payment_date', '<=', $currentDate)
+                $paymentStats = \App\Models\PaymentSchedule::whereHas('contract', function ($q) use ($lotIds) {
+                    $q->whereIn('lot_id', $lotIds);
+                })
+                    ->where('deadline_date', '<=', $currentDate)
                     ->selectRaw('SUM(planned_amount) as total_planned, SUM(actual_amount) as total_actual')
                     ->first();
 
