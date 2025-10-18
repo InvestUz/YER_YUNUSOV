@@ -85,7 +85,7 @@
             <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            Шартнома яратиш
+            Тўлов турини яратиш
         </h3>
         <p class="text-xs text-yellow-700 mt-1">Тизимда шартнома мавжуд эмас</p>
     </div>
@@ -96,9 +96,7 @@
 
         {{-- STEP 1: Payment Type Selection --}}
         <div id="paymentTypeStep">
-            <label class="block text-sm font-bold mb-3 text-gray-900">
-                1. Тўлов турини танланг <span class="text-red-500">*</span>
-            </label>
+
 
             <div class="space-y-3">
                 {{-- Muddatli Option --}}
@@ -112,7 +110,7 @@
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                             </svg>
                         </div>
-                        <p class="text-xs text-gray-600">Бўлиб тўлаш - График қўлда қўшилади</p>
+                        <p class="text-xs text-gray-600">Бўлиб тўлаш</p>
                     </div>
                 </label>
 
@@ -127,7 +125,7 @@
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                             </svg>
                         </div>
-                        <p class="text-xs text-gray-600">Бир йўла тўлаш - Битта тўлов</p>
+                        <p class="text-xs text-gray-600">Бир йўла тўлаш </p>
                     </div>
                 </label>
             </div>
