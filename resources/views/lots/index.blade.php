@@ -230,7 +230,7 @@
                                 @if($lot->payment_type === 'muddatli')
                                 <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded border border-gray-300">Муддатли</span>
                                 @else
-                                <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded border border-gray-300">Бир марта</span>
+                                <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded border border-gray-300">Муддатсиз</span>
                                 @endif
                             </td>
                             <td class="py-2.5 px-3 text-center border-r border-gray-200">
@@ -378,7 +378,7 @@
                                 <option value="muddatli"
                                     {{ request('payment_type') === 'muddatli' ? 'selected' : '' }}>Муддатли</option>
                                 <option value="muddatli_emas"
-                                    {{ request('payment_type') === 'muddatli_emas' ? 'selected' : '' }}>Бир марта
+                                    {{ request('payment_type') === 'muddatli_emas' ? 'selected' : '' }}>Муддатсиз
                                 </option>
                             </select>
                         </div>
