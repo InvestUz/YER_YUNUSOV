@@ -762,15 +762,15 @@ mahallaSearch.addEventListener('input', function() {
     }
 
     const filtered = mahallas.filter(m => 
-        m && m.name_uz && m.name_uz.toLowerCase().includes(searchTerm)
+        m && m.name && m.name.toLowerCase().includes(searchTerm)
     );
 
     if (filtered.length === 0) {
         mahallaDropdown.innerHTML = '<div class="p-2 text-sm text-gray-600 text-center">Натижа топилмади</div>';
     } else {
         mahallaDropdown.innerHTML = filtered.map(m => `
-            <div class="p-3 hover:bg-blue-50 cursor-pointer border-b mahalla-option" data-id="${m.id}" data-name="${m.name_uz}">
-                ${m.name_uz}
+            <div class="p-3 hover:bg-blue-50 cursor-pointer border-b mahalla-option" data-id="${m.id}" data-name="${m.name}">
+                ${m.name}
             </div>
         `).join('');
         
@@ -847,7 +847,7 @@ saveMahallaBtn.addEventListener('click', function() {
             mahallas.push(data.mahalla);
             
             // Set as selected
-            mahallaSearch.value = data.mahalla.name_uz;
+            mahallaSearch.value = data.mahalla.name;
             mahallaIdInput.value = data.mahalla.id;
             
             // Close modal
