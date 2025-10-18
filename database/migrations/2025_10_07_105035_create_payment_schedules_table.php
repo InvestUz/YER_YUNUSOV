@@ -20,7 +20,7 @@ return new class extends Migration
 
             // Planned (График)
             $table->date('planned_date'); // Режа бўйича тўлов санаси
-            $table->date('deadline_date'); // Охирги тўлов муддати
+            $table->date('deadline_date')->nullable(); // Охирги тўлов муддати
             $table->decimal('planned_amount', 15, 2); // Режа бўйича сумма
 
             // Actual (Амал)

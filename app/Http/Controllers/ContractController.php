@@ -258,7 +258,6 @@ class ContractController extends Controller
         $validated = $request->validate([
             'planned_date' => 'required|date',
             'planned_amount' => 'required|numeric|min:0',
-            'deadline_date' => 'nullable|date',
         ]);
 
         DB::beginTransaction();

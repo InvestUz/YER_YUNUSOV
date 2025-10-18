@@ -88,6 +88,9 @@ Route::middleware('auth')->group(function () {
     // Export route must be before resource routes to avoid conflicts
     Route::get('/lots/export', [LotController::class, 'export'])->name('lots.export');
 
+    Route::post('/lots/{lot}/update-status', [LotController::class, 'updateStatus'])
+        ->name('lots.updateStatus');
+
     // Resource routes
     Route::resource('lots', LotController::class);
     Route::post('/lots/{lot}/toggle-like', [LotController::class, 'toggleLike'])->name('lots.toggleLike');

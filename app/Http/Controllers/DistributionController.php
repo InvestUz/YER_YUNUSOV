@@ -34,8 +34,15 @@ class DistributionController extends Controller
                 ->with('error', 'Тўлов суммаси киритилмаган');
         }
 
-        // ✅ CRITICAL: Use distributable_amount from lot (handles discount automatically)
-        $distributableAmount = $lot->distributable_amount;
+        // ✅ FIXED: For muddatli, use payment schedule amount directly
+        // For muddatsiz, use lot's distributable_amount (which handles discount)
+        if ($lot->payment_type === 'muddatli') {
+            // For installment payments, distribute the actual payment amount
+            $distributableAmount = $paymentSchedule->actual_amount;
+        } else {
+            // For one-time payments, use lot's distributable_amount (handles 20% discount if applicable)
+            $distributableAmount = $lot->distributable_amount;
+        }
 
         // Get existing distributions for this payment schedule
         $existingDistributions = Distribution::where('payment_schedule_id', $paymentScheduleId)->get();
@@ -45,9 +52,9 @@ class DistributionController extends Controller
         // Distribution categories
         $categories = Distribution::getCategories();
 
-        // Discount information
+        // Discount information (only relevant for muddatsiz)
         $discountInfo = [
-            'qualifies' => $lot->qualifiesForDiscount(),
+            'qualifies' => $lot->payment_type !== 'muddatli' && $lot->qualifiesForDiscount(),
             'paid_amount' => $lot->paid_amount,
             'discount' => $lot->discount,
             'incoming_amount' => $lot->incoming_amount,
@@ -57,6 +64,8 @@ class DistributionController extends Controller
         Log::info('Distribution create view', [
             'lot_id' => $lot->id,
             'payment_schedule_id' => $paymentScheduleId,
+            'payment_type' => $lot->payment_type,
+            'payment_actual_amount' => $paymentSchedule->actual_amount,
             'paid_amount' => $lot->paid_amount,
             'discount' => $lot->discount,
             'distributable_amount' => $distributableAmount,
@@ -90,8 +99,14 @@ class DistributionController extends Controller
         $paymentSchedule = PaymentSchedule::with('contract.lot')->findOrFail($validated['payment_schedule_id']);
         $lot = $paymentSchedule->contract->lot;
 
-        // ✅ Use distributable_amount from lot (already rounded)
-        $distributableAmount = $lot->distributable_amount;
+        // ✅ FIXED: Calculate distributable amount based on payment type
+        if ($lot->payment_type === 'muddatli') {
+            // For installment payments, distribute the actual payment amount
+            $distributableAmount = $paymentSchedule->actual_amount;
+        } else {
+            // For one-time payments, use lot's distributable_amount (handles discount)
+            $distributableAmount = $lot->distributable_amount;
+        }
 
         // Check remaining amount
         $existingTotal = Distribution::where('payment_schedule_id', $paymentSchedule->id)
@@ -100,13 +115,14 @@ class DistributionController extends Controller
         $grandTotal = $existingTotal + $newTotal;
 
         Log::info('Distribution validation', [
+            'payment_type' => $lot->payment_type,
             'distributable_amount' => $distributableAmount,
             'existing_total' => $existingTotal,
             'new_total' => $newTotal,
             'grand_total' => $grandTotal,
         ]);
 
-        // ✅ FIX: Allow rounding difference up to 1 som
+        // ✅ Allow rounding difference up to 1 som
         if ($grandTotal > ($distributableAmount + 1)) {
             return back()->withInput()
                 ->with('error', sprintf(
@@ -158,8 +174,12 @@ class DistributionController extends Controller
         $paymentSchedule = $distribution->paymentSchedule;
         $lot = $paymentSchedule->contract->lot;
 
-        // ✅ Use distributable amount from lot
-        $distributableAmount = $lot->distributable_amount;
+        // ✅ FIXED: Calculate distributable amount based on payment type
+        if ($lot->payment_type === 'muddatli') {
+            $distributableAmount = $paymentSchedule->actual_amount;
+        } else {
+            $distributableAmount = $lot->distributable_amount;
+        }
 
         // Calculate available amount
         $totalDistributed = Distribution::where('payment_schedule_id', $distribution->payment_schedule_id)
@@ -196,8 +216,12 @@ class DistributionController extends Controller
         $paymentSchedule = $distribution->paymentSchedule;
         $lot = $paymentSchedule->contract->lot;
 
-        // ✅ Use distributable amount from lot
-        $distributableAmount = $lot->distributable_amount;
+        // ✅ FIXED: Calculate distributable amount based on payment type
+        if ($lot->payment_type === 'muddatli') {
+            $distributableAmount = $paymentSchedule->actual_amount;
+        } else {
+            $distributableAmount = $lot->distributable_amount;
+        }
 
         // Validate amount doesn't exceed distributable amount
         $otherDistributions = Distribution::where('payment_schedule_id', $distribution->payment_schedule_id)
