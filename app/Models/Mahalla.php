@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Mahalla extends Model
 {
-    protected $fillable = ['tuman_id', 'name', 'name_ru'];
+    protected $fillable = ['tuman_id', 'name', 'name_ru','creator_id','updater_id'];
 
     public function tuman()
     {

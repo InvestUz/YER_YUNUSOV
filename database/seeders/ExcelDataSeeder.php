@@ -7,8 +7,6 @@ use App\Models\Region;
 use App\Models\Tuman;
 use App\Models\Mahalla;
 use App\Models\Lot;
-use App\Models\Distribution;
-use App\Models\PaymentSchedule;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -35,8 +33,6 @@ class ExcelDataSeeder extends Seeder
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
         // Clear existing data
-        PaymentSchedule::truncate();
-        Distribution::truncate();
         Lot::truncate();
         Mahalla::truncate();
         User::truncate();
@@ -99,7 +95,7 @@ class ExcelDataSeeder extends Seeder
             ]);
 
             $this->tumanMap[$nameUz] = $tuman->id;
-            $this->stats['tumans'][$nameUz] = 0; // Initialize counter
+            $this->stats['tumans'][$nameUz] = 0;
         }
 
         $this->command->info("✓ Created " . count($tumanNames) . " districts");
@@ -204,11 +200,10 @@ class ExcelDataSeeder extends Seeder
         // Count lots per tuman
         $this->stats['tumans'][$tumanName] = ($this->stats['tumans'][$tumanName] ?? 0) + 1;
 
-        // Get FULL ADDRESS from column 3 (this is the address, NOT mahalla name)
+        // Get FULL ADDRESS from column 3
         $fullAddress = trim($row[3]);
 
         // Extract mahalla name from address
-        // Pattern: "SomeName MFY" or "SomeName MFҲ" or just the address
         $mahallaName = $this->extractMahallaName($fullAddress);
 
         $mahallaId = null;
@@ -233,7 +228,7 @@ class ExcelDataSeeder extends Seeder
             'lot_number' => $lotNumber,
             'tuman_id' => $tumanId,
             'mahalla_id' => $mahallaId,
-            'address' => $fullAddress, // Store full address here
+            'address' => $fullAddress,
             'unique_number' => $row[4] ?? null,
             'zone' => $row[5] ?? null,
             'latitude' => $row[6] ?? null,
@@ -274,12 +269,6 @@ class ExcelDataSeeder extends Seeder
             $lot->save();
         }
 
-        // Import distributions
-        $this->importDistributions($lot, $row);
-
-        // Import payment schedules
-        $this->importPaymentSchedules($lot, $row);
-
         // Log successful import
         Log::info("Lot imported successfully", [
             'lot_number' => $lotNumber,
@@ -307,175 +296,9 @@ class ExcelDataSeeder extends Seeder
         }
 
         // Pattern 2: Just return the address as mahalla name
-        // This ensures we capture all unique locations
         return $address;
     }
 
-    private function importDistributions($lot, $row)
-    {
-        // Check if lot has a contract first
-        if (!$lot->contract) {
-            // Create a contract automatically if distributions exist
-            $hasDistributions = false;
-            $categories = [
-                'local_budget' => [36, 40, 44],
-                'development_fund' => [37, 41, 45],
-                'new_uzbekistan' => [38, 42, 46],
-                'district_authority' => [39, 43, 47],
-            ];
-
-            foreach ($categories as $category => $indices) {
-                $allocatedAmount = $this->parseDecimal($row[$indices[0]] ?? 0);
-                $distributedAmount = $this->parseDecimal($row[$indices[1]] ?? 0);
-
-                if ($allocatedAmount > 0 || $distributedAmount > 0) {
-                    $hasDistributions = true;
-                    break;
-                }
-            }
-
-            if ($hasDistributions && $lot->contract_signed) {
-                // Auto-create contract for this lot
-                $contract = \App\Models\Contract::create([
-                    'lot_id' => $lot->id,
-                    'contract_number' => $lot->contract_number ?? 'AUTO-' . $lot->lot_number,
-                    'contract_date' => $lot->contract_date ?? $lot->auction_date ?? now(),
-                    'contract_amount' => $lot->sold_price ?? 0,
-                    'paid_amount' => $lot->paid_amount ?? 0,
-                    'payment_type' => $lot->payment_type ?? 'muddatsiz',
-                    'status' => 'active',
-                    'created_by' => 1, // Admin user
-                    'updated_by' => 1,
-                ]);
-            } else {
-                return; // No contract and no distributions, skip
-            }
-        }
-
-        $contract = $lot->contract;
-
-        // Now import distributions linked to contract
-        $categories = [
-            'local_budget' => [36, 40, 44],
-            'development_fund' => [37, 41, 45],
-            'new_uzbekistan' => [38, 42, 46],
-            'district_authority' => [39, 43, 47],
-        ];
-
-        foreach ($categories as $category => $indices) {
-            $allocatedAmount = $this->parseDecimal($row[$indices[0]] ?? 0);
-            $distributedAmount = $this->parseDecimal($row[$indices[1]] ?? 0);
-            $remainingAmount = $this->parseDecimal($row[$indices[2]] ?? 0);
-
-            if ($allocatedAmount > 0 || $distributedAmount > 0 || $remainingAmount > 0) {
-                \App\Models\Distribution::create([
-                    'contract_id' => $contract->id, // Use contract_id, not lot_id
-                    'payment_schedule_id' => null,
-                    'category' => $category,
-                    'allocated_amount' => $distributedAmount, // Already distributed amount
-                    'distribution_date' => $lot->contract_date ?? now(),
-                    'status' => $distributedAmount > 0 ? 'distributed' : 'pending',
-                    'note' => "Импортировано из Excel",
-                    'created_by' => 1,
-                    'updated_by' => 1,
-                ]);
-            }
-        }
-    }
-
-    private function importPaymentSchedules($lot, $row)
-    {
-        // Only create payment schedules for installment payment types
-        if ($lot->payment_type !== 'muddatli') {
-            return;
-        }
-
-        // Check if lot has a contract
-        if (!$lot->contract && $lot->contract_signed) {
-            // Auto-create contract
-            $contract = \App\Models\Contract::create([
-                'lot_id' => $lot->id,
-                'contract_number' => $lot->contract_number ?? 'AUTO-' . $lot->lot_number,
-                'contract_date' => $lot->contract_date ?? $lot->auction_date ?? now(),
-                'contract_amount' => $lot->sold_price ?? 0,
-                'paid_amount' => $lot->paid_amount ?? 0,
-                'payment_type' => 'muddatli',
-                'status' => 'active',
-                'created_by' => 1,
-                'updated_by' => 1,
-            ]);
-        }
-
-        if (!$lot->contract) {
-            return; // Still no contract, skip
-        }
-
-        $contract = $lot->contract;
-
-        // Payment schedules start from column 49 (index 48)
-        $years = [2024, 2025, 2026, 2027, 2028, 2029];
-        $monthsRu = [
-            'август',
-            'сентябрь',
-            'октябрь',
-            'ноябрь',
-            'декабрь',
-            'январь',
-            'февраль',
-            'март',
-            'аперль',
-            'май',
-            'июнь',
-            'июль'
-        ];
-
-        $colIndex = 49;
-        $paymentNumber = 1;
-
-        foreach ($years as $yearIndex => $year) {
-            foreach ($monthsRu as $monthIndex => $monthName) {
-                if (!isset($row[$colIndex])) {
-                    $colIndex++;
-                    continue;
-                }
-
-                $amount = $this->parseDecimal($row[$colIndex]);
-
-                if ($amount > 0) {
-                    // Calculate correct month number (1-12)
-                    $monthNum = ($monthIndex < 5) ? ($monthIndex + 8) : ($monthIndex - 4);
-                    $actualYear = ($monthIndex < 5) ? $year : ($year + 1);
-
-                    try {
-                        $plannedDate = date('Y-m-d', strtotime("{$actualYear}-{$monthNum}-01"));
-                        $deadlineDate = date('Y-m-d', strtotime("{$actualYear}-{$monthNum}-10"));
-
-                        \App\Models\PaymentSchedule::create([
-                            'contract_id' => $contract->id,
-                            'payment_number' => $paymentNumber++,
-                            'planned_date' => $plannedDate,
-                            'deadline_date' => $deadlineDate,
-                            'planned_amount' => $amount,
-                            'actual_amount' => 0,
-                            'difference' => -$amount,
-                            'status' => 'pending',
-                            'created_by' => 1,
-                            'updated_by' => 1,
-                        ]);
-                    } catch (\Exception $e) {
-                        Log::warning("Failed to create payment schedule", [
-                            'lot_id' => $lot->id,
-                            'contract_id' => $contract->id,
-                            'year' => $actualYear,
-                            'month' => $monthName,
-                            'error' => $e->getMessage()
-                        ]);
-                    }
-                }
-                $colIndex++;
-            }
-        }
-    }
     private function findTumanId($tumanName)
     {
         $tumanName = trim($tumanName);
@@ -543,46 +366,16 @@ class ExcelDataSeeder extends Seeder
         }
 
         $this->command->newLine();
-        $this->command->info("MAHALLAS (NEIGHBORHOODS) BY DISTRICT:");
+        $this->command->info("MAHALLAS BY DISTRICT:");
         $this->command->info("───────────────────────────────────────────────────────");
 
         foreach ($this->stats['unique_mahallas'] as $tuman => $mahallas) {
             $this->command->info(sprintf("  %-35s : %d mahallas", $tuman, count($mahallas)));
-            foreach ($mahallas as $mahalla) {
-                $this->command->line("    • " . $mahalla);
-            }
-        }
-
-        $this->command->newLine();
-        $this->command->info("UNIQUE ADDRESSES BY DISTRICT:");
-        $this->command->info("───────────────────────────────────────────────────────");
-
-        foreach ($this->stats['addresses'] as $tuman => $addresses) {
-            $this->command->info(sprintf("  %-35s : %d addresses", $tuman, count($addresses)));
         }
 
         $this->command->newLine();
         $this->command->info("═══════════════════════════════════════════════════════");
-
-        // Log complete JSON statistics
-        Log::info("Import completed", [
-            'summary' => [
-                'total_rows' => $this->stats['total_rows'],
-                'imported' => $this->stats['imported'],
-                'errors' => $this->stats['errors'],
-                'total_lots' => $totalLots,
-                'total_mahallas' => array_sum(array_map('count', $this->stats['unique_mahallas'])),
-                'total_addresses' => array_sum(array_map('count', $this->stats['addresses']))
-            ],
-            'lots_by_district' => $this->stats['tumans'],
-            'mahallas_by_district' => array_map('count', $this->stats['unique_mahallas']),
-            'mahallas_detail' => $this->stats['unique_mahallas'],
-            'addresses_by_district' => array_map('count', $this->stats['addresses']),
-            'addresses_detail' => $this->stats['addresses']
-        ]);
-
         $this->command->info("✓ Data imported successfully!");
-        $this->command->info("✓ Check storage/logs/laravel.log for detailed JSON output");
     }
 
     // Helper methods

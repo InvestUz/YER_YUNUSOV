@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('tuman_id')->constrained('tumans')->onDelete('cascade');
             $table->string('name');
             $table->string('name_ru')->nullable();
+            $table->bigInteger('creator_id')->nullable();
+            $table->bigInteger('updater_id')->nullable();
             $table->timestamps();
         });
     }
