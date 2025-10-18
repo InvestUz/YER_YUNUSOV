@@ -27,7 +27,7 @@
                     </p>
                 </div>
                 <div class="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
-                    <p class="text-xs text-green-700 font-medium mb-1">Тўланган</p>
+                    <p class="text-xs text-green-700 font-medium mb-1">Тўланған</p>
                     <p class="text-sm font-bold text-green-900">
                         {{ number_format($lot->contract->paid_amount / 1000000, 1) }}М
                     </p>
@@ -43,18 +43,72 @@
             <div>
                 <div class="flex justify-between text-xs text-gray-600 mb-2">
                     <span>Тўлов прогресси</span>
-                    <span class="font-bold text-gray-900">{{ number_format($lot->contract->payment_percentage, 1) }}%</span>
+                    <span
+                        class="font-bold text-gray-900">{{ number_format($lot->contract->payment_percentage, 1) }}%</span>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                     <div class="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full transition-all duration-500 shadow-sm"
                         style="width: {{ min($lot->contract->payment_percentage, 100) }}%"></div>
                 </div>
             </div>
-
         </div>
+
+        {{-- Discount Information (ONLY for qualifying muddatsiz contracts) --}}
+        @if ($lot->qualifiesForDiscount())
+            <div class="px-6 pb-4">
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="currentColor"
+                            viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-yellow-800 mb-1">Чегирма қўлланилди (20%)</p>
+                            <p class="text-xs text-yellow-700 mb-2">
+                                Аукцион санаси: {{ $lot->auction_date->format('d.m.Y') }} (10.09.2024 дан кейин)
+                            </p>
+
+                            <div class="space-y-2 text-xs">
+                                <div class="flex justify-between py-1 border-b border-yellow-200">
+                                    <span class="text-yellow-700">Тўланган сумма:</span>
+                                    <strong class="text-yellow-900">{{ number_format($lot->paid_amount, 0, '.', ' ') }}
+                                        сўм</strong>
+                                </div>
+                                <div class="flex justify-between py-1 border-b border-yellow-200">
+                                    <span class="text-yellow-700">Чегирма (20%):</span>
+                                    <strong class="text-yellow-900">{{ number_format($lot->discount, 0, '.', ' ') }}
+                                        сўм</strong>
+                                </div>
+                                <div class="flex justify-between py-1 border-b border-yellow-200">
+                                    <span class="text-yellow-700">Шартномадан (80%):</span>
+                                    <strong
+                                        class="text-yellow-900">{{ number_format($lot->incoming_amount, 0, '.', ' ') }}
+                                        сўм</strong>
+                                </div>
+                                <div class="flex justify-between py-1.5 bg-green-50 px-2 rounded">
+                                    <span class="font-medium text-green-800">Тақсимотга (80% пулнинг бари):</span>
+                                    <strong
+                                        class="text-green-800 text-sm">{{ number_format($lot->distributable_amount, 0, '.', ' ') }}
+                                        сўм</strong>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 p-2 bg-blue-50 rounded text-xs text-blue-800">
+                                <strong>Формула:</strong><br>
+                                • Чегирма = Тўланған × 20%<br>
+                                • Шартнома = Тўланған - Чегирма = 80%<br>
+                                • Тақсимот = Шартнома × 80%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 @elseif($lot->payment_type === 'muddatsiz' && $lot->paid_amount > 0)
-    {{-- MUDDATSIZ PAYMENT DISPLAY --}}
+    {{-- MUDDATSIZ PAYMENT DISPLAY (NO FORMAL CONTRACT) --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
             <h3 class="font-bold text-blue-900 text-lg flex items-center gap-2">
@@ -76,7 +130,7 @@
                     </p>
                 </div>
                 <div class="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
-                    <p class="text-xs text-green-700 font-medium mb-1">Тўланган</p>
+                    <p class="text-xs text-green-700 font-medium mb-1">Тўланған</p>
                     <p class="text-sm font-bold text-green-900">
                         {{ number_format($lot->paid_amount / 1000000, 1) }}М
                     </p>
@@ -87,7 +141,8 @@
                 $difference = $lot->paid_amount - $lot->sold_price;
             @endphp
             @if ($difference != 0)
-                <div class="p-4 rounded-lg border {{ $difference > 0 ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200' }}">
+                <div
+                    class="p-4 rounded-lg border {{ $difference > 0 ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200' }}">
                     <div class="flex items-center justify-between mb-2">
                         <span class="font-medium text-gray-700">Фарқ:</span>
                         <span class="font-bold text-lg {{ $difference > 0 ? 'text-green-700' : 'text-orange-700' }}">
@@ -96,11 +151,39 @@
                     </div>
                     <p class="text-sm {{ $difference > 0 ? 'text-green-700' : 'text-orange-700' }}">
                         @if ($difference > 0)
-                            ✓ Аукцион нархидан {{ number_format($difference, 0, '.', ' ') }} сўм кўп тўланган
+                            ✓ Аукцион нархидан {{ number_format($difference, 0, '.', ' ') }} сўм кўп тўланған
                         @else
-                            ⚠ Аукцион нархидан {{ number_format(abs($difference), 0, '.', ' ') }} сўм кам тўланган
+                            ⚠ Аукцион нархидан {{ number_format(abs($difference), 0, '.', ' ') }} сўм кам тўланған
                         @endif
                     </p>
+                </div>
+            @endif
+
+            {{-- Discount Information --}}
+            @if ($lot->qualifiesForDiscount())
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="currentColor"
+                            viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-yellow-800 mb-1">Чегирма қўлланилди
+                                ({{ \App\Models\Lot::DISCOUNT_PERCENTAGE }}%)</p>
+                            <p class="text-xs text-yellow-700">
+                                Аукцион санаси: {{ $lot->auction_date->format('d.m.Y') }} (10.09.2024 дан кейин)
+                            </p>
+                            <p class="text-xs text-yellow-700 mt-1">
+                                Чегирма суммаси: <strong>{{ number_format($lot->discount, 0, '.', ' ') }} сўм</strong>
+                            </p>
+                            <p class="text-xs text-yellow-700 mt-1">
+                                Тақсимотга йўналтириладиган сумма:
+                                <strong>{{ number_format($lot->distributable_amount, 0, '.', ' ') }} сўм</strong> (20%)
+                            </p>
+                        </div>
+                    </div>
                 </div>
             @endif
 
@@ -111,7 +194,8 @@
                             d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
                             clip-rule="evenodd" />
                     </svg>
-                    <span><strong>Эслатма:</strong> Муддатсиз тўлов учун шартнома яратилмаган. Тўлов амалга оширилган.</span>
+                    <span><strong>Эслатма:</strong> Муддатсиз тўлов учун шартнома яратилмаган. Тўлов амалга
+                        оширилган.</span>
                 </p>
             </div>
         </div>
@@ -122,13 +206,17 @@
         <div class="bg-white rounded-xl shadow-sm border-2 border-yellow-400 overflow-hidden">
             <div class="px-6 py-4 bg-gradient-to-r from-yellow-50 to-yellow-100 border-b border-yellow-200">
                 <h3 class="font-bold text-yellow-900 text-lg flex items-center gap-2">
-
-                    Тўлов тури
+                    <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    Тўлов турини яратиш
                 </h3>
                 <p class="text-xs text-yellow-700 mt-1">Тизимда шартнома мавжуд эмас</p>
             </div>
 
-            <form action="{{ route('contracts.store') }}" method="POST" class="p-6 space-y-4" id="contractCreationForm">
+            <form action="{{ route('contracts.store') }}" method="POST" class="p-6 space-y-4"
+                id="contractCreationForm">
                 @csrf
                 <input type="hidden" name="lot_id" value="{{ $lot->id }}">
 
@@ -144,29 +232,43 @@
                 {{-- STEP 1: Payment Type Selection --}}
                 <div id="paymentTypeStep">
                     <div class="space-y-3">
-                        <label class="relative flex cursor-pointer border-2 border-gray-300 rounded-lg p-4 hover:border-blue-500 transition-all payment-type-card group" data-type="muddatli">
-                            <input type="radio" name="payment_type" value="muddatli" required class="sr-only payment-type-radio">
+                        <label
+                            class="relative flex cursor-pointer border-2 border-gray-300 rounded-lg p-4 hover:border-blue-500 transition-all payment-type-card group"
+                            data-type="muddatli">
+                            <input type="radio" name="payment_type" value="muddatli" required
+                                class="sr-only payment-type-radio">
                             <div class="flex-1">
                                 <div class="flex items-center justify-between mb-2">
-                                    <span class="text-base font-bold text-gray-900 group-hover:text-blue-700">Муддатли</span>
-                                    <svg class="w-6 h-6 text-blue-600 hidden check-icon" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                    <span
+                                        class="text-base font-bold text-gray-900 group-hover:text-blue-700">Муддатли</span>
+                                    <svg class="w-6 h-6 text-blue-600 hidden check-icon" fill="currentColor"
+                                        viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                            clip-rule="evenodd" />
                                     </svg>
                                 </div>
                                 <p class="text-xs text-gray-600">Бўлиб тўлаш</p>
                             </div>
                         </label>
 
-                        <label class="relative flex cursor-pointer border-2 border-gray-300 rounded-lg p-4 hover:border-blue-500 transition-all payment-type-card group" data-type="muddatsiz">
-                            <input type="radio" name="payment_type" value="muddatsiz" required class="sr-only payment-type-radio">
+                        <label
+                            class="relative flex cursor-pointer border-2 border-gray-300 rounded-lg p-4 hover:border-blue-500 transition-all payment-type-card group"
+                            data-type="muddatsiz">
+                            <input type="radio" name="payment_type" value="muddatsiz" required
+                                class="sr-only payment-type-radio">
                             <div class="flex-1">
                                 <div class="flex items-center justify-between mb-2">
-                                    <span class="text-base font-bold text-gray-900 group-hover:text-blue-700">Муддатсиз</span>
-                                    <svg class="w-6 h-6 text-blue-600 hidden check-icon" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                    <span
+                                        class="text-base font-bold text-gray-900 group-hover:text-blue-700">Муддатсиз</span>
+                                    <svg class="w-6 h-6 text-blue-600 hidden check-icon" fill="currentColor"
+                                        viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd"
+                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                            clip-rule="evenodd" />
                                     </svg>
                                 </div>
-                                <p class="text-xs text-gray-600">Бир йўла тўлаш </p>
+                                <p class="text-xs text-gray-600">Бир йўла тўлаш</p>
                             </div>
                         </label>
                     </div>
@@ -179,33 +281,39 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium mb-1 text-gray-700">Шартнома рақами <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-medium mb-1 text-gray-700">Шартнома рақами <span
+                                class="text-red-500">*</span></label>
                         <input type="text" name="contract_number" value="{{ old('contract_number') }}"
                             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium mb-1 text-gray-700">Шартнома санаси <span class="text-red-500">*</span></label>
-                        <input type="date" name="contract_date" value="{{ old('contract_date', now()->format('Y-m-d')) }}"
+                        <label class="block text-xs font-medium mb-1 text-gray-700">Шартнома санаси <span
+                                class="text-red-500">*</span></label>
+                        <input type="date" name="contract_date"
+                            value="{{ old('contract_date', now()->format('Y-m-d')) }}"
                             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium mb-1 text-gray-700">Шартнома суммаси (сўм) <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-medium mb-1 text-gray-700">Шартнома суммаси (сўм) <span
+                                class="text-red-500">*</span></label>
                         <input type="number" step="0.01" name="contract_amount" id="contractAmount"
                             value="{{ old('contract_amount', $lot->sold_price) }}"
                             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium mb-1 text-gray-700">Харидор номи <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-medium mb-1 text-gray-700">Харидор номи <span
+                                class="text-red-500">*</span></label>
                         <input type="text" name="buyer_name" value="{{ old('buyer_name', $lot->winner_name) }}"
                             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </div>
 
                     <div>
                         <label class="block text-xs font-medium mb-1 text-gray-700">Харидор телефони</label>
-                        <input type="text" name="buyer_phone" value="{{ old('buyer_phone', $lot->winner_phone) }}"
+                        <input type="text" name="buyer_phone"
+                            value="{{ old('buyer_phone', $lot->winner_phone) }}"
                             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     </div>
 
@@ -216,11 +324,12 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium mb-1 text-gray-700">Ҳолат <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-medium mb-1 text-gray-700">Ҳолат <span
+                                class="text-red-500">*</span></label>
                         <select name="status"
                             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                             <option value="active" selected>Фаол</option>
-                            <option value="completed">Тўланган</option>
+                            <option value="completed">Тўланған</option>
                             <option value="cancelled">Бекор қилинган</option>
                         </select>
                     </div>
@@ -232,15 +341,17 @@
                             placeholder="Қўшимча маълумот...">{{ old('note') }}</textarea>
                     </div>
 
-                    {{-- NEW: Initial Payment Section for Muddatli --}}
+                    {{-- Initial Payment Section for Muddatli --}}
                     <div id="initialPaymentSection" class="border-t pt-4">
-                        <label class="block text-sm font-bold mb-3 text-gray-900">3. Аввал тўланган сумма (Опционал)</label>
+                        <label class="block text-sm font-bold mb-3 text-gray-900">3. Аввал тўланған сумма
+                            (Опционал)</label>
                         <p class="text-xs text-gray-600 mb-3">
                             Агар шартнома имзолашдан олдин тўлов бўлган бўлса, киритинг
                         </p>
 
                         <div>
-                            <label class="block text-xs font-medium mb-1 text-gray-700">Аввал тўланган сумма (сўм)</label>
+                            <label class="block text-xs font-medium mb-1 text-gray-700">Аввал тўланған сумма
+                                (сўм)</label>
                             <input type="number" step="0.01" name="initial_paid_amount" id="initialPaidAmount"
                                 value="{{ old('initial_paid_amount', 0) }}"
                                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -261,23 +372,82 @@
                 {{-- STEP 3: Muddatsiz Payment (NO CONTRACT) --}}
                 <div id="muddatsizPaymentStep" class="hidden space-y-4">
                     <div class="border-t pt-4">
-                        <label class="block text-sm font-bold mb-3 text-gray-900">2. Бир йўла тўлов маълумотлари</label>
+                        <label class="block text-sm font-bold mb-3 text-gray-900">2. Бир йўла тўлов
+                            маълумотлари</label>
                         <p class="text-xs text-gray-600 mb-3">
-                            <strong>Эслатма:</strong> Муддатсиз тўловда шартнома яратилмайди, фақат амалда тўланган сумма қайд қилинади.
+                            <strong>Эслатма:</strong> Муддатсиз тўловда шартнома яратилмайди, фақат амалда тўланған
+                            сумма қайд қилинади.
                         </p>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium mb-1 text-gray-700">Факт тўланган сумма (сўм) <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-medium mb-1 text-gray-700">Факт тўланған сумма (сўм) <span
+                                class="text-red-500">*</span></label>
                         <input type="number" step="0.01" name="actual_paid_amount" id="actualPaidAmount"
                             value="{{ old('actual_paid_amount', $lot->sold_price) }}"
                             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             min="0" oninput="validateMuddatsizAmount()">
-                        <p class="text-xs text-gray-500 mt-1">Аукционда сотилган нарх: {{ number_format($lot->sold_price, 0, '.', ' ') }} сўм</p>
+                        <p class="text-xs text-gray-500 mt-1">Аукционда сотилган нарх:
+                            {{ number_format($lot->sold_price, 0, '.', ' ') }} сўм</p>
                     </div>
 
+                    {{-- DISCOUNT FIELD - Only shows if auction_date > 10.09.2024 --}}
+                    @if ($lot->auction_date && $lot->auction_date->gt(\Carbon\Carbon::parse('2024-09-10')))
+                        <div class="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+                            <div class="flex items-start gap-3 mb-3">
+                                <svg class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="currentColor"
+                                    viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-yellow-800 mb-1">Чегирма қўлланади (20%)</p>
+                                    <p class="text-xs text-yellow-700">
+                                        Аукцион санаси {{ $lot->auction_date->format('d.m.Y') }} - 10.09.2024 дан кейин
+                                        бўлгани учун 20% чегирма автоматик ҳисобланади
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium mb-1 text-yellow-800">
+                                    Чегирма суммаси (20% автоматик ҳисоб)
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <input type="number" step="0.01" name="discount_amount" id="discountAmount"
+                                    readonly value="{{ old('discount_amount', 0) }}"
+                                    class="w-full border border-yellow-300 rounded-lg px-3 py-2 text-sm bg-yellow-50 text-yellow-900 font-semibold cursor-not-allowed focus:ring-2 focus:ring-yellow-500">
+                                <p class="text-xs text-yellow-700 mt-1">
+                                    <strong>Формула:</strong> Чегирма = Факт тўланған сумма × 20%
+                                </p>
+                            </div>
+
+                            <div class="mt-3 p-3 bg-white rounded border border-yellow-200">
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="text-gray-700">Факт тўланған:</span>
+                                    <span id="displayPaidAmount" class="font-semibold text-gray-900">0 сўм</span>
+                                </div>
+                                <div class="flex justify-between items-center text-sm mt-1">
+                                    <span class="text-yellow-700">Чегирма (20%):</span>
+                                    <span id="displayDiscountAmount" class="font-semibold text-yellow-700">0
+                                        сўм</span>
+                                </div>
+                                <div class="border-t border-yellow-200 mt-2 pt-2 flex justify-between items-center">
+                                    <span class="font-medium text-gray-900">Тақсимотга йўналтирилади:</span>
+                                    <span id="displayDistributableAmount" class="font-bold text-green-700 text-base">0
+                                        сўм</span>
+                                </div>
+                                <p class="text-xs text-gray-600 mt-1">
+                                    Тақсимот суммаси = (Факт тўланған - Чегирма) × 20%
+                                </p>
+                            </div>
+                        </div>
+                    @endif
+
                     <div>
-                        <label class="block text-xs font-medium mb-1 text-gray-700">Тўлов санаси <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-medium mb-1 text-gray-700">Тўлов санаси <span
+                                class="text-red-500">*</span></label>
                         <input type="date" name="actual_payment_date" id="actualPaymentDate"
                             value="{{ old('actual_payment_date', now()->format('Y-m-d')) }}"
                             class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -306,12 +476,12 @@
                                     d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
                                     clip-rule="evenodd" />
                             </svg>
-                            <span><strong>Эслатма:</strong> Муддатсиз тўлов учун шартнома яратилмайди. Факт тўланган сумма бевосита қайд қилинади.</span>
+                            <span><strong>Эслатма:</strong> Муддатсиз тўлов учун шартнома яратилмайди. Факт тўланған
+                                сумма бевосита қайд қилинади.</span>
                         </p>
                     </div>
                 </div>
-
-                {{-- NOTE --}}
+                {{-- NOTE for Muddatli --}}
                 <div id="muddatliNote" class="hidden">
                     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <p class="text-sm text-blue-800 flex items-start gap-2">
@@ -320,7 +490,8 @@
                                     d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
                                     clip-rule="evenodd" />
                             </svg>
-<span><strong>Муҳим:</strong> Шартнома яратилгандан кейин, тўлов графигини қўлда қўшишингиз керак. Ҳар бир тўлов қаторини "+ Қўшиш" тугмаси орқали қўшинг.</span>
+                            <span><strong>Муҳим:</strong> Шартнома яратилгандан кейин, тўлов графигини қўлда қўшишингиз
+                                керак. Ҳар бир тўлов қаторини "+ Қўшиш" тугмаси орқали қўшинг.</span>
                         </p>
                     </div>
                 </div>
@@ -398,12 +569,15 @@
                     showElement(initialPaymentSection);
                     hideElement(muddatsizPaymentStep);
 
-                    contractDetailsStep.querySelectorAll('input, select, textarea').forEach(field => {
-                        const fieldName = field.getAttribute('name');
-                        if (['contract_number', 'contract_date', 'contract_amount', 'buyer_name', 'status'].includes(fieldName)) {
-                            field.setAttribute('required', 'required');
-                        }
-                    });
+                    contractDetailsStep.querySelectorAll('input, select, textarea').forEach(
+                        field => {
+                            const fieldName = field.getAttribute('name');
+                            if (['contract_number', 'contract_date', 'contract_amount',
+                                    'buyer_name', 'status'
+                                ].includes(fieldName)) {
+                                field.setAttribute('required', 'required');
+                            }
+                        });
 
                     muddatsizPaymentStep.querySelectorAll('input, select').forEach(field => {
                         field.removeAttribute('required');
@@ -417,9 +591,10 @@
                     hideElement(initialPaymentSection);
                     showElement(muddatsizPaymentStep);
 
-                    contractDetailsStep.querySelectorAll('input, select, textarea').forEach(field => {
-                        field.removeAttribute('required');
-                    });
+                    contractDetailsStep.querySelectorAll('input, select, textarea').forEach(
+                        field => {
+                            field.removeAttribute('required');
+                        });
 
                     const actualPaidInput = document.getElementById('actualPaidAmount');
                     const actualDateInput = document.getElementById('actualPaymentDate');
@@ -431,7 +606,8 @@
 
                 submitBtn.disabled = false;
                 submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                submitBtn.classList.add('bg-gradient-to-r', 'from-green-600', 'to-green-700', 'hover:from-green-700', 'hover:to-green-800', 'cursor-pointer');
+                submitBtn.classList.add('bg-gradient-to-r', 'from-green-600', 'to-green-700',
+                    'hover:from-green-700', 'hover:to-green-800', 'cursor-pointer');
             });
         });
 
@@ -445,7 +621,7 @@
                 const initialPaid = parseFloat(this.value) || 0;
 
                 if (initialPaid > contractAmount) {
-                    this.setCustomValidity('Аввал тўланган сумма шартнома суммасидан кўп бўлолмайди');
+                    this.setCustomValidity('Аввал тўланған сумма шартнома суммасидан кўп бўлолмайди');
                 } else {
                     this.setCustomValidity('');
                 }
@@ -456,7 +632,8 @@
                 const initialPaid = parseFloat(initialPaidInput.value) || 0;
 
                 if (initialPaid > contractAmount) {
-                    initialPaidInput.setCustomValidity('Аввал тўланган сумма шартнома суммасидан кўп бўлолмайди');
+                    initialPaidInput.setCustomValidity(
+                        'Аввал тўланған сумма шартнома суммасидан кўп бўлолмайди');
                 } else {
                     initialPaidInput.setCustomValidity('');
                 }
@@ -471,12 +648,34 @@
         const differenceAmount = document.getElementById('muddatsizDifferenceAmount');
         const differenceMessage = document.getElementById('muddatsizDifferenceMessage');
 
-        if (!actualPaidInput || !indicator) return;
+        // Discount calculation elements
+        const discountInput = document.getElementById('discountAmount');
+        const displayPaidAmount = document.getElementById('displayPaidAmount');
+        const displayDiscountAmount = document.getElementById('displayDiscountAmount');
+        const displayDistributableAmount = document.getElementById('displayDistributableAmount');
+
+        if (!actualPaidInput) return;
 
         const actualPaid = parseFloat(actualPaidInput.value) || 0;
         const difference = actualPaid - auctionPrice;
 
-        if (actualPaid > 0 && actualPaid !== auctionPrice) {
+        // Calculate discount (20%) if auction date > 10.09.2024
+        @if ($lot->auction_date && $lot->auction_date->gt(\Carbon\Carbon::parse('2024-09-10')))
+            const discount = actualPaid * 0.20;
+            const afterDiscount = actualPaid - discount; // 80% of paid
+            const distributable = afterDiscount; // 100% of incoming (same as afterDiscount)
+
+            if (discountInput) discountInput.value = discount.toFixed(2);
+            if (displayPaidAmount) displayPaidAmount.textContent = new Intl.NumberFormat('uz-UZ').format(actualPaid) +
+                ' сўм';
+            if (displayDiscountAmount) displayDiscountAmount.textContent = new Intl.NumberFormat('uz-UZ').format(
+                discount) + ' сўм';
+            if (displayDistributableAmount) displayDistributableAmount.textContent = new Intl.NumberFormat('uz-UZ')
+                .format(distributable) + ' сўм';
+        @endif
+
+        // Show difference indicator
+        if (indicator && actualPaid > 0 && actualPaid !== auctionPrice) {
             indicator.classList.remove('hidden');
             indicator.style.display = 'block';
             differenceAmount.textContent = new Intl.NumberFormat('uz-UZ').format(Math.abs(difference)) + ' сўм';
@@ -484,15 +683,17 @@
             if (difference > 0) {
                 indicator.className = 'p-4 rounded-lg border bg-green-50 border-green-200';
                 differenceAmount.className = 'font-bold text-lg text-green-700';
-                differenceMessage.textContent = '✓ Аукцион нархидан ' + new Intl.NumberFormat('uz-UZ').format(difference) + ' сўм кўп тўланган';
+                differenceMessage.textContent = '✓ Аукцион нархидан ' + new Intl.NumberFormat('uz-UZ').format(
+                    difference) + ' сўм кўп тўланған';
                 differenceMessage.className = 'text-sm text-green-700';
             } else {
                 indicator.className = 'p-4 rounded-lg border bg-orange-50 border-orange-200';
                 differenceAmount.className = 'font-bold text-lg text-orange-700';
-                differenceMessage.textContent = '⚠ Аукцион нархидан ' + new Intl.NumberFormat('uz-UZ').format(Math.abs(difference)) + ' сўм кам тўланган';
+                differenceMessage.textContent = '⚠ Аукцион нархидан ' + new Intl.NumberFormat('uz-UZ').format(Math.abs(
+                    difference)) + ' сўм кам тўланған';
                 differenceMessage.className = 'text-sm text-orange-700';
             }
-        } else {
+        } else if (indicator) {
             indicator.classList.add('hidden');
             indicator.style.display = 'none';
         }

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Http;
+use Carbon\Carbon;
 
 class Lot extends Model
 {
@@ -72,6 +72,10 @@ class Lot extends Model
         'likes_count' => 'integer',
     ];
 
+    // Discount cutoff date constant
+    const DISCOUNT_CUTOFF_DATE = '2024-09-10';
+    const DISCOUNT_PERCENTAGE = 20;
+
     public function tuman()
     {
         return $this->belongsTo(Tuman::class);
@@ -102,6 +106,157 @@ class Lot extends Model
         return $this->hasOne(LotImage::class)->where('is_primary', true);
     }
 
+    public function contract()
+    {
+        return $this->hasOne(Contract::class);
+    }
+
+    public function hasContract()
+    {
+        return $this->contract()->exists();
+    }
+
+    public function getContractNumberAttribute()
+    {
+        return $this->contract?->contract_number ?? '-';
+    }
+
+    /**
+     * Check if lot qualifies for discount (muddatsiz + after cutoff date)
+     */
+    public function qualifiesForDiscount()
+    {
+        if (!in_array($this->payment_type, ['muddatsiz', 'muddatli_emas'])) {
+            return false;
+        }
+
+        if (!$this->auction_date) {
+            return false;
+        }
+
+        // Strictly AFTER September 10, 2024
+        return $this->auction_date->gt(Carbon::parse(self::DISCOUNT_CUTOFF_DATE));
+    }
+
+    /**
+     * Calculate discount amount based on auction date and payment type
+     */
+    public function calculateDiscount()
+    {
+        if (!$this->qualifiesForDiscount() || !$this->paid_amount) {
+            $this->discount = 0;
+            return 0;
+        }
+
+        // 20% discount for muddatsiz AFTER 10.09.2024
+        $this->discount = $this->paid_amount * (self::DISCOUNT_PERCENTAGE / 100);
+        return $this->discount;
+    }
+
+    /**
+     * Calculate auction fee (1% of sold price)
+     */
+    public function calculateAuctionFee()
+    {
+        if ($this->sold_price) {
+            $this->auction_fee = $this->sold_price * 0.01;
+        } else {
+            $this->auction_fee = 0;
+        }
+        return $this->auction_fee;
+    }
+
+    /**
+     * Calculate incoming amount (after discount and auction fee)
+     * CRITICAL: For muddatsiz with transferred_amount = 0, use paid_amount
+     */
+    public function calculateIncomingAmount()
+    {
+        // For muddatsiz/muddatli_emas, if transferred_amount is 0, use paid_amount
+        $baseAmount = $this->transferred_amount;
+
+        if (in_array($this->payment_type, ['muddatsiz', 'muddatli_emas']) && $this->transferred_amount == 0) {
+            $baseAmount = $this->paid_amount;
+        }
+
+        // Calculate incoming: base - discount - auction_fee
+        $this->incoming_amount = max(0, $baseAmount - $this->discount - ($this->auction_fee ?? 0));
+
+        return $this->incoming_amount;
+    }
+
+    /**
+     * Calculate davaktiv amount
+     */
+    public function calculateDavaktivAmount()
+    {
+        $this->davaktiv_amount = max(0, $this->incoming_amount - ($this->auction_expenses ?? 0));
+        return $this->davaktiv_amount;
+    }
+
+    /**
+     * Get the amount that should be distributed
+     * CRITICAL: For post-10.09.2024 muddatsiz, incoming_amount is already after 20% discount
+     * So we distribute 100% of incoming_amount
+     */
+    public function getDistributableAmountAttribute()
+    {
+        // Return 100% of incoming amount
+        // (for discount-qualified lots, incoming is already 80% after 20% discount)
+        return $this->incoming_amount;
+    }
+
+    /**
+     * Get remaining amount to be distributed
+     */
+    public function getRemainingDistributableAmountAttribute()
+    {
+        $totalDistributed = 0;
+
+        if ($this->contract && $this->contract->distributions) {
+            $totalDistributed = $this->contract->distributions->sum('allocated_amount');
+        }
+
+        return max(0, $this->distributable_amount - $totalDistributed);
+    }
+
+    /**
+     * Check if distribution is complete
+     */
+    public function isDistributionComplete()
+    {
+        return $this->remaining_distributable_amount <= 0.01; // Allow small rounding difference
+    }
+
+    /**
+     * Get distribution progress percentage
+     */
+    public function getDistributionProgressAttribute()
+    {
+        if ($this->distributable_amount <= 0) {
+            return 0;
+        }
+
+        $totalDistributed = 0;
+        if ($this->contract && $this->contract->distributions) {
+            $totalDistributed = $this->contract->distributions->sum('allocated_amount');
+        }
+
+        return min(100, ($totalDistributed / $this->distributable_amount) * 100);
+    }
+
+    /**
+     * Automatic calculations - CALL THIS AFTER ANY PAYMENT UPDATE
+     */
+    public function autoCalculate()
+    {
+        // Calculate in correct order
+        $this->calculateAuctionFee();      // 1. Calculate 1% auction fee
+        $this->calculateDiscount();        // 2. Calculate 20% discount (if applicable)
+        $this->calculateIncomingAmount();  // 3. Calculate incoming after discount & fee
+        $this->calculateDavaktivAmount();  // 4. Calculate davaktiv after expenses
+    }
+
     // Extract coordinates from Google Maps URL
     public function extractCoordinatesFromUrl()
     {
@@ -109,7 +264,6 @@ class Lot extends Model
             return;
         }
 
-        // Pattern 1: @lat,lng format
         if (preg_match('/@(-?\d+\.\d+),(-?\d+\.\d+)/', $this->location_url, $matches)) {
             $this->latitude = $matches[1];
             $this->longitude = $matches[2];
@@ -117,7 +271,6 @@ class Lot extends Model
             return;
         }
 
-        // Pattern 2: 3d parameter format
         if (preg_match('/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/', $this->location_url, $matches)) {
             $this->latitude = $matches[1];
             $this->longitude = $matches[2];
@@ -125,19 +278,15 @@ class Lot extends Model
             return;
         }
 
-        // Pattern 3: Degrees format like in your URL
         if (preg_match('/(\d+)%C2%B0(\d+)\'([\d.]+)%22N\+(\d+)%C2%B0(\d+)\'([\d.]+)%22E/', $this->location_url, $matches)) {
-            // Convert DMS to decimal
             $lat = $matches[1] + ($matches[2] / 60) + ($matches[3] / 3600);
             $lng = $matches[4] + ($matches[5] / 60) + ($matches[6] / 3600);
-
             $this->latitude = $lat;
             $this->longitude = $lng;
             $this->save();
             return;
         }
 
-        // Pattern 4: Direct parameters
         if (preg_match('/3d(-?\d+\.\d+).*4d(-?\d+\.\d+)/', $this->location_url, $matches)) {
             $this->latitude = $matches[1];
             $this->longitude = $matches[2];
@@ -145,7 +294,6 @@ class Lot extends Model
         }
     }
 
-    // Get map embed URL
     public function getMapEmbedUrlAttribute()
     {
         $this->extractCoordinatesFromUrl();
@@ -163,7 +311,6 @@ class Lot extends Model
             "&layer=mapnik&marker={$lat}%2C{$lng}";
     }
 
-    // Get primary image or default
     public function getPrimaryImageUrlAttribute()
     {
         $primaryImage = $this->primaryImage;
@@ -177,11 +324,9 @@ class Lot extends Model
             return $firstImage->url;
         }
 
-        // Return a professional placeholder
         return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"%3E%3Crect width="800" height="600" fill="%23e5e7eb"/%3E%3Cg transform="translate(400,300)"%3E%3Cpath d="M-80-60h160v120h-160z" fill="%239ca3af" opacity="0.3"/%3E%3Ccircle cx="-40" cy="-20" r="15" fill="%239ca3af" opacity="0.5"/%3E%3Cpath d="M-80 60l60-80 40 50 60-80 60 110h-220z" fill="%239ca3af" opacity="0.4"/%3E%3C/g%3E%3Ctext x="400" y="340" text-anchor="middle" font-family="Arial" font-size="16" fill="%236b7280"%3EРасм мавжуд эмас%3C/text%3E%3C/svg%3E';
     }
 
-    // Get all images or default
     public function getAllImagesAttribute()
     {
         $images = $this->images;
@@ -198,46 +343,14 @@ class Lot extends Model
         });
     }
 
-    // Increment views
     public function incrementViews()
     {
         $this->increment('views_count');
     }
 
-    // Toggle like
     public function toggleLike()
     {
-        // You can implement user-specific likes with a pivot table
-        // For now, just increment/decrement
         $this->increment('likes_count');
-    }
-
-    // Automatic calculations
-    public function calculateAuctionFee()
-    {
-        if ($this->sold_price) {
-            $this->auction_fee = $this->sold_price * 0.01;
-        }
-        return $this->auction_fee;
-    }
-
-    public function calculateIncomingAmount()
-    {
-        $this->incoming_amount = $this->transferred_amount - $this->discount - $this->auction_fee;
-        return $this->incoming_amount;
-    }
-
-    public function calculateDavaktivAmount()
-    {
-        $this->davaktiv_amount = $this->incoming_amount - $this->auction_expenses;
-        return $this->davaktiv_amount;
-    }
-
-    public function autoCalculate()
-    {
-        $this->calculateAuctionFee();
-        $this->calculateIncomingAmount();
-        $this->calculateDavaktivAmount();
     }
 
     // Scopes
@@ -276,32 +389,13 @@ class Lot extends Model
         return $this->hasMany(LotMessage::class);
     }
 
-    // Helper method to get unique viewers
     public function getUniqueViewersCountAttribute()
     {
         return $this->views()->distinct('ip_address')->count('ip_address');
     }
 
-    // Helper method to get authenticated viewers
     public function getAuthenticatedViewersCountAttribute()
     {
         return $this->views()->whereNotNull('user_id')->distinct('user_id')->count('user_id');
-    }
-
-    public function contract()
-    {
-        return $this->hasOne(Contract::class);
-    }
-
-    // Lot ning shartnoma borligini tekshirish
-    public function hasContract()
-    {
-        return $this->contract()->exists();
-    }
-
-    // Lot ning shartnoma raqamini olish
-    public function getContractNumberAttribute()
-    {
-        return $this->contract?->contract_number ?? '-';
     }
 }

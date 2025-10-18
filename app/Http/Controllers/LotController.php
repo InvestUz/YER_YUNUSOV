@@ -417,137 +417,251 @@ class LotController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Lot $lot)
-    {
-        $user = Auth::user();
+  public function show(Lot $lot)
+{
+    $user = Auth::user();
 
-        // Check access
-        if ($user && $user->role === 'district_user' && $lot->tuman_id !== $user->tuman_id) {
-            abort(403, 'Рухсат йўқ');
-        }
+    // Check access
+    if ($user && $user->role === 'district_user' && $lot->tuman_id !== $user->tuman_id) {
+        abort(403, 'Рухсат йўқ');
+    }
 
-        // Track view with detailed information
-        $this->trackView($lot, request());
+    // Track view with detailed information
+    $this->trackView($lot, request());
 
-        // Extract coordinates if missing
-        $lot->extractCoordinatesFromUrl();
+    // Extract coordinates if missing
+    $lot->extractCoordinatesFromUrl();
 
-        // Load relationships - FIXED: proper eager loading
-        $lot->load([
-            'tuman',
-            'mahalla',
-            'images',
-            'contract.paymentSchedules' => function ($query) {
-                $query->orderBy('payment_number');
-            },
-            'contract.distributions',
-            'contract.additionalAgreements'
+    // Load relationships - FIXED: proper eager loading
+    $lot->load([
+        'tuman',
+        'mahalla',
+        'images',
+        'contract.paymentSchedules' => function ($query) {
+            $query->orderBy('payment_number');
+        },
+        'contract.distributions',
+        'contract.additionalAgreements'
+    ]);
+
+    // ==================== DEBUG LOGGING START ====================
+    \Log::info('=== LOT SHOW DEBUG START ===', [
+        'lot_id' => $lot->id,
+        'lot_number' => $lot->lot_number,
+        'timestamp' => now()->toDateTimeString()
+    ]);
+
+    // 1. Basic Lot Information
+    \Log::info('1. Basic Lot Info', [
+        'payment_type' => $lot->payment_type,
+        'auction_date' => $lot->auction_date ? $lot->auction_date->format('Y-m-d') : 'NULL',
+        'sold_price' => $lot->sold_price,
+        'initial_price' => $lot->initial_price,
+        'land_area' => $lot->land_area,
+    ]);
+
+    // 2. Payment Amounts
+    \Log::info('2. Payment Amounts', [
+        'paid_amount' => $lot->paid_amount,
+        'transferred_amount' => $lot->transferred_amount,
+        'auction_fee' => $lot->auction_fee,
+        'auction_expenses' => $lot->auction_expenses,
+    ]);
+
+    // 3. Discount Qualification Check
+    $qualifiesForDiscount = $lot->qualifiesForDiscount();
+    \Log::info('3. Discount Qualification', [
+        'qualifies_for_discount' => $qualifiesForDiscount,
+        'payment_type_check' => in_array($lot->payment_type, ['muddatsiz', 'muddatli_emas']),
+        'has_auction_date' => !is_null($lot->auction_date),
+        'auction_date_gt_cutoff' => $lot->auction_date ? $lot->auction_date->gt(\Carbon\Carbon::parse('2024-09-10')) : false,
+    ]);
+
+    // 4. Calculated Amounts
+    \Log::info('4. Calculated Amounts', [
+        'discount' => $lot->discount,
+        'incoming_amount' => $lot->incoming_amount,
+        'davaktiv_amount' => $lot->davaktiv_amount,
+        'distributable_amount' => $lot->distributable_amount,
+    ]);
+
+    // 5. Manual Discount Calculation Test
+    $manualDiscount = 0;
+    $manualIncoming = 0;
+    $manualDistributable = 0;
+
+    if ($qualifiesForDiscount && $lot->paid_amount > 0) {
+        $manualDiscount = $lot->paid_amount * 0.20;
+        $manualIncoming = $lot->transferred_amount - $manualDiscount - ($lot->auction_fee ?? 0);
+        $manualDistributable = $manualIncoming * 0.20;
+    } else {
+        $manualIncoming = $lot->transferred_amount - ($lot->auction_fee ?? 0);
+        $manualDistributable = $manualIncoming;
+    }
+
+    \Log::info('5. Manual Calculation Test', [
+        'manual_discount' => $manualDiscount,
+        'manual_incoming' => $manualIncoming,
+        'manual_distributable' => $manualDistributable,
+        'matches_lot_discount' => $manualDiscount == $lot->discount,
+        'matches_lot_incoming' => $manualIncoming == $lot->incoming_amount,
+        'matches_lot_distributable' => $manualDistributable == $lot->distributable_amount,
+    ]);
+
+    // 6. Contract Information
+    \Log::info('6. Contract Info', [
+        'has_contract' => !is_null($lot->contract),
+        'contract_id' => $lot->contract?->id,
+        'contract_payment_type' => $lot->contract?->payment_type,
+        'contract_amount' => $lot->contract?->contract_amount,
+        'contract_paid_amount' => $lot->contract?->paid_amount,
+    ]);
+
+    // 7. Distribution Information
+    if ($lot->contract && $lot->contract->distributions->count() > 0) {
+        \Log::info('7. Distributions', [
+            'distribution_count' => $lot->contract->distributions->count(),
+            'distributions' => $lot->contract->distributions->map(function($dist) {
+                return [
+                    'category' => $dist->category,
+                    'allocated_amount' => $dist->allocated_amount,
+                    'percentage' => $dist->percentage,
+                ];
+            })->toArray()
         ]);
+    } else {
+        \Log::info('7. Distributions', ['message' => 'No distributions found']);
+    }
 
-        // Get unique views count
-        $uniqueViewsCount = LotView::where('lot_id', $lot->id)
-            ->distinct('ip_address')
-            ->count('ip_address');
+    // 8. Attribute Accessors Test
+    \Log::info('8. Testing Attribute Accessors', [
+        'getDiscountAttribute' => $lot->getAttribute('discount'),
+        'getIncomingAmountAttribute' => $lot->getAttribute('incoming_amount'),
+        'getDavaktivAmountAttribute' => $lot->getAttribute('davaktiv_amount'),
+        'getDistributableAmountAttribute' => $lot->getAttribute('distributable_amount'),
+    ]);
 
-        // Get total views count
-        $totalViewsCount = LotView::where('lot_id', $lot->id)->count();
+    // 9. Database Raw Values
+    \Log::info('9. Database Raw Values', [
+        'db_discount' => $lot->getAttributes()['discount'] ?? 'NOT_IN_DB',
+        'db_incoming_amount' => $lot->getAttributes()['incoming_amount'] ?? 'NOT_IN_DB',
+        'db_davaktiv_amount' => $lot->getAttributes()['davaktiv_amount'] ?? 'NOT_IN_DB',
+        'db_paid_amount' => $lot->getAttributes()['paid_amount'] ?? 'NOT_IN_DB',
+        'db_transferred_amount' => $lot->getAttributes()['transferred_amount'] ?? 'NOT_IN_DB',
+    ]);
 
-        // Get messages count
-        $messagesCount = LotMessage::where('lot_id', $lot->id)->count();
-        $unreadMessagesCount = LotMessage::where('lot_id', $lot->id)
-            ->where('status', 'pending')
-            ->count();
+    // 10. Full Lot Attributes Dump
+    \Log::info('10. Full Lot Attributes', [
+        'all_attributes' => $lot->getAttributes()
+    ]);
 
-        // Get likes count
-        $likesCount = LotLike::where('lot_id', $lot->id)->count();
+    \Log::info('=== LOT SHOW DEBUG END ===');
+    // ==================== DEBUG LOGGING END ====================
 
-        // Check if current user/IP has liked
-        $hasLiked = false;
-        if ($user) {
-            $hasLiked = LotLike::where('lot_id', $lot->id)
-                ->where('user_id', $user->id)
-                ->exists();
-        } else {
-            $hasLiked = LotLike::where('lot_id', $lot->id)
-                ->where('ip_address', request()->ip())
-                ->whereNull('user_id')
-                ->exists();
-        }
+    // Get unique views count
+    $uniqueViewsCount = LotView::where('lot_id', $lot->id)
+        ->distinct('ip_address')
+        ->count('ip_address');
 
-        // Calculate payment statistics
-        $paymentStats = [
-            'total_amount' => $lot->sold_price ?? 0,
-            'paid_amount' => $lot->paid_amount ?? 0,
-            'transferred_amount' => $lot->transferred_amount ?? 0,
-            'remaining_amount' => 0,
-            'payment_progress' => 0,
-            'overdue_amount' => 0,
-        ];
+    // Get total views count
+    $totalViewsCount = LotView::where('lot_id', $lot->id)->count();
 
-        $totalPaid = $paymentStats['paid_amount'] + $paymentStats['transferred_amount'];
-        $paymentStats['remaining_amount'] = $paymentStats['total_amount'] - $totalPaid;
+    // Get messages count
+    $messagesCount = LotMessage::where('lot_id', $lot->id)->count();
+    $unreadMessagesCount = LotMessage::where('lot_id', $lot->id)
+        ->where('status', 'pending')
+        ->count();
 
-        if ($paymentStats['total_amount'] > 0) {
-            $paymentStats['payment_progress'] = ($totalPaid / $paymentStats['total_amount']) * 100;
-        }
+    // Get likes count
+    $likesCount = LotLike::where('lot_id', $lot->id)->count();
 
-        // Distribution statistics - FIXED: get from contract if exists
-        $distributionStats = [
-            'local_budget' => 0,
-            'development_fund' => 0,
-            'new_uzbekistan' => 0,
-            'district_authority' => 0,
-            'total_distributed' => 0,
-        ];
+    // Check if current user/IP has liked
+    $hasLiked = false;
+    if ($user) {
+        $hasLiked = LotLike::where('lot_id', $lot->id)
+            ->where('user_id', $user->id)
+            ->exists();
+    } else {
+        $hasLiked = LotLike::where('lot_id', $lot->id)
+            ->where('ip_address', request()->ip())
+            ->whereNull('user_id')
+            ->exists();
+    }
 
-        if ($lot->contract && $lot->contract->distributions->count() > 0) {
-            foreach ($lot->contract->distributions as $dist) {
-                if (isset($distributionStats[$dist->category])) {
-                    $distributionStats[$dist->category] += $dist->allocated_amount;
-                    $distributionStats['total_distributed'] += $dist->allocated_amount;
-                }
+    // Calculate payment statistics
+    $paymentStats = [
+        'total_amount' => $lot->sold_price ?? 0,
+        'paid_amount' => $lot->paid_amount ?? 0,
+        'transferred_amount' => $lot->transferred_amount ?? 0,
+        'remaining_amount' => 0,
+        'payment_progress' => 0,
+        'overdue_amount' => 0,
+    ];
+
+    $totalPaid = $paymentStats['paid_amount'] + $paymentStats['transferred_amount'];
+    $paymentStats['remaining_amount'] = $paymentStats['total_amount'] - $totalPaid;
+
+    if ($paymentStats['total_amount'] > 0) {
+        $paymentStats['payment_progress'] = ($totalPaid / $paymentStats['total_amount']) * 100;
+    }
+
+    // Distribution statistics - FIXED: get from contract if exists
+    $distributionStats = [
+        'local_budget' => 0,
+        'development_fund' => 0,
+        'new_uzbekistan' => 0,
+        'district_authority' => 0,
+        'total_distributed' => 0,
+    ];
+
+    if ($lot->contract && $lot->contract->distributions->count() > 0) {
+        foreach ($lot->contract->distributions as $dist) {
+            if (isset($distributionStats[$dist->category])) {
+                $distributionStats[$dist->category] += $dist->allocated_amount;
+                $distributionStats['total_distributed'] += $dist->allocated_amount;
             }
         }
-
-        // Financial metrics
-        $financialMetrics = [
-            'price_increase' => 0,
-            'price_increase_percent' => 0,
-            'price_per_hectare' => 0,
-            'net_income' => 0,
-        ];
-
-        if ($lot->initial_price > 0 && $lot->sold_price > 0) {
-            $financialMetrics['price_increase'] = $lot->sold_price - $lot->initial_price;
-            $financialMetrics['price_increase_percent'] = (($lot->sold_price - $lot->initial_price) / $lot->initial_price) * 100;
-        }
-
-        if ($lot->land_area > 0 && $lot->sold_price > 0) {
-            $financialMetrics['price_per_hectare'] = $lot->sold_price / $lot->land_area;
-        }
-
-        $financialMetrics['net_income'] = $lot->davaktiv_amount ?? 0;
-
-        // Auction countdown
-        $auctionCountdown = null;
-        if ($lot->auction_date && $lot->auction_date > now()) {
-            $auctionCountdown = now()->diff($lot->auction_date);
-        }
-
-        return view('lots.show', compact(
-            'lot',
-            'paymentStats',
-            'distributionStats',
-            'financialMetrics',
-            'auctionCountdown',
-            'uniqueViewsCount',
-            'totalViewsCount',
-            'messagesCount',
-            'unreadMessagesCount',
-            'likesCount',
-            'hasLiked'
-        ));
     }
+
+    // Financial metrics
+    $financialMetrics = [
+        'price_increase' => 0,
+        'price_increase_percent' => 0,
+        'price_per_hectare' => 0,
+        'net_income' => 0,
+    ];
+
+    if ($lot->initial_price > 0 && $lot->sold_price > 0) {
+        $financialMetrics['price_increase'] = $lot->sold_price - $lot->initial_price;
+        $financialMetrics['price_increase_percent'] = (($lot->sold_price - $lot->initial_price) / $lot->initial_price) * 100;
+    }
+
+    if ($lot->land_area > 0 && $lot->sold_price > 0) {
+        $financialMetrics['price_per_hectare'] = $lot->sold_price / $lot->land_area;
+    }
+
+    $financialMetrics['net_income'] = $lot->davaktiv_amount ?? 0;
+
+    // Auction countdown
+    $auctionCountdown = null;
+    if ($lot->auction_date && $lot->auction_date > now()) {
+        $auctionCountdown = now()->diff($lot->auction_date);
+    }
+
+    return view('lots.show', compact(
+        'lot',
+        'paymentStats',
+        'distributionStats',
+        'financialMetrics',
+        'auctionCountdown',
+        'uniqueViewsCount',
+        'totalViewsCount',
+        'messagesCount',
+        'unreadMessagesCount',
+        'likesCount',
+        'hasLiked'
+    ));
+}
 
     private function trackView(Lot $lot, Request $request)
     {
