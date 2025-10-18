@@ -363,8 +363,28 @@ class LotController extends Controller
      */
     public function store(Request $request)
     {
+        $wizardStep = (int) $request->input('wizard_step', 3);
+        $lotId = $request->input('lot_id');
+
+        // If this is a final submission with existing lot_id, just redirect
+        if ($lotId && $wizardStep === 3) {
+            $lot = Lot::findOrFail($lotId);
+
+            // Update wizard_step to mark as complete
+            $lot->update(['wizard_step' => 3]);
+
+            // Auto-calculate if sold_price exists
+            if ($lot->sold_price) {
+                $lot->autoCalculate();
+                $lot->save();
+            }
+
+            return redirect()->route('lots.show', $lot)
+                ->with('success', 'Лот муваффақиятли яратилди!');
+        }
+
+        // Otherwise, validate all fields for new lot
         $validated = $request->validate([
-            // Section 1: Basic Information
             'lot_number' => 'required|string|unique:lots,lot_number',
             'tuman_id' => 'required|exists:tumans,id',
             'mahalla_id' => 'nullable|exists:mahallas,id',
@@ -374,8 +394,6 @@ class LotController extends Controller
             'zone' => 'nullable|string',
             'master_plan_zone' => 'nullable|string',
             'yangi_uzbekiston' => 'boolean',
-
-            // Section 2: Auction Information
             'auction_date' => 'nullable|date',
             'sold_price' => 'nullable|numeric',
             'payment_type' => 'nullable|in:muddatli,muddatli_emas',
@@ -384,33 +402,105 @@ class LotController extends Controller
             'winner_phone' => 'nullable|string',
             'basis' => 'nullable|string',
             'auction_type' => 'nullable|in:ochiq,yopiq',
-
-            // Section 3: Additional Information
             'object_type' => 'nullable|string',
             'latitude' => 'nullable|string',
             'longitude' => 'nullable|string',
             'location_url' => 'nullable|url',
         ]);
 
-        // Set default values
-        $validated['yangi_uzbekiston'] = $request->has('yangi_uzbekiston');
+        $validated['yangi_uzbekiston'] = $request->has('yangi_uzbekiston') ? 1 : 0;
         $validated['contract_signed'] = false;
         $validated['paid_amount'] = 0;
         $validated['transferred_amount'] = 0;
         $validated['discount'] = 0;
+        $validated['wizard_step'] = 3;
 
-        // Create the lot
         $lot = Lot::create($validated);
 
-        // Auto-calculate fields if sold_price exists
         if ($lot->sold_price) {
             $lot->autoCalculate();
             $lot->save();
         }
 
-        // Redirect to show page with success message
         return redirect()->route('lots.show', $lot)
-            ->with('success', 'Лот муваффақиятли қўшилди! Энди шартнома ва тўлов жадвалини қўшишингиз мумкин.');
+            ->with('success', 'Лот муваффақиятли яратилди!');
+    }
+    /**
+     * Save individual section (partial lot data)
+     */
+    public function saveSection(Request $request)
+    {
+        $sectionNumber = (int) $request->input('section_number', 1);
+        $lotId = $request->input('lot_id'); // If updating existing partial lot
+
+        // Validate based on section
+        if ($sectionNumber === 1) {
+            $validated = $request->validate([
+                'lot_number' => 'required|string|unique:lots,lot_number,' . ($lotId ?? 'NULL'),
+                'tuman_id' => 'required|exists:tumans,id',
+                'mahalla_id' => 'nullable|exists:mahallas,id',
+                'address' => 'required|string',
+                'unique_number' => 'required|string',
+                'land_area' => 'required|numeric|min:0',
+                'zone' => 'nullable|string',
+                'master_plan_zone' => 'nullable|string',
+                'yangi_uzbekiston' => 'nullable|boolean',
+            ]);
+
+            $validated['wizard_step'] = 1;
+            $validated['yangi_uzbekiston'] = $request->has('yangi_uzbekiston') ? 1 : 0;
+        } elseif ($sectionNumber === 2) {
+            $validated = $request->validate([
+                'lot_id' => 'required|exists:lots,id',
+                'auction_date' => 'nullable|date',
+                'sold_price' => 'nullable|numeric',
+                'payment_type' => 'nullable|in:muddatli,muddatli_emas',
+                'winner_name' => 'nullable|string',
+                'winner_type' => 'nullable|string',
+                'winner_phone' => 'nullable|string',
+                'basis' => 'nullable|string',
+                'auction_type' => 'nullable|in:ochiq,yopiq',
+            ]);
+
+            $lotId = $validated['lot_id'];
+            unset($validated['lot_id']);
+            $validated['wizard_step'] = 2;
+        } else { // Section 3
+            $validated = $request->validate([
+                'lot_id' => 'required|exists:lots,id',
+                'object_type' => 'nullable|string',
+                'latitude' => 'nullable|string',
+                'longitude' => 'nullable|string',
+                'location_url' => 'nullable|url',
+            ]);
+
+            $lotId = $validated['lot_id'];
+            unset($validated['lot_id']);
+            $validated['wizard_step'] = 3;
+        }
+
+        // Set default values for section 1
+        if ($sectionNumber === 1) {
+            $validated['contract_signed'] = false;
+            $validated['paid_amount'] = 0;
+            $validated['transferred_amount'] = 0;
+            $validated['discount'] = 0;
+        }
+
+        // Create or update lot
+        if ($lotId) {
+            $lot = Lot::findOrFail($lotId);
+            $lot->update($validated);
+        } else {
+            $lot = Lot::create($validated);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Бўлим {$sectionNumber} сақланди",
+            'lot_id' => $lot->id,
+            'section' => $sectionNumber
+        ]);
     }
 
     /**

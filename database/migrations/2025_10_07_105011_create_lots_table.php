@@ -36,6 +36,7 @@ return new class extends Migration
             $table->string('winner_name')->nullable();
             $table->string('winner_phone')->nullable();
             $table->enum('payment_type', ['muddatli', 'muddatli_emas', 'muddatsiz'])->nullable();
+            $table->integer('wizard_step')->default(0);
             $table->string('basis')->nullable();
             $table->enum('auction_type', ['ochiq', 'yopiq'])->nullable();
             $table->string('lot_status')->default('active');

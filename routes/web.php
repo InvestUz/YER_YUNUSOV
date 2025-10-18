@@ -97,6 +97,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/lots/{lot}/send-message', [LotController::class, 'sendMessage'])
         ->name('lots.sendMessage');
 
+    Route::post('/lots/save-section', [LotController::class, 'saveSection'])->name('lots.saveSection');
     // Admin routes for viewing analytics
     Route::prefix('analytics')->name('analytics.')->group(function () {
         Route::get('/lot-views/{lot}', [AnalyticsController::class, 'lotViews'])

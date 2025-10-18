@@ -28,6 +28,7 @@ class Lot extends Model
         'construction_area',
         'investment_amount',
         'initial_price',
+        'wizard_step',
         'auction_date',
         'sold_price',
         'winner_type',

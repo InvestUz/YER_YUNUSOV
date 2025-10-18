@@ -11,12 +11,21 @@
     .leaflet-container {
         cursor: crosshair;
     }
+
     .section-saved {
         animation: pulse 0.5s ease-in-out;
     }
+
     @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.02); }
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.02);
+        }
     }
 </style>
 @endpush
@@ -84,7 +93,7 @@
                  SECTION 7: FORM SECTION 1 - АСОСИЙ МАЪЛУМОТЛАР
                  ==================================== --}}
             <div class="bg-white border-2 border-gray-300 shadow-lg rounded-lg overflow-hidden mb-6" id="section-1">
-                
+
                 {{-- Section Header --}}
                 <div class="px-6 py-4 bg-blue-600 flex items-center justify-between">
                     <h2 class="text-lg font-bold text-white">1. АСОСИЙ МАЪЛУМОТЛАР</h2>
@@ -93,7 +102,7 @@
 
                 {{-- Section Content --}}
                 <div class="p-6 space-y-6">
-                    
+
                     {{-- Field: Лот рақами --}}
                     <div>
                         <label class="block text-sm font-bold text-gray-900 mb-2">
@@ -175,7 +184,7 @@
                         </div>
                     </div>
 
-                 
+
 
                     {{-- Fields: Зона, Бош режа, Янги Ўзбекистон (Grid) --}}
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -224,7 +233,7 @@
                  SECTION 8: FORM SECTION 2 - АУКЦИОН МАЪЛУМОТЛАРИ
                  ==================================== --}}
             <div class="bg-white border-2 border-gray-300 shadow-lg rounded-lg overflow-hidden mb-6" id="section-2">
-                
+
                 {{-- Section Header --}}
                 <div class="px-6 py-4 bg-green-600 flex items-center justify-between">
                     <h2 class="text-lg font-bold text-white">2. АУКЦИОН МАЪЛУМОТЛАРИ</h2>
@@ -233,7 +242,7 @@
 
                 {{-- Section Content --}}
                 <div class="p-6 space-y-6">
-                    
+
                     {{-- Fields: Аукцион санаси, Сотилган нарх, Тўлов тури (Grid) --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -326,7 +335,7 @@
                  SECTION 9: FORM SECTION 3 - ҚЎШИМЧА МАЪЛУМОТЛАР
                  ==================================== --}}
             <div class="bg-white border-2 border-gray-300 shadow-lg rounded-lg overflow-hidden mb-6" id="section-3">
-                
+
                 {{-- Section Header --}}
                 <div class="px-6 py-4 bg-purple-600 flex items-center justify-between">
                     <h2 class="text-lg font-bold text-white">3. ҚЎШИМЧА МАЪЛУМОТЛАР</h2>
@@ -335,7 +344,7 @@
 
                 {{-- Section Content --}}
                 <div class="p-6 space-y-6">
-                    
+
                     {{-- Field: Объект тури --}}
                     <div>
                         <label class="block text-sm font-bold text-gray-900 mb-2">Объект тури</label>
@@ -345,7 +354,7 @@
                             placeholder="Yoqilg'i quyish shoxobchasi">
                     </div>
 
-                
+
 
                     {{-- Fields: Latitude, Longitude (Grid) --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -464,37 +473,27 @@
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+
 <script>
 // ====================================
-// PART 1: GLOBAL VARIABLES & CONFIGURATION
+// MINIMAL JAVASCRIPT - NO VALIDATION
 // ====================================
 
-// Get CSRF token for AJAX requests
 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-// Section save tracking object
-const savedSections = {
-    1: false,
-    2: false,
-    3: false
-};
-
-// Map-related variables
-let map;
-let marker;
+// Map variables
+let map, marker;
 const latInput = document.getElementById('latitude');
 const lngInput = document.getElementById('longitude');
 const locationUrlInput = document.getElementById('location_url');
 let mapInitialized = false;
 
-// Mahalla-related variables
+// Mahalla variables
 let mahallas = [];
 const mahallaSearch = document.getElementById('mahalla_search');
 const mahallaDropdown = document.getElementById('mahalla_dropdown');
 const mahallaIdInput = document.getElementById('mahalla_id');
 const tumanSelect = document.getElementById('tuman_select');
-
-// Modal elements
 const addMahallaBtn = document.getElementById('add_mahalla_btn');
 const mahallaModal = document.getElementById('mahalla_modal');
 const newMahallaName = document.getElementById('new_mahalla_name');
@@ -502,189 +501,35 @@ const saveMahallaBtn = document.getElementById('save_mahalla');
 const cancelMahallaBtn = document.getElementById('cancel_mahalla');
 const mahallaError = document.getElementById('mahalla_error');
 
-
 // ====================================
-// PART 2: SECTION SAVE FUNCTIONALITY
+// SECTION SAVE - VISUAL ONLY
 // ====================================
-
-/**
- * Save section data to localStorage
- * @param {number} sectionNumber - The section number (1, 2, or 3)
- */
 function saveSection(sectionNumber) {
     const section = document.getElementById(`section-${sectionNumber}`);
     const statusEl = section.querySelector('.section-status');
     
-    // Get all inputs in this section
-    const inputs = section.querySelectorAll('input, select, textarea');
-    let isValid = true;
-    
-    // Validate required fields in section 1
-    if (sectionNumber === 1) {
-        const requiredFields = ['lot_number', 'tuman_id', 'address', 'unique_number', 'land_area'];
-        requiredFields.forEach(fieldName => {
-            const field = document.getElementById(fieldName);
-            if (!field || !field.value.trim()) {
-                isValid = false;
-                if (field) {
-                    field.classList.add('border-red-600');
-                    field.classList.remove('border-gray-300');
-                }
-            } else {
-                if (field) {
-                    field.classList.remove('border-red-600');
-                    field.classList.add('border-gray-300');
-                }
-            }
-        });
-        
-        if (!isValid) {
-            showMessage('Илтимос, барча мажбурий майдонларни тўлдиринг!', 'error');
-            return;
-        }
-    }
-    
-    // Save data to localStorage
-    const sectionData = {};
-    inputs.forEach(input => {
-        if (input.name) {
-            sectionData[input.name] = input.value;
-        }
-    });
-    localStorage.setItem(`lot_section_${sectionNumber}`, JSON.stringify(sectionData));
-    
-    // Mark as saved
-    savedSections[sectionNumber] = true;
+    // Just visual feedback
     statusEl.textContent = '✓ Сақланди';
     statusEl.classList.remove('opacity-75');
     statusEl.classList.add('font-bold');
     
-    // Add animation
     section.classList.add('section-saved');
-    setTimeout(() => {
-        section.classList.remove('section-saved');
-    }, 500);
+    setTimeout(() => section.classList.remove('section-saved'), 500);
     
-    showMessage(`${sectionNumber}-бўлим маълумотлари сақланди`, 'success');
-    
-    // Scroll to next section if not last
+    // Scroll to next section
     if (sectionNumber < 3) {
         setTimeout(() => {
-            const nextSection = document.getElementById(`section-${sectionNumber + 1}`);
-            nextSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document.getElementById(`section-${sectionNumber + 1}`).scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
         }, 600);
     }
 }
 
-
 // ====================================
-// PART 3: MESSAGE DISPLAY HELPER
+// MAP FUNCTIONALITY
 // ====================================
-
-/**
- * Show success or error message
- * @param {string} text - Message text to display
- * @param {string} type - Message type ('success' or 'error')
- */
-function showMessage(text, type = 'success') {
-    const messageEl = document.getElementById('success-message');
-    const textEl = document.getElementById('success-text');
-    
-    textEl.textContent = text;
-    
-    if (type === 'error') {
-        messageEl.className = 'mb-6 bg-red-50 border-l-4 border-red-600 p-4 rounded';
-        textEl.className = 'text-sm font-medium text-red-800';
-    } else {
-        messageEl.className = 'mb-6 bg-green-50 border-l-4 border-green-600 p-4 rounded';
-        textEl.className = 'text-sm font-medium text-green-800';
-    }
-    
-    messageEl.classList.remove('hidden');
-    
-    // Auto-hide after 3 seconds
-    setTimeout(() => {
-        messageEl.classList.add('hidden');
-    }, 3000);
-    
-    // Scroll to top to show message
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-
-// ====================================
-// PART 4: LOAD SAVED DATA ON PAGE LOAD
-// ====================================
-
-window.addEventListener('DOMContentLoaded', function() {
-    // Load saved section data from localStorage
-    for (let i = 1; i <= 3; i++) {
-        const savedData = localStorage.getItem(`lot_section_${i}`);
-        if (savedData) {
-            try {
-                const data = JSON.parse(savedData);
-                Object.keys(data).forEach(name => {
-                    const input = document.querySelector(`[name="${name}"]`);
-                    if (input && !input.value) {
-                        input.value = data[name];
-                    }
-                });
-                
-                // Mark as saved
-                savedSections[i] = true;
-                const section = document.getElementById(`section-${i}`);
-                const statusEl = section.querySelector('.section-status');
-                statusEl.textContent = '✓ Сақланди';
-                statusEl.classList.remove('opacity-75');
-                statusEl.classList.add('font-bold');
-            } catch (e) {
-                console.error('Error loading saved data:', e);
-            }
-        }
-    }
-});
-
-
-// ====================================
-// PART 5: FORM SUBMISSION HANDLING
-// ====================================
-
-document.getElementById('lotForm').addEventListener('submit', function(e) {
-    // Validate that section 1 required fields are complete
-    const requiredFields = ['lot_number', 'tuman_id', 'address', 'unique_number', 'land_area', 'initial_price'];
-    let isValid = true;
-    
-    requiredFields.forEach(fieldName => {
-        const field = document.getElementById(fieldName);
-        if (!field || !field.value.trim()) {
-            isValid = false;
-            if (field) {
-                field.classList.add('border-red-600');
-            }
-        }
-    });
-    
-    if (!isValid) {
-        e.preventDefault();
-        showMessage('Илтимос, камида асосий маълумотларни тўлдиринг!', 'error');
-        document.getElementById('section-1').scrollIntoView({ behavior: 'smooth' });
-        return;
-    }
-    
-    // Clear localStorage after successful validation
-    setTimeout(() => {
-        for (let i = 1; i <= 3; i++) {
-            localStorage.removeItem(`lot_section_${i}`);
-        }
-    }, 100);
-});
-
-
-// ====================================
-// PART 6: LEAFLET MAP INITIALIZATION
-// ====================================
-
-// Observe when map container becomes visible
 const mapContainer = document.getElementById('map');
 const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -698,350 +543,273 @@ const observer = new IntersectionObserver((entries) => {
 });
 observer.observe(mapContainer);
 
-/**
- * Initialize Leaflet map
- */
 function initMap() {
     const defaultLat = 41.2995;
     const defaultLng = 69.2401;
-
     const oldLat = parseFloat(latInput.value) || defaultLat;
     const oldLng = parseFloat(lngInput.value) || defaultLng;
 
-    // Create map instance
     map = L.map('map').setView([oldLat, oldLng], 13);
-
-    // Add OpenStreetMap tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
         maxZoom: 19
     }).addTo(map);
 
-    // Add marker if coordinates already exist
     if (latInput.value && lngInput.value) {
-        marker = L.marker([oldLat, oldLng], {
-            draggable: true
-        }).addTo(map);
-
-        marker.on('dragend', function(e) {
-            const position = marker.getLatLng();
-            updateCoordinates(position.lat, position.lng);
+        marker = L.marker([oldLat, oldLng], { draggable: true }).addTo(map);
+        marker.on('dragend', function() {
+            const pos = marker.getLatLng();
+            updateCoordinates(pos.lat, pos.lng);
         });
     }
 
-    // Handle map click to add/move marker
     map.on('click', function(e) {
-        const lat = e.latlng.lat;
-        const lng = e.latlng.lng;
-
         if (marker) {
-            marker.setLatLng([lat, lng]);
+            marker.setLatLng([e.latlng.lat, e.latlng.lng]);
         } else {
-            marker = L.marker([lat, lng], {
-                draggable: true
-            }).addTo(map);
-
-            marker.on('dragend', function(e) {
-                const position = marker.getLatLng();
-                updateCoordinates(position.lat, position.lng);
+            marker = L.marker([e.latlng.lat, e.latlng.lng], { draggable: true }).addTo(map);
+            marker.on('dragend', function() {
+                const pos = marker.getLatLng();
+                updateCoordinates(pos.lat, pos.lng);
             });
         }
-
-        updateCoordinates(lat, lng);
+        updateCoordinates(e.latlng.lat, e.latlng.lng);
     });
 }
 
-
-// ====================================
-// PART 7: COORDINATE UPDATE FUNCTIONS
-// ====================================
-
-/**
- * Update coordinate inputs and generate Google Maps URL
- * @param {number} lat - Latitude
- * @param {number} lng - Longitude
- */
 function updateCoordinates(lat, lng) {
     latInput.value = lat.toFixed(10);
     lngInput.value = lng.toFixed(10);
-
-    // Generate Google Maps URL
-    const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-    locationUrlInput.value = googleMapsUrl;
-
-    // Visual feedback
-    latInput.classList.add('border-green-500');
-    lngInput.classList.add('border-green-500');
-    setTimeout(() => {
-        latInput.classList.remove('border-green-500');
-        lngInput.classList.remove('border-green-500');
-    }, 1000);
+    locationUrlInput.value = `https://www.google.com/maps?q=${lat},${lng}`;
 }
 
-// Handle manual latitude input
-latInput.addEventListener('change', function() {
-    const lat = parseFloat(this.value);
-    const lng = parseFloat(lngInput.value);
-
-    if (!isNaN(lat) && !isNaN(lng)) {
-        if (marker) {
-            marker.setLatLng([lat, lng]);
-        } else if (map) {
-            marker = L.marker([lat, lng], {
-                draggable: true
-            }).addTo(map);
-
-            marker.on('dragend', function(e) {
-                const position = marker.getLatLng();
-                updateCoordinates(position.lat, position.lng);
-            });
-        }
-        if (map) {
-            map.setView([lat, lng], 13);
-        }
-
-        const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-        locationUrlInput.value = googleMapsUrl;
-    }
-});
-
-// Handle manual longitude input
-lngInput.addEventListener('change', function() {
-    const lat = parseFloat(latInput.value);
-    const lng = parseFloat(this.value);
-
-    if (!isNaN(lat) && !isNaN(lng)) {
-        if (marker) {
-            marker.setLatLng([lat, lng]);
-        } else if (map) {
-            marker = L.marker([lat, lng], {
-                draggable: true
-            }).addTo(map);
-
-            marker.on('dragend', function(e) {
-                const position = marker.getLatLng();
-                updateCoordinates(position.lat, position.lng);
-            });
-        }
-        if (map) {
-            map.setView([lat, lng], 13);
-        }
-
-        const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-        locationUrlInput.value = googleMapsUrl;
-    }
-});
-
-
 // ====================================
-// PART 8: TUMAN SELECT - LOAD MAHALLAS
+// TUMAN -> MAHALLA LOADING
 // ====================================
-
 tumanSelect.addEventListener('change', function() {
     const tumanId = this.value;
     mahallaSearch.value = '';
     mahallaIdInput.value = '';
 
     if (!tumanId) {
-        mahallaDropdown.innerHTML = '<div class="p-2 text-sm text-gray-600 text-center">Туманни танланг</div>';
-        mahallaDropdown.classList.add('hidden');
         mahallaSearch.disabled = true;
         mahallaSearch.placeholder = 'Туманни танланг...';
         return;
     }
 
-    // Fetch mahallas for selected tuman
     fetch(`/mahallas/${tumanId}`)
         .then(response => response.json())
         .then(data => {
             mahallas = data;
-            mahallaSearch.placeholder = 'Маҳалла номини ёзинг...';
             mahallaSearch.disabled = false;
-
-            // Pre-select if old value exists
-            const oldValue = '{{ old("mahalla_id") }}';
-            if (oldValue && mahallas.length > 0) {
-                const selected = mahallas.find(m => m.id == oldValue);
-                if (selected) {
-                    mahallaSearch.value = selected.name;
-                    mahallaIdInput.value = selected.id;
-                }
-            }
-        })
-        .catch(error => {
-            console.error('Error loading mahallas:', error);
-            alert('Маҳаллалар юкланмади');
+            mahallaSearch.placeholder = 'Маҳалла номини ёзинг...';
         });
 });
 
-
 // ====================================
-// PART 9: MAHALLA SEARCH FUNCTIONALITY
+// MAHALLA SEARCH
 // ====================================
-
 mahallaSearch.addEventListener('input', function() {
     const searchTerm = this.value.toLowerCase();
 
     if (!searchTerm) {
         mahallaDropdown.classList.add('hidden');
-        mahallaIdInput.value = '';
         return;
     }
 
-    // Check if mahallas array is populated
-    if (!mahallas || mahallas.length === 0) {
-        mahallaDropdown.innerHTML = '<div class="p-2 text-sm text-gray-600 text-center">Туманни танланг</div>';
-        mahallaDropdown.classList.remove('hidden');
-        return;
-    }
-
-    // Filter mahallas based on search term
-    const filtered = mahallas.filter(m => {
-        // Safety check: ensure m and m.name exist
-        return m && m.name && m.name.toLowerCase().includes(searchTerm);
-    });
+    const filtered = mahallas.filter(m => m && m.name && m.name.toLowerCase().includes(searchTerm));
 
     if (filtered.length === 0) {
         mahallaDropdown.innerHTML = '<div class="p-2 text-sm text-gray-600 text-center">Натижа топилмади</div>';
-        mahallaDropdown.classList.remove('hidden');
-        return;
+    } else {
+        mahallaDropdown.innerHTML = filtered.map(m => `
+            <div class="p-3 hover:bg-blue-50 cursor-pointer border-b mahalla-option" data-id="${m.id}" data-name="${m.name}">
+                ${m.name}
+            </div>
+        `).join('');
+        
+        document.querySelectorAll('.mahalla-option').forEach(option => {
+            option.addEventListener('click', function() {
+                mahallaSearch.value = this.dataset.name;
+                mahallaIdInput.value = this.dataset.id;
+                mahallaDropdown.classList.add('hidden');
+            });
+        });
     }
 
-    // Display filtered results
-    mahallaDropdown.innerHTML = filtered.map(m => `
-        <div class="p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-200 mahalla-option" 
-             data-id="${m.id}" 
-             data-name="${m.name}">
-            <div class="font-medium text-gray-900">${m.name}</div>
-        </div>
-    `).join('');
-
     mahallaDropdown.classList.remove('hidden');
-
-    // Add click handlers to dropdown options
-    document.querySelectorAll('.mahalla-option').forEach(option => {
-        option.addEventListener('click', function() {
-            mahallaSearch.value = this.dataset.name;
-            mahallaIdInput.value = this.dataset.id;
-            mahallaDropdown.classList.add('hidden');
-        });
-    });
 });
 
-// Close dropdown when clicking outside
 document.addEventListener('click', function(e) {
     if (!mahallaSearch.contains(e.target) && !mahallaDropdown.contains(e.target)) {
         mahallaDropdown.classList.add('hidden');
     }
 });
 
-
 // ====================================
-// PART 10: ADD NEW MAHALLA - MODAL HANDLERS
+// ADD MAHALLA MODAL
 // ====================================
-
-// Open modal
-addMahallaBtn.addEventListener('click', function() {
-    const tumanId = tumanSelect.value;
-
-    if (!tumanId) {
-        alert('Аввал туманни танланг!');
-        tumanSelect.focus();
-        return;
-    }
-
+addMahallaBtn.addEventListener('click', () => {
     newMahallaName.value = '';
     mahallaError.classList.add('hidden');
     mahallaModal.classList.remove('hidden');
-    newMahallaName.focus();
 });
 
-// Close modal
-cancelMahallaBtn.addEventListener('click', function() {
+cancelMahallaBtn.addEventListener('click', () => {
     mahallaModal.classList.add('hidden');
 });
 
-// Save new mahalla
 saveMahallaBtn.addEventListener('click', function() {
     const name = newMahallaName.value.trim();
-    const tumanId = tumanSelect.value;
-
-    if (!name) {
-        mahallaError.textContent = 'Маҳалла номини киритинг';
-        mahallaError.classList.remove('hidden');
-        return;
-    }
-
-    // Check for duplicates
-    if (mahallas.some(m => m.name && m.name.toLowerCase() === name.toLowerCase())) {
-        mahallaError.textContent = 'Бу маҳалла аллақачон мавжуд';
-        mahallaError.classList.remove('hidden');
-        return;
-    }
-
-    // Disable button during save
+    
     saveMahallaBtn.disabled = true;
     saveMahallaBtn.textContent = 'Сақланмоқда...';
 
-    // Send AJAX request to save mahalla
     fetch('/mahallas', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            },
-            body: JSON.stringify({
-                tuman_id: tumanId,
-                name: name
-            })
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
+        },
+        body: JSON.stringify({
+            tuman_id: tumanSelect.value,
+            name: name
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Add to local array
-                mahallas.push(data.mahalla);
-                
-                // Set as selected
-                mahallaSearch.value = data.mahalla.name;
-                mahallaIdInput.value = data.mahalla.id;
-                
-                // Close modal
-                mahallaModal.classList.add('hidden');
-                
-                // Show success message
-                showMessage('Маҳалла муваффақиятли қўшилди!', 'success');
-            } else {
-                mahallaError.textContent = data.message || 'Хатолик юз берди';
-                mahallaError.classList.remove('hidden');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            mahallaError.textContent = 'Хатолик юз берди';
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            mahallas.push(data.mahalla);
+            mahallaSearch.value = data.mahalla.name;
+            mahallaIdInput.value = data.mahalla.id;
+            mahallaModal.classList.add('hidden');
+        } else {
+            mahallaError.textContent = data.message || 'Хатолик';
             mahallaError.classList.remove('hidden');
-        })
-        .finally(() => {
-            saveMahallaBtn.disabled = false;
-            saveMahallaBtn.textContent = 'Сақлаш';
-        });
+        }
+    })
+    .finally(() => {
+        saveMahallaBtn.disabled = false;
+        saveMahallaBtn.textContent = 'Сақлаш';
+    });
 });
 
-// Close modal on ESC key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        mahallaModal.classList.add('hidden');
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') mahallaModal.classList.add('hidden');
+});
+
+// ====================================
+// SECTION SAVE - AJAX TO DATABASE
+// ====================================
+function saveSection(sectionNumber) {
+    const section = document.getElementById(`section-${sectionNumber}`);
+    const statusEl = section.querySelector('.section-status');
+    const saveBtn = section.querySelector('button[onclick*="saveSection"]');
+    
+    // Get form data
+    const formData = new FormData(document.getElementById('lotForm'));
+    formData.append('section_number', sectionNumber);
+    
+    // Get lot_id if exists (for updates)
+    const lotIdInput = document.getElementById('lot_id');
+    if (lotIdInput && lotIdInput.value) {
+        formData.append('lot_id', lotIdInput.value);
     }
-});
-
-
-// ====================================
-// PART 11: INITIALIZE - LOAD PRE-SELECTED TUMAN
-// ====================================
-
-// If tuman is pre-selected (from old input), load its mahallas
-if (tumanSelect.value) {
-    tumanSelect.dispatchEvent(new Event('change'));
+    
+    // Show loading state
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '⏳ Сақланмоқда...';
+    }
+    
+    // Send AJAX request
+    fetch('/lots/save-section', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Save lot_id for subsequent sections
+            if (data.lot_id && lotIdInput) {
+                lotIdInput.value = data.lot_id;
+            }
+            
+            // Update UI
+            statusEl.textContent = '✓ Сақланди';
+            statusEl.classList.remove('opacity-75');
+            statusEl.classList.add('font-bold');
+            
+            section.classList.add('section-saved');
+            setTimeout(() => section.classList.remove('section-saved'), 500);
+            
+            // Show success message
+            showSuccessMessage(data.message);
+            
+            // Scroll to next section
+            if (sectionNumber < 3) {
+                setTimeout(() => {
+                    document.getElementById(`section-${sectionNumber + 1}`).scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }, 600);
+            }
+        } else {
+            alert('Хатолик: ' + (data.message || 'Маълумотлар сақланмади'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Хатолик юз берди. Илтимос, қайта уриниб кўринг.');
+    })
+    .finally(() => {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '💾 Сақлаш';
+        }
+    });
 }
 
+// Show success message helper
+function showSuccessMessage(text) {
+    const messageEl = document.getElementById('success-message');
+    const textEl = document.getElementById('success-text');
+    
+    if (messageEl && textEl) {
+        textEl.textContent = text;
+        messageEl.className = 'mb-6 bg-green-50 border-l-4 border-green-600 p-4 rounded';
+        messageEl.classList.remove('hidden');
+        
+        setTimeout(() => {
+            messageEl.classList.add('hidden');
+        }, 3000);
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+// ====================================
+// FINAL FORM SUBMISSION
+// ====================================
+document.getElementById('lotForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Add wizard_step for final submission
+    let wizardStepInput = document.querySelector('input[name="wizard_step"]');
+    if (!wizardStepInput) {
+        wizardStepInput = document.createElement('input');
+        wizardStepInput.type = 'hidden';
+        wizardStepInput.name = 'wizard_step';
+        this.appendChild(wizardStepInput);
+    }
+    wizardStepInput.value = '3'; // Mark as complete
+    
+    // Submit form normally
+    this.submit();
+});
 </script>
 @endpush
