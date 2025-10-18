@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdditionalAgreementController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\MahallaController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ContractController;
@@ -25,13 +26,7 @@ Route::get('/', function () {
     }
     return redirect()->route('login');
 });
-Route::get('/api/mahallas/{tuman_id}', function ($tuman_id) {
-    $mahallas = \App\Models\Mahalla::where('tuman_id', $tuman_id)
-        ->orderBy('name', 'asc')
-        ->get(['id', 'name']);
 
-    return response()->json($mahallas);
-});
 // Guest routes (not authenticated)
 Route::middleware('guest')->group(function () {
     Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -40,6 +35,10 @@ Route::middleware('guest')->group(function () {
 
 // Authenticated routes
 Route::middleware('auth')->group(function () {
+    // Mahalla API routes (for AJAX)
+    Route::get('/mahallas/{tumanId}', [MahallaController::class, 'getByTuman']);
+    Route::post('/mahallas', [MahallaController::class, 'store']);
+
     Route::resource('contracts', ContractController::class);
     Route::post('/contracts/{contract}/generate-schedule', [ContractController::class, 'generateSchedule'])
         ->name('contracts.generate-schedule');
@@ -57,10 +56,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/additional-agreements/{agreement}', [AdditionalAgreementController::class, 'destroy'])
         ->name('additional-agreements.destroy');
 
-    Route::post('/contracts/{contract}/generate-schedule', [ContractController::class, 'generateSchedule'])
-        ->name('contracts.generate-schedule');
-
-
     // Payment recording
     Route::post('/payment-schedules/{schedule}/record-payment', [ContractController::class, 'recordPayment'])
         ->name('payment-schedules.record-payment');
@@ -68,10 +63,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/payment-schedules/{schedule}', [PaymentScheduleController::class, 'update'])
         ->name('payment-schedules.update');
 
-
     // Payment Schedules
-    Route::put('/payment-schedules/{schedule}', [PaymentScheduleController::class, 'update'])
-        ->name('payment-schedules.update');
     Route::delete('/payment-schedules/{schedule}', [PaymentScheduleController::class, 'destroy'])
         ->name('payment-schedules.destroy');
 
@@ -86,6 +78,7 @@ Route::middleware('auth')->group(function () {
         ->name('distributions.update');
     Route::delete('/distributions/{distribution}', [DistributionController::class, 'destroy'])
         ->name('distributions.destroy');
+
     // Logout
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
@@ -96,13 +89,9 @@ Route::middleware('auth')->group(function () {
     // Export route must be before resource routes to avoid conflicts
     Route::get('/lots/export', [LotController::class, 'export'])->name('lots.export');
 
-    // AJAX route for mahallas
-    Route::get('/mahallas/by-tuman', [LotController::class, 'getMahallas'])->name('mahallas.by-tuman');
-
     // Resource routes
     Route::resource('lots', LotController::class);
     Route::post('/lots/{lot}/toggle-like', [LotController::class, 'toggleLike'])->name('lots.toggleLike');
-
     Route::post('/lots/{lot}/send-message', [LotController::class, 'sendMessage'])
         ->name('lots.sendMessage');
 
@@ -127,7 +116,6 @@ Route::middleware('auth')->group(function () {
             return redirect()->route('monitoring.report1');
         })->name('index');
 
-
         Route::get('/report1', [MonitoringController::class, 'report1'])->name('report1');
         Route::get('/report1/details', [MonitoringController::class, 'report1Details'])->name('report1.details');
 
@@ -139,12 +127,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/report3', [MonitoringController::class, 'report3'])->name('report3');
         Route::get('/report3/details', [MonitoringController::class, 'report3Details'])->name('report3.details');
 
-
         Route::get('/monitoring/payment-schedule/{lotId}', [MonitoringController::class, 'paymentSchedule'])
             ->name('monitoring.payment-schedule');
     });
 });
-
 
 //testparserstart
 Route::get('/parser', [ParserController::class, 'index'])->name('parser.index');

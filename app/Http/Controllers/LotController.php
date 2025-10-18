@@ -389,13 +389,14 @@ class LotController extends Controller
             'basis' => 'nullable|string',
             'auction_type' => 'nullable|in:ochiq,yopiq',
             'lot_status' => 'nullable|string',
-            'contract_signed' => 'boolean',
-            'contract_date' => 'nullable|date',
-            'contract_number' => 'nullable|string',
-            'paid_amount' => 'nullable|numeric',
-            'transferred_amount' => 'nullable|numeric',
-            'discount' => 'nullable|numeric',
         ]);
+
+        // Set default values
+        $validated['yangi_uzbekiston'] = $request->has('yangi_uzbekiston');
+        $validated['contract_signed'] = false;
+        $validated['paid_amount'] = 0;
+        $validated['transferred_amount'] = 0;
+        $validated['discount'] = 0;
 
         $lot = Lot::create($validated);
 
@@ -405,8 +406,9 @@ class LotController extends Controller
             $lot->save();
         }
 
-        return redirect()->route('lots.index')
-            ->with('success', 'Лот муваффақиятли қўшилди!');
+        // Redirect to show page with success message
+        return redirect()->route('lots.show', $lot)
+            ->with('success', 'Лот муваффақиятли қўшилди! Энди шартнома ва тўлов жадвалини қўшишингиз мумкин.');
     }
 
     /**
