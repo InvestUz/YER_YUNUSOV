@@ -130,7 +130,7 @@
     <div class="fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 z-30">
         <!-- Logo -->
         <div class="flex items-center gap-3 px-6 py-5 border-b border-gray-200">
-         
+
             <div>
                 <div class="w-40 d-flex m-auto"><img src="https://toshkentinvest.uz/assets/frontend/tild6238-3031-4265-a564-343037346231/tic_logo_blue.png" alt=""></div>
                 <p class="text-xs text-gray-500">Yerlarni monitoring qilish tizimi</p>
@@ -162,7 +162,7 @@
             </a>
 
             <!-- Dashboard / Infographics -->
-            <a href="{{ route('dashboard') }}"
+            {{-- <a href="{{ route('dashboard') }}"
                 class="flex items-center gap-3 px-4 py-3 {{ request()->routeIs('dashboard') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50' }} rounded-lg font-medium transition-colors">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -170,7 +170,7 @@
                     </path>
                 </svg>
                 <span>Инфографика</span>
-            </a>
+            </a> --}}
         </nav>
 
         <!-- User Info -->

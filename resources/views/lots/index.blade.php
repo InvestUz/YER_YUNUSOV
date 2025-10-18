@@ -143,7 +143,6 @@
                             <th class="text-right py-3 px-3 text-xs font-semibold text-gray-700 uppercase border-r border-gray-300">Сотилган</th>
                             <th class="text-left py-3 px-3 text-xs font-semibold text-gray-700 uppercase border-r border-gray-300">Ғолиб</th>
                             <th class="text-center py-3 px-3 text-xs font-semibold text-gray-700 uppercase border-r border-gray-300">Тўлов</th>
-                            <th class="text-center py-3 px-3 text-xs font-semibold text-gray-700 uppercase border-r border-gray-300">Ҳолат</th>
                             <th class="text-center py-3 px-3 text-xs font-semibold text-gray-700 uppercase">Амаллар</th>
                         </tr>
                     </thead>
@@ -179,7 +178,6 @@
                                 <span class="text-gray-500">-</span>
                                 @endif
                             </td>
-                            <td class="py-2.5 px-3 text-center border-r border-gray-300 text-gray-500">-</td>
                             <td class="py-2.5 px-3 text-center border-r border-gray-300 text-gray-500">-</td>
                             <td class="py-2.5 px-3 text-center border-r border-gray-300 text-gray-500">-</td>
                             <td class="py-2.5 px-3 text-center text-gray-500">-</td>
@@ -233,13 +231,7 @@
                                 <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded border border-gray-300">Муддатсиз</span>
                                 @endif
                             </td>
-                            <td class="py-2.5 px-3 text-center border-r border-gray-200">
-                                @if($lot->contract_signed)
-                                <span class="text-xs px-2 py-0.5 bg-green-50 text-green-700 rounded border border-green-200">Тузилган</span>
-                                @else
-                                <span class="text-xs px-2 py-0.5 bg-gray-50 text-gray-600 rounded border border-gray-200">Кутилмоқда</span>
-                                @endif
-                            </td>
+
                             <td class="py-2.5 px-3 text-center">
                                 <div class="flex items-center justify-center gap-1">
                                     <a href="{{ route('lots.show', $lot->id) }}"

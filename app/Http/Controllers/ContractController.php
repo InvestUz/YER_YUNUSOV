@@ -96,7 +96,6 @@ class ContractController extends Controller
                 'buyer_inn' => 'nullable|string|max:50',
                 'status' => 'required|in:active,completed,cancelled',
                 'note' => 'nullable|string|max:1000',
-                'initial_paid_amount' => 'nullable|numeric|min:0',
                 'initial_payment_date' => 'nullable',
             ]);
         }

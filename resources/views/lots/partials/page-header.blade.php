@@ -39,6 +39,8 @@
                         <span class="w-2 h-2 rounded-full mr-1.5
                             {{ $lot->lot_status === 'active' ? 'bg-green-500' :
                                ($lot->lot_status === 'sold' ? 'bg-blue-500' : 'bg-gray-500') }}"></span>
+                    <span class="text-gray-600">  Лот холати:</span>
+
                         {{ ucfirst($lot->lot_status) }}
                     </span>
                 </div>

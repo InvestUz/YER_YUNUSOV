@@ -150,7 +150,7 @@
                             {{-- Кадастр рақами --}}
                             <div>
                                 <label class="block text-sm font-bold text-gray-900 mb-2">
-                                    Кадастр рақами <span class="text-red-600">*</span>
+                                    Уникал рақами <span class="text-red-600">*</span>
                                 </label>
                                 <input type="text" name="unique_number" required
                                     class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition"
@@ -186,6 +186,7 @@
                                     <option value="2-зона" {{ old('zone') == '2-зона' ? 'selected' : '' }}>2-зона</option>
                                     <option value="3-зона" {{ old('zone') == '3-зона' ? 'selected' : '' }}>3-зона</option>
                                     <option value="4-зона" {{ old('zone') == '4-зона' ? 'selected' : '' }}>4-зона</option>
+                                    <option value="5-зона" {{ old('zone') == '5-зона' ? 'selected' : '' }}>5-зона</option>
                                 </select>
                             </div>
 
@@ -221,19 +222,7 @@
                     </div>
                     <div class="p-6 space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {{-- Бошланғич нарх --}}
-                            <div>
-                                <label class="block text-sm font-bold text-gray-900 mb-2">
-                                    Бошланғич нарх (сўм) <span class="text-red-600">*</span>
-                                </label>
-                                <input type="number" step="0.01" name="initial_price" required
-                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition"
-                                    value="{{ old('initial_price') }}"
-                                    placeholder="243567840.00">
-                                @error('initial_price')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                @enderror
-                            </div>
+
 
                             {{-- Аукцион санаси --}}
                             <div>
@@ -341,26 +330,6 @@
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition"
                                 value="{{ old('object_type') }}"
                                 placeholder="Yoqilg'i quyish shoxobchasi">
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {{-- Қурилиш майдони --}}
-                            <div>
-                                <label class="block text-sm font-bold text-gray-900 mb-2">Қурилиш майдони (м²)</label>
-                                <input type="number" step="0.01" name="construction_area"
-                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition"
-                                    value="{{ old('construction_area') }}"
-                                    placeholder="5850.00">
-                            </div>
-
-                            {{-- Инвестиция --}}
-                            <div>
-                                <label class="block text-sm font-bold text-gray-900 mb-2">Инвестиция ($)</label>
-                                <input type="number" step="0.01" name="investment_amount"
-                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition"
-                                    value="{{ old('investment_amount') }}"
-                                    placeholder="2340000.00">
-                            </div>
                         </div>
 
                         {{-- Координаталар --}}
