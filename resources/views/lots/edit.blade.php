@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Янги лот қўшиш')
+@section('title', 'Лотни таҳрирлаш')
 
 {{-- ====================================
      SECTION 1: STYLES
@@ -39,11 +39,13 @@
              SECTION 3: PAGE HEADER
              ==================================== --}}
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Янги лот қўшиш</h1>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Лотни таҳрирлаш</h1>
             <nav class="flex items-center gap-2 text-sm text-gray-600">
                 <a href="{{ route('lots.index') }}" class="hover:text-blue-700 font-medium">Лотлар</a>
                 <span class="text-gray-400">/</span>
-                <span class="text-gray-900 font-semibold">Янги лот</span>
+                <a href="{{ route('lots.show', $lot) }}" class="hover:text-blue-700 font-medium">{{ $lot->lot_number }}</a>
+                <span class="text-gray-400">/</span>
+                <span class="text-gray-900 font-semibold">Таҳрирлаш</span>
             </nav>
         </div>
 
@@ -94,11 +96,9 @@
         {{-- ====================================
              SECTION 6: MAIN FORM START
              ==================================== --}}
-        <form action="{{ route('lots.store') }}" method="POST" id="lotForm">
+        <form action="{{ route('lots.update', $lot) }}" method="POST" id="lotForm">
             @csrf
-            
-            {{-- Hidden field to store lot_id for section saves --}}
-            <input type="hidden" name="lot_id" id="lot_id" value="{{ old('lot_id', session('lot_id')) }}">
+            @method('PUT')
 
             {{-- ====================================
                  SECTION 7: FORM SECTION 1 - АСОСИЙ МАЪЛУМОТЛАР
@@ -108,9 +108,7 @@
                 {{-- Section Header --}}
                 <div class="px-6 py-4 bg-blue-600 flex items-center justify-between">
                     <h2 class="text-lg font-bold text-white">1. АСОСИЙ МАЪЛУМОТЛАР</h2>
-                    <span class="section-status text-sm text-white opacity-75">
-                        {{ session('section_1_saved') ? '✓ Сақланди' : 'Сақланмаган' }}
-                    </span>
+                    <span class="section-status text-sm text-white opacity-75">Тайёр</span>
                 </div>
 
                 {{-- Section Content --}}
@@ -123,7 +121,7 @@
                         </label>
                         <input type="text" name="lot_number" id="lot_number" required
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition @error('lot_number') border-red-500 @enderror"
-                            value="{{ old('lot_number', session('lot_data.lot_number')) }}"
+                            value="{{ old('lot_number', $lot->lot_number) }}"
                             placeholder="Мисол: 18477002">
                         @error('lot_number')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -140,7 +138,7 @@
                             <option value="">-- Туманни танланг --</option>
                             @foreach($tumans as $tuman)
                             <option value="{{ $tuman->id }}" 
-                                {{ old('tuman_id', session('lot_data.tuman_id')) == $tuman->id ? 'selected' : '' }}>
+                                {{ old('tuman_id', $lot->tuman_id) == $tuman->id ? 'selected' : '' }}>
                                 {{ $tuman->name_uz }}
                             </option>
                             @endforeach
@@ -157,12 +155,11 @@
                             <div class="flex-1 relative">
                                 <input type="text" id="mahalla_search"
                                     class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition"
-                                    placeholder="Туманни танланг..." 
-                                    autocomplete="off" 
-                                    value="{{ old('mahalla_search', session('lot_data.mahalla_search')) }}"
-                                    {{ old('tuman_id', session('lot_data.tuman_id')) ? '' : 'disabled' }}>
+                                    placeholder="Маҳалла қидириш..." 
+                                    autocomplete="off"
+                                    value="{{ old('mahalla_search', optional($lot->mahalla)->name_uz) }}">
                                 <input type="hidden" name="mahalla_id" id="mahalla_id" 
-                                    value="{{ old('mahalla_id', session('lot_data.mahalla_id')) }}">
+                                    value="{{ old('mahalla_id', $lot->mahalla_id) }}">
                                 <div id="mahalla_dropdown" class="hidden absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                                     <div class="p-2 text-sm text-gray-600 text-center">Туманни танланг</div>
                                 </div>
@@ -181,7 +178,7 @@
                         </label>
                         <input type="text" name="address" id="address" required
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition @error('address') border-red-500 @enderror"
-                            value="{{ old('address', session('lot_data.address')) }}"
+                            value="{{ old('address', $lot->address) }}"
                             placeholder="Мисол: Fidoyilar MFY">
                         @error('address')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -196,7 +193,7 @@
                             </label>
                             <input type="text" name="unique_number" id="unique_number" required
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition @error('unique_number') border-red-500 @enderror"
-                                value="{{ old('unique_number', session('lot_data.unique_number')) }}"
+                                value="{{ old('unique_number', $lot->unique_number) }}"
                                 placeholder="KA1726290029/1-1">
                             @error('unique_number')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -209,7 +206,7 @@
                             </label>
                             <input type="number" step="0.01" name="land_area" id="land_area" required
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition @error('land_area') border-red-500 @enderror"
-                                value="{{ old('land_area', session('lot_data.land_area')) }}"
+                                value="{{ old('land_area', $lot->land_area) }}"
                                 placeholder="0.01">
                             @error('land_area')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -224,11 +221,11 @@
                             <select name="zone" id="zone" 
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition">
                                 <option value="">-- Танланг --</option>
-                                <option value="1-зона" {{ old('zone', session('lot_data.zone')) == '1-зона' ? 'selected' : '' }}>1-зона</option>
-                                <option value="2-зона" {{ old('zone', session('lot_data.zone')) == '2-зона' ? 'selected' : '' }}>2-зона</option>
-                                <option value="3-зона" {{ old('zone', session('lot_data.zone')) == '3-зона' ? 'selected' : '' }}>3-зона</option>
-                                <option value="4-зона" {{ old('zone', session('lot_data.zone')) == '4-зона' ? 'selected' : '' }}>4-зона</option>
-                                <option value="5-зона" {{ old('zone', session('lot_data.zone')) == '5-зона' ? 'selected' : '' }}>5-зона</option>
+                                <option value="1-зона" {{ old('zone', $lot->zone) == '1-зона' ? 'selected' : '' }}>1-зона</option>
+                                <option value="2-зона" {{ old('zone', $lot->zone) == '2-зона' ? 'selected' : '' }}>2-зона</option>
+                                <option value="3-зона" {{ old('zone', $lot->zone) == '3-зона' ? 'selected' : '' }}>3-зона</option>
+                                <option value="4-зона" {{ old('zone', $lot->zone) == '4-зона' ? 'selected' : '' }}>4-зона</option>
+                                <option value="5-зона" {{ old('zone', $lot->zone) == '5-зона' ? 'selected' : '' }}>5-зона</option>
                             </select>
                         </div>
 
@@ -237,9 +234,9 @@
                             <select name="master_plan_zone" id="master_plan_zone" 
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition">
                                 <option value="">-- Танланг --</option>
-                                <option value="Konservatsiya" {{ old('master_plan_zone', session('lot_data.master_plan_zone')) == 'Konservatsiya' ? 'selected' : '' }}>Konservatsiya</option>
-                                <option value="Rekonstruksiya" {{ old('master_plan_zone', session('lot_data.master_plan_zone')) == 'Rekonstruksiya' ? 'selected' : '' }}>Rekonstruksiya</option>
-                                <option value="Renovatsiya" {{ old('master_plan_zone', session('lot_data.master_plan_zone')) == 'Renovatsiya' ? 'selected' : '' }}>Renovatsiya</option>
+                                <option value="Konservatsiya" {{ old('master_plan_zone', $lot->master_plan_zone) == 'Konservatsiya' ? 'selected' : '' }}>Konservatsiya</option>
+                                <option value="Rekonstruksiya" {{ old('master_plan_zone', $lot->master_plan_zone) == 'Rekonstruksiya' ? 'selected' : '' }}>Rekonstruksiya</option>
+                                <option value="Renovatsiya" {{ old('master_plan_zone', $lot->master_plan_zone) == 'Renovatsiya' ? 'selected' : '' }}>Renovatsiya</option>
                             </select>
                         </div>
 
@@ -247,8 +244,8 @@
                             <label class="block text-sm font-bold text-gray-900 mb-2">Янги Ўзбекистон</label>
                             <select name="yangi_uzbekiston" id="yangi_uzbekiston" 
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition">
-                                <option value="0" {{ old('yangi_uzbekiston', session('lot_data.yangi_uzbekiston', '0')) == '0' ? 'selected' : '' }}>Йўқ</option>
-                                <option value="1" {{ old('yangi_uzbekiston', session('lot_data.yangi_uzbekiston')) == '1' ? 'selected' : '' }}>Ҳа</option>
+                                <option value="0" {{ old('yangi_uzbekiston', $lot->yangi_uzbekiston) == '0' ? 'selected' : '' }}>Йўқ</option>
+                                <option value="1" {{ old('yangi_uzbekiston', $lot->yangi_uzbekiston) == '1' ? 'selected' : '' }}>Ҳа</option>
                             </select>
                         </div>
                     </div>
@@ -271,49 +268,70 @@
                 {{-- Section Header --}}
                 <div class="px-6 py-4 bg-green-600 flex items-center justify-between">
                     <h2 class="text-lg font-bold text-white">2. АУКЦИОН МАЪЛУМОТЛАРИ</h2>
-                    <span class="section-status text-sm text-white opacity-75">
-                        {{ session('section_2_saved') ? '✓ Сақланди' : 'Сақланмаган' }}
-                    </span>
+                    <span class="section-status text-sm text-white opacity-75">Тайёр</span>
                 </div>
 
                 {{-- Section Content --}}
                 <div class="p-6 space-y-6">
 
-                    {{-- Fields: Аукцион санаси, Сотилган нарх, Тўлов тури (Grid) --}}
+                    {{-- Fields: Аукцион санаси, Сотилган нарх (Grid) --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="block text-sm font-bold text-gray-900 mb-2">Аукцион санаси</label>
-                            <input type="date" name="auction_date" id="auction_date"
-                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition"
-                                value="{{ old('auction_date', session('lot_data.auction_date')) }}">
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Аукцион санаси <span class="text-red-600">*</span></label>
+                            <input type="date" name="auction_date" id="auction_date" required
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition @error('auction_date') border-red-500 @enderror"
+                                value="{{ old('auction_date', $lot->auction_date ? $lot->auction_date->format('Y-m-d') : '') }}">
+                            @error('auction_date')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div>
-                            <label class="block text-sm font-bold text-gray-900 mb-2">Сотилган нарх (сўм)</label>
-                            <input type="number" step="0.01" name="sold_price" id="sold_price"
-                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition"
-                                value="{{ old('sold_price', session('lot_data.sold_price')) }}"
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Бошланғич нарх (сўм) <span class="text-red-600">*</span></label>
+                            <input type="number" step="0.01" name="initial_price" id="initial_price" required
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition @error('initial_price') border-red-500 @enderror"
+                                value="{{ old('initial_price', $lot->initial_price) }}"
+                                placeholder="150000000.00">
+                            @error('initial_price')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Сотилган нарх (сўм) <span class="text-red-600">*</span></label>
+                            <input type="number" step="0.01" name="sold_price" id="sold_price" required
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition @error('sold_price') border-red-500 @enderror"
+                                value="{{ old('sold_price', $lot->sold_price) }}"
                                 placeholder="267924294.00">
+                            @error('sold_price')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div>
-                            <label class="block text-sm font-bold text-gray-900 mb-2">Тўлов тури</label>
-                            <select name="payment_type" id="payment_type" 
-                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition">
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Тўлов тури <span class="text-red-600">*</span></label>
+                            <select name="payment_type" id="payment_type" required
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition @error('payment_type') border-red-500 @enderror">
                                 <option value="">-- Танланг --</option>
-                                <option value="muddatli" {{ old('payment_type', session('lot_data.payment_type')) == 'muddatli' ? 'selected' : '' }}>Муддатли</option>
-                                <option value="muddatli_emas" {{ old('payment_type', session('lot_data.payment_type')) == 'muddatli_emas' ? 'selected' : '' }}>Муддатли эмас</option>
+                                <option value="muddatli" {{ old('payment_type', $lot->payment_type) == 'muddatli' ? 'selected' : '' }}>Муддатли</option>
+                                <option value="muddatli_emas" {{ old('payment_type', $lot->payment_type) == 'muddatli_emas' ? 'selected' : '' }}>Муддатли эмас</option>
                             </select>
+                            @error('payment_type')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
 
                     {{-- Field: Ғолиб номи --}}
                     <div>
-                        <label class="block text-sm font-bold text-gray-900 mb-2">Ғолиб номи</label>
-                        <input type="text" name="winner_name" id="winner_name"
-                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition"
-                            value="{{ old('winner_name', session('lot_data.winner_name')) }}"
+                        <label class="block text-sm font-bold text-gray-900 mb-2">Ғолиб номи <span class="text-red-600">*</span></label>
+                        <input type="text" name="winner_name" id="winner_name" required
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition @error('winner_name') border-red-500 @enderror"
+                            value="{{ old('winner_name', $lot->winner_name) }}"
                             placeholder="GAZ NEFT-AVTO BENZIN MChJ">
+                        @error('winner_name')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     {{-- Fields: Ғолиб тури, Телефон (Grid) --}}
@@ -323,9 +341,9 @@
                             <select name="winner_type" id="winner_type" 
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition">
                                 <option value="">-- Танланг --</option>
-                                <option value="G`olib" {{ old('winner_type', session('lot_data.winner_type')) == 'G`olib' ? 'selected' : '' }}>G`olib</option>
-                                <option value="Yuridik shaxs" {{ old('winner_type', session('lot_data.winner_type')) == 'Yuridik shaxs' ? 'selected' : '' }}>Yuridik shaxs</option>
-                                <option value="Jismoniy shaxs" {{ old('winner_type', session('lot_data.winner_type')) == 'Jismoniy shaxs' ? 'selected' : '' }}>Jismoniy shaxs</option>
+                                <option value="G`olib" {{ old('winner_type', $lot->winner_type) == 'G`olib' ? 'selected' : '' }}>G`olib</option>
+                                <option value="Yuridik shaxs" {{ old('winner_type', $lot->winner_type) == 'Yuridik shaxs' ? 'selected' : '' }}>Yuridik shaxs</option>
+                                <option value="Jismoniy shaxs" {{ old('winner_type', $lot->winner_type) == 'Jismoniy shaxs' ? 'selected' : '' }}>Jismoniy shaxs</option>
                             </select>
                         </div>
 
@@ -333,18 +351,18 @@
                             <label class="block text-sm font-bold text-gray-900 mb-2">Телефон</label>
                             <input type="text" name="winner_phone" id="winner_phone"
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition"
-                                value="{{ old('winner_phone', session('lot_data.winner_phone')) }}"
+                                value="{{ old('winner_phone', $lot->winner_phone) }}"
                                 placeholder="(098) 300-5885">
                         </div>
                     </div>
 
-                    {{-- Fields: Асос, Аукцион тури (Grid) --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {{-- Fields: Асос, Аукцион тури, Лот холати (Grid) --}}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label class="block text-sm font-bold text-gray-900 mb-2">Асос (ПФ)</label>
                             <input type="text" name="basis" id="basis"
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition"
-                                value="{{ old('basis', session('lot_data.basis')) }}"
+                                value="{{ old('basis', $lot->basis) }}"
                                 placeholder="ПФ-93">
                         </div>
 
@@ -353,9 +371,66 @@
                             <select name="auction_type" id="auction_type" 
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition">
                                 <option value="">-- Танланг --</option>
-                                <option value="ochiq" {{ old('auction_type', session('lot_data.auction_type')) == 'ochiq' ? 'selected' : '' }}>Очиқ</option>
-                                <option value="yopiq" {{ old('auction_type', session('lot_data.auction_type')) == 'yopiq' ? 'selected' : '' }}>Ёпиқ</option>
+                                <option value="ochiq" {{ old('auction_type', $lot->auction_type) == 'ochiq' ? 'selected' : '' }}>Очиқ</option>
+                                <option value="yopiq" {{ old('auction_type', $lot->auction_type) == 'yopiq' ? 'selected' : '' }}>Ёпиқ</option>
                             </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Лот холати</label>
+                            <input type="text" name="lot_status" id="lot_status"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition"
+                                value="{{ old('lot_status', $lot->lot_status) }}"
+                                placeholder="Konservatsiya">
+                        </div>
+                    </div>
+
+                    {{-- Contract Fields --}}
+                    <div class="border-t pt-6 mt-6">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">Шартнома маълумотлари</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="flex items-center gap-2 text-sm font-bold text-gray-900 mb-2">
+                                    <input type="checkbox" name="contract_signed" id="contract_signed" 
+                                        class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                        {{ old('contract_signed', $lot->contract_signed) ? 'checked' : '' }}>
+                                    <span>Шартнома имзоланган</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="contract_fields" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 {{ old('contract_signed', $lot->contract_signed) ? '' : 'hidden' }}">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-900 mb-2">Шартнома санаси</label>
+                                <input type="date" name="contract_date" id="contract_date"
+                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition"
+                                    value="{{ old('contract_date', $lot->contract_date ? $lot->contract_date->format('Y-m-d') : '') }}">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-bold text-gray-900 mb-2">Шартнома рақами</label>
+                                <input type="text" name="contract_number" id="contract_number"
+                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition"
+                                    value="{{ old('contract_number', $lot->contract_number) }}"
+                                    placeholder="2024/0001">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-bold text-gray-900 mb-2">Тўлов муддати (ой)</label>
+                                <input type="number" name="payment_period_months" id="payment_period_months" min="1" max="60"
+                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition"
+                                    value="{{ old('payment_period_months', $lot->payment_period_months) }}"
+                                    placeholder="12">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-bold text-gray-900 mb-2">Бошланғич тўлов (сўм)</label>
+                                <input type="number" step="0.01" name="initial_payment" id="initial_payment"
+                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition"
+                                    value="{{ old('initial_payment', $lot->initial_payment) }}"
+                                    placeholder="50000000.00">
+                            </div>
                         </div>
                     </div>
 
@@ -377,9 +452,7 @@
                 {{-- Section Header --}}
                 <div class="px-6 py-4 bg-purple-600 flex items-center justify-between">
                     <h2 class="text-lg font-bold text-white">3. ҚЎШИМЧА МАЪЛУМОТЛАР</h2>
-                    <span class="section-status text-sm text-white opacity-75">
-                        {{ session('section_3_saved') ? '✓ Сақланди' : 'Сақланмаган' }}
-                    </span>
+                    <span class="section-status text-sm text-white opacity-75">Тайёр</span>
                 </div>
 
                 {{-- Section Content --}}
@@ -390,8 +463,35 @@
                         <label class="block text-sm font-bold text-gray-900 mb-2">Объект тури</label>
                         <input type="text" name="object_type" id="object_type"
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-600 font-medium transition"
-                            value="{{ old('object_type', session('lot_data.object_type')) }}"
+                            value="{{ old('object_type', $lot->object_type) }}"
                             placeholder="Yoqilg'i quyish shoxobchasi">
+                    </div>
+
+                    {{-- Additional Object Fields --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Объект тури (рус)</label>
+                            <input type="text" name="object_type_ru" id="object_type_ru"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-600 font-medium transition"
+                                value="{{ old('object_type_ru', $lot->object_type_ru) }}"
+                                placeholder="АЗС">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Қурилиш майдони (м²)</label>
+                            <input type="number" step="0.01" name="construction_area" id="construction_area"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-600 font-medium transition"
+                                value="{{ old('construction_area', $lot->construction_area) }}"
+                                placeholder="500.00">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Инвестиция миқдори (сўм)</label>
+                            <input type="number" step="0.01" name="investment_amount" id="investment_amount"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-600 font-medium transition"
+                                value="{{ old('investment_amount', $lot->investment_amount) }}"
+                                placeholder="1000000000.00">
+                        </div>
                     </div>
 
                     {{-- Fields: Latitude, Longitude (Grid) --}}
@@ -400,7 +500,7 @@
                             <label class="block text-sm font-bold text-gray-900 mb-2">Latitude</label>
                             <input type="text" name="latitude" id="latitude"
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-600 font-medium transition"
-                                value="{{ old('latitude', session('lot_data.latitude')) }}"
+                                value="{{ old('latitude', $lot->latitude) }}"
                                 placeholder="41.3419730499832">
                         </div>
 
@@ -408,7 +508,7 @@
                             <label class="block text-sm font-bold text-gray-900 mb-2">Longitude</label>
                             <input type="text" name="longitude" id="longitude"
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-600 font-medium transition"
-                                value="{{ old('longitude', session('lot_data.longitude')) }}"
+                                value="{{ old('longitude', $lot->longitude) }}"
                                 placeholder="69.16886331525568">
                         </div>
                     </div>
@@ -428,7 +528,7 @@
                         <label class="block text-sm font-bold text-gray-900 mb-2">Google Maps URL</label>
                         <input type="url" name="location_url" id="location_url"
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-purple-600 font-medium transition"
-                            value="{{ old('location_url', session('lot_data.location_url')) }}"
+                            value="{{ old('location_url', $lot->location_url) }}"
                             placeholder="https://www.google.com/maps?q=...">
                         <p class="mt-1 text-sm text-gray-600">Google Maps ҳавола автоматик ясалди</p>
                     </div>
@@ -450,17 +550,17 @@
                 <div class="p-6">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-xl font-bold text-gray-900 mb-2">Барча маълумотларни тўлдирдингизми?</h3>
-                            <p class="text-sm text-gray-600">Барча бўлимларни сақлаб, лотни яратинг</p>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">Барча ўзгаришларни сақлаш</h3>
+                            <p class="text-sm text-gray-600">Маълумотларни текшириб, сақланг</p>
                         </div>
                         <div class="flex gap-3">
-                            <a href="{{ route('lots.index') }}"
+                            <a href="{{ route('lots.show', $lot) }}"
                                 class="px-8 py-3 bg-white hover:bg-gray-100 text-gray-900 border-2 border-gray-400 rounded-lg font-bold transition">
                                 Бекор қилиш
                             </a>
                             <button type="submit"
                                 class="px-8 py-3 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-lg font-bold transition border-2 border-green-700 shadow-lg">
-                                ✓ Лотни яратиш
+                                ✓ Ўзгаришларни сақлаш
                             </button>
                         </div>
                     </div>
@@ -513,7 +613,7 @@
 
 <script>
 // ====================================
-// JAVASCRIPT LOGIC WITH SESSION PERSISTENCE
+// JAVASCRIPT LOGIC FOR EDIT FORM
 // ====================================
 
 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -526,7 +626,7 @@ const locationUrlInput = document.getElementById('location_url');
 let mapInitialized = false;
 
 // Mahalla variables
-let mahallas = @json($mahallas ?? []);
+let mahallas = @json($mahallas);
 const mahallaSearch = document.getElementById('mahalla_search');
 const mahallaDropdown = document.getElementById('mahalla_dropdown');
 const mahallaIdInput = document.getElementById('mahalla_id');
@@ -538,37 +638,22 @@ const saveMahallaBtn = document.getElementById('save_mahalla');
 const cancelMahallaBtn = document.getElementById('cancel_mahalla');
 const mahallaError = document.getElementById('mahalla_error');
 
-// ====================================
-// PAGE LOAD: RESTORE MAHALLA IF TUMAN SELECTED
-// ====================================
-document.addEventListener('DOMContentLoaded', function() {
-    const selectedTumanId = tumanSelect.value;
-    const savedMahallaId = mahallaIdInput.value;
-    const savedMahallaSearch = mahallaSearch.value;
-    
-    if (selectedTumanId) {
-        // Load mahallas for selected tuman
-        fetch(`/mahallas/${selectedTumanId}`)
-            .then(response => response.json())
-            .then(data => {
-                mahallas = data;
-                mahallaSearch.disabled = false;
-                mahallaSearch.placeholder = 'Маҳалла номини ёзинг...';
-                
-                // If we have saved mahalla data, keep it visible
-                if (savedMahallaId && savedMahallaSearch) {
-                    mahallaSearch.value = savedMahallaSearch;
-                    mahallaIdInput.value = savedMahallaId;
-                }
-            })
-            .catch(error => {
-                console.error('Error loading mahallas:', error);
-            });
-    }
-});
+// Contract fields toggle
+const contractSignedCheckbox = document.getElementById('contract_signed');
+const contractFields = document.getElementById('contract_fields');
+
+if (contractSignedCheckbox) {
+    contractSignedCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            contractFields.classList.remove('hidden');
+        } else {
+            contractFields.classList.add('hidden');
+        }
+    });
+}
 
 // ====================================
-// SECTION SAVE - AJAX TO DATABASE WITH SESSION
+// SECTION SAVE - AJAX UPDATE
 // ====================================
 function saveSection(sectionNumber) {
     const section = document.getElementById(`section-${sectionNumber}`);
@@ -577,13 +662,6 @@ function saveSection(sectionNumber) {
     
     // Get form data
     const formData = new FormData(document.getElementById('lotForm'));
-    formData.append('section_number', sectionNumber);
-    
-    // Get lot_id if exists (for updates)
-    const lotIdInput = document.getElementById('lot_id');
-    if (lotIdInput && lotIdInput.value) {
-        formData.append('lot_id', lotIdInput.value);
-    }
     
     // Show loading state
     if (saveBtn) {
@@ -591,8 +669,8 @@ function saveSection(sectionNumber) {
         saveBtn.innerHTML = '⏳ Сақланмоқда...';
     }
     
-    // Send AJAX request
-    fetch('/lots/save-section', {
+    // Send AJAX request to update
+    fetch('{{ route("lots.update", $lot) }}', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': csrfToken,
@@ -603,11 +681,6 @@ function saveSection(sectionNumber) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Save lot_id for subsequent sections
-            if (data.lot_id && lotIdInput) {
-                lotIdInput.value = data.lot_id;
-            }
-            
             // Update UI
             statusEl.textContent = '✓ Сақланди';
             statusEl.classList.remove('opacity-75');
@@ -617,7 +690,7 @@ function saveSection(sectionNumber) {
             setTimeout(() => section.classList.remove('section-saved'), 500);
             
             // Show success message
-            showSuccessMessage(data.message);
+            showSuccessMessage('Маълумотлар муваффақиятли янгиланди');
             
             // Scroll to next section
             if (sectionNumber < 3) {
@@ -876,41 +949,6 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         mahallaModal.classList.add('hidden');
     }
-});
-
-// ====================================
-// FINAL FORM SUBMISSION
-// ====================================
-document.getElementById('lotForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    // Add wizard_step for final submission
-    let wizardStepInput = document.querySelector('input[name="wizard_step"]');
-    if (!wizardStepInput) {
-        wizardStepInput = document.createElement('input');
-        wizardStepInput.type = 'hidden';
-        wizardStepInput.name = 'wizard_step';
-        this.appendChild(wizardStepInput);
-    }
-    wizardStepInput.value = '3'; // Mark as complete
-    
-    // Submit form normally
-    this.submit();
-});
-
-// ====================================
-// AUTO-SAVE FORM DATA TO PREVENT LOSS
-// ====================================
-let autoSaveTimeout;
-const formInputs = document.querySelectorAll('#lotForm input, #lotForm select, #lotForm textarea');
-
-formInputs.forEach(input => {
-    input.addEventListener('change', function() {
-        clearTimeout(autoSaveTimeout);
-        autoSaveTimeout = setTimeout(() => {
-            console.log('Form data changed, ready for section save');
-        }, 500);
-    });
 });
 
 </script>

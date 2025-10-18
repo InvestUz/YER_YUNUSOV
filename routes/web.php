@@ -139,3 +139,6 @@ Route::middleware('auth')->group(function () {
 Route::get('/parser', [ParserController::class, 'index'])->name('parser.index');
 Route::get('/parser/parse-lots', [ParserController::class, 'parseLots'])->name('parser.parse');
 Route::get('/parser/parse-single', [ParserController::class, 'parseSingleLot'])->name('parser.single');
+
+
+
