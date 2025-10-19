@@ -419,22 +419,32 @@ class ExcelDataSeeder extends Seeder
         return in_array($value, ['янги ўзбекистон', 'yes', '1', 'true', 'ha', '+']);
     }
 
-    private function parsePaymentType($value)
-    {
-        if (empty($value)) return null;
-        $value = strtolower(trim($value));
+  private function parsePaymentType($value)
+{
+    if (empty($value)) {
+        return 'muddatsiz'; // Default to one-time payment instead of NULL
+    }
+    
+    $value = strtolower(trim($value));
 
-        if (strpos($value, 'муддатли эмас') !== false) {
-            return 'muddatli_emas';
-        }
-
-        if (strpos($value, 'муддатли') !== false) {
-            return 'muddatli';
-        }
-
-        return null;
+    // Check for "муддатли эмас" or "muddatsiz" (one-time payment)
+    if (strpos($value, 'муддатли эмас') !== false || 
+        strpos($value, 'muddatsiz') !== false ||
+        strpos($value, 'бир йўла') !== false ||
+        strpos($value, 'bir yola') !== false) {
+        return 'muddatsiz';
     }
 
+    // Check for "муддатли" (installment payment)
+    if (strpos($value, 'муддатли') !== false || 
+        strpos($value, 'muddatli') !== false ||
+        strpos($value, 'бўлиб') !== false) {
+        return 'muddatli';
+    }
+
+    // Default to muddatsiz if can't determine
+    return 'muddatsiz';
+}
     private function parseAuctionType($value)
     {
         if (empty($value)) return null;

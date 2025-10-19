@@ -77,6 +77,7 @@ class Lot extends Model
     const DISCOUNT_CUTOFF_DATE = '2024-09-10';
     const DISCOUNT_PERCENTAGE = 20;
 
+    
     public function tuman()
     {
         return $this->belongsTo(Tuman::class);
