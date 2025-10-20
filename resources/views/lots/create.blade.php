@@ -226,6 +226,17 @@
                             </select>
                         </div>
 
+     <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Ҳуқуқий субъект</label>
+                            <select name="huquqiy_subyekt" id="huquqiy_subyekt"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition">
+                                <option value="">-- Танланг --</option>
+                                <option value="Jismoniy shaxs" {{ old('huquqiy_subyekt') == 'Jismoniy shaxs' ? 'selected' : '' }}>Jismoniy shaxs</option>
+                                <option value="Yuridik shaxs" {{ old('huquqiy_subyekt') == 'Yuridik shaxs' ? 'selected' : '' }}>Yuridik shaxs</option>
+
+                            </select>
+                        </div>
+
                         <div>
                             <label class="block text-sm font-bold text-gray-900 mb-2">Телефон</label>
                             <input type="text" name="winner_phone" id="winner_phone"

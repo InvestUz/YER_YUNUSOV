@@ -32,6 +32,7 @@ class Lot extends Model
         'auction_date',
         'sold_price',
         'winner_type',
+        'huquqiy_subyekt',
         'winner_name',
         'winner_phone',
         'payment_type',

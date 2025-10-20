@@ -21,21 +21,22 @@ return new class extends Migration
             $table->text('location_url')->nullable();
             $table->string('master_plan_zone')->nullable();
             $table->boolean('yangi_uzbekiston')->default(false);
-            
+
             // Area measurements - need 4 decimals, moderate size
             $table->decimal('land_area', 12, 4)->nullable();              // Max: 99,999,999.9999 ha
             $table->decimal('construction_area', 15, 4)->nullable();       // Max: 99,999,999,999.9999 sq.m
-            
+
             $table->string('object_type')->nullable();
             $table->string('object_type_ru')->nullable();
-            
+
             // Financial values - need 2 decimals, VERY large numbers
             $table->decimal('investment_amount', 20, 2)->nullable();       // Max: 999,999,999,999,999,999.99
             $table->decimal('initial_price', 20, 2)->nullable();           // Max: 999,999,999,999,999,999.99
             $table->date('auction_date')->nullable();
             $table->decimal('sold_price', 20, 2)->nullable();              // Max: 999,999,999,999,999,999.99
-            
+
             $table->string('winner_type')->nullable();
+            $table->string('huquqiy_subyekt')->nullable();
             $table->string('winner_name')->nullable();
             $table->string('winner_phone')->nullable();
             $table->enum('payment_type', ['muddatli', 'muddatsiz'])->nullable();
@@ -46,7 +47,7 @@ return new class extends Migration
             $table->boolean('contract_signed')->default(false);
             $table->date('contract_date')->nullable();
             $table->string('contract_number')->nullable();
-            
+
             // Payment amounts - large financial values
             $table->decimal('paid_amount', 20, 2)->default(0);
             $table->decimal('transferred_amount', 20, 2)->default(0);
@@ -55,7 +56,7 @@ return new class extends Migration
             $table->decimal('incoming_amount', 20, 2)->default(0);
             $table->decimal('davaktiv_amount', 20, 2)->default(0);
             $table->decimal('auction_expenses', 20, 2)->default(0);
-            
+
             $table->unsignedInteger('views_count')->default(0);
             $table->unsignedInteger('likes_count')->default(0);
             $table->timestamps();
