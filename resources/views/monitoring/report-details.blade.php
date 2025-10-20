@@ -149,7 +149,7 @@
                             {{ $lot->address ?? 'Манзил кўрсатилмаган' }}
                         </td>
                         <td class="px-4 py-3 text-sm font-bold text-slate-800 text-right">
-                            {{ number_format($lot->land_area, 2) }}
+                            {{ number_format($lot->land_area, 4) }}
                         </td>
                         <td class="px-4 py-3 text-sm font-semibold text-slate-600">
                             {{ $lot->zone ?? '-' }}

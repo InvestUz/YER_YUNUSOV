@@ -38,7 +38,7 @@
                 <tr class="hover:bg-blue-50 transition-colors">
                     <td class="py-3 px-4 text-gray-600 font-medium">Ер майдони</td>
                     <td class="py-3 px-4 text-gray-900 font-semibold">
-                        {{ $lot->land_area ? number_format($lot->land_area, 2) . ' га' : '-' }}
+                        {{ $lot->land_area ? number_format($lot->land_area, 4) . ' га' : '-' }}
                     </td>
                 </tr>
 
