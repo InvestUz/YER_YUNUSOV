@@ -865,6 +865,7 @@ class LotController extends Controller
         return view('lots.edit', compact('lot', 'tumans', 'mahallas'));
     }
 
+
     /**
      * Update the specified resource in storage.
      */
@@ -898,7 +899,6 @@ class LotController extends Controller
             'auction_date' => 'required|date',
             'sold_price' => 'required|numeric|min:0',
             'winner_type' => 'nullable|string|max:255',
-            'huquqiy_subyekt' => 'nullable|string|max:255',
             'winner_name' => 'required|string|max:255',
             'winner_phone' => 'nullable|string|max:50',
             'payment_type' => 'required|in:muddatli,muddatli_emas',
@@ -945,7 +945,6 @@ class LotController extends Controller
         return redirect()->route('lots.show', $lot)
             ->with('success', 'Лот маълумотлари муваффақиятли янгиланди');
     }
-
     /**
      * Create payment schedule for installment lots
      */
