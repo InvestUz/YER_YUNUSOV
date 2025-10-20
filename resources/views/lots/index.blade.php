@@ -210,7 +210,7 @@
                                 @endif
                             </td>
                             <td class="py-2.5 px-3 text-right border-r border-gray-200 text-gray-700 font-medium">
-                                {{ number_format($lot->land_area, 2) }}
+                                {{ number_format($lot->land_area, 4) }} 
                             </td>
                             <td class="py-2.5 px-3 text-right border-r border-gray-200 text-gray-700">
                                 {{ number_format($lot->initial_price / 1000000, 1) }}

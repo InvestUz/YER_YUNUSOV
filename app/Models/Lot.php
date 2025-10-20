@@ -57,8 +57,12 @@ class Lot extends Model
         'contract_signed' => 'boolean',
         'auction_date' => 'date',
         'contract_date' => 'date',
-        'land_area' => 'decimal:2',
-        'construction_area' => 'decimal:2',
+
+        // Area measurements - 4 decimal places for precision
+        'land_area' => 'decimal:4',           // Handles 0.0019 to 9999.9999 hectares
+        'construction_area' => 'decimal:4',    // Handles large square meter values
+
+        // Financial values - 2 decimal places (standard for currency)
         'investment_amount' => 'decimal:2',
         'initial_price' => 'decimal:2',
         'sold_price' => 'decimal:2',
@@ -69,10 +73,10 @@ class Lot extends Model
         'incoming_amount' => 'decimal:2',
         'davaktiv_amount' => 'decimal:2',
         'auction_expenses' => 'decimal:2',
+
         'views_count' => 'integer',
         'likes_count' => 'integer',
     ];
-
     // Discount cutoff date constant
     const DISCOUNT_CUTOFF_DATE = '2024-09-10';
     const DISCOUNT_PERCENTAGE = 20;
