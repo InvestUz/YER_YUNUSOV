@@ -216,11 +216,12 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label class="block text-sm font-bold text-gray-900 mb-2">Ғолиб тури</label>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">Аукцион ғолиби</label>
                             <select name="winner_type" id="winner_type"
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition">
                                 <option value="">-- Танланг --</option>
                                 <option value="G`olib" {{ old('winner_type') == 'G`olib' ? 'selected' : '' }}>G`olib</option>
+                                <option value="Salohiyatli g`olib" {{ old('winner_type') == 'Salohiyatli g`olib' ? 'selected' : '' }}>Salohiyatli g`olib</option>
                                 <option value="Yuridik shaxs" {{ old('winner_type') == 'Yuridik shaxs' ? 'selected' : '' }}>Yuridik shaxs</option>
                                 <option value="Jismoniy shaxs" {{ old('winner_type') == 'Jismoniy shaxs' ? 'selected' : '' }}>Jismoniy shaxs</option>
                             </select>
