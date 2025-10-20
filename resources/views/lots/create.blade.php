@@ -204,15 +204,7 @@
                                 value="{{ old('sold_price') }}" placeholder="267924294.00">
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-bold text-gray-900 mb-2">Тўлов тури</label>
-                            <select name="payment_type" id="payment_type"
-                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition">
-                                <option value="">-- Танланг --</option>
-                                <option value="muddatli" {{ old('payment_type') == 'muddatli' ? 'selected' : '' }}>Муддатли</option>
-                                <option value="muddatli_emas" {{ old('payment_type') == 'muddatli_emas' ? 'selected' : '' }}>Муддатли эмас</option>
-                            </select>
-                        </div>
+
                     </div>
 
                     <div>

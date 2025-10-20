@@ -378,7 +378,6 @@ class LotController extends Controller
             'yangi_uzbekiston' => 'boolean',
             'auction_date' => 'nullable|date',
             'sold_price' => 'nullable|string',
-            'payment_type' => 'nullable|in:muddatli,muddatli_emas',
             'winner_name' => 'nullable|string',
             'winner_type' => 'nullable|string',
             'winner_phone' => 'nullable|string',
