@@ -113,7 +113,7 @@ class ContractController extends Controller
             'lot_id' => 'required|exists:lots,id',
             'payment_type' => 'required|in:muddatli,muddatsiz',
             'actual_paid_amount' => 'required|numeric|min:0',
-            'actual_payment_date' => 'required|date',
+            'actual_payment_date' => 'nullable',
             'reference_number' => 'nullable|string|max:255',
         ]);
     }
@@ -190,7 +190,7 @@ class ContractController extends Controller
             $contract = Contract::create([
                 'lot_id' => $lot->id,
                 'contract_number' => 'MUDDATSIZ-' . $lot->lot_number . '-' . now()->format('Ymd'),
-                'contract_date' => $validated['actual_payment_date'],
+                'contract_date' => $validated['actual_payment_date'] ?? '',
                 'contract_amount' => $validated['actual_paid_amount'],
                 'buyer_name' => $lot->winner_name,
                 'buyer_phone' => $lot->winner_phone,
@@ -208,9 +208,9 @@ class ContractController extends Controller
             $paymentSchedule = PaymentSchedule::create([
                 'contract_id' => $contract->id,
                 'payment_number' => 1,
-                'planned_date' => $validated['actual_payment_date'],
+                'planned_date' => $validated['actual_payment_date'] ?? '',
                 'planned_amount' => $validated['actual_paid_amount'],
-                'actual_date' => $validated['actual_payment_date'],
+                'actual_date' => $validated['actual_payment_date'] ?? '',
                 'actual_amount' => $validated['actual_paid_amount'],
                 'status' => 'paid',
                 'payment_method' => 'bank_transfer',
