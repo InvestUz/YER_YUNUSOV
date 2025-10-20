@@ -96,7 +96,7 @@
              ==================================== --}}
         <form action="{{ route('lots.store') }}" method="POST" id="lotForm">
             @csrf
-            
+
             {{-- Hidden field to store lot_id for section saves --}}
             <input type="hidden" name="lot_id" id="lot_id" value="{{ old('lot_id', session('lot_id')) }}">
 
@@ -139,7 +139,7 @@
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition @error('tuman_id') border-red-500 @enderror">
                             <option value="">-- Туманни танланг --</option>
                             @foreach($tumans as $tuman)
-                            <option value="{{ $tuman->id }}" 
+                            <option value="{{ $tuman->id }}"
                                 {{ old('tuman_id', session('lot_data.tuman_id')) == $tuman->id ? 'selected' : '' }}>
                                 {{ $tuman->name_uz }}
                             </option>
@@ -157,11 +157,11 @@
                             <div class="flex-1 relative">
                                 <input type="text" id="mahalla_search"
                                     class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition"
-                                    placeholder="Туманни танланг..." 
-                                    autocomplete="off" 
+                                    placeholder="Туманни танланг..."
+                                    autocomplete="off"
                                     value="{{ old('mahalla_search', session('lot_data.mahalla_search')) }}"
                                     {{ old('tuman_id', session('lot_data.tuman_id')) ? '' : 'disabled' }}>
-                                <input type="hidden" name="mahalla_id" id="mahalla_id" 
+                                <input type="hidden" name="mahalla_id" id="mahalla_id"
                                     value="{{ old('mahalla_id', session('lot_data.mahalla_id')) }}">
                                 <div id="mahalla_dropdown" class="hidden absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                                     <div class="p-2 text-sm text-gray-600 text-center">Туманни танланг</div>
@@ -207,7 +207,7 @@
                             <label class="block text-sm font-bold text-gray-900 mb-2">
                                 Ер майдони (га) <span class="text-red-600">*</span>
                             </label>
-                            <input type="number" step="0.01" name="land_area" id="land_area" required
+                            <input type="number" name="land_area" id="land_area" required
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition @error('land_area') border-red-500 @enderror"
                                 value="{{ old('land_area', session('lot_data.land_area')) }}"
                                 placeholder="0.01">
@@ -221,7 +221,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label class="block text-sm font-bold text-gray-900 mb-2">Зона</label>
-                            <select name="zone" id="zone" 
+                            <select name="zone" id="zone"
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition">
                                 <option value="">-- Танланг --</option>
                                 <option value="1-зона" {{ old('zone', session('lot_data.zone')) == '1-зона' ? 'selected' : '' }}>1-зона</option>
@@ -234,7 +234,7 @@
 
                         <div>
                             <label class="block text-sm font-bold text-gray-900 mb-2">Бош режа</label>
-                            <select name="master_plan_zone" id="master_plan_zone" 
+                            <select name="master_plan_zone" id="master_plan_zone"
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition">
                                 <option value="">-- Танланг --</option>
                                 <option value="Konservatsiya" {{ old('master_plan_zone', session('lot_data.master_plan_zone')) == 'Konservatsiya' ? 'selected' : '' }}>Konservatsiya</option>
@@ -245,7 +245,7 @@
 
                         <div>
                             <label class="block text-sm font-bold text-gray-900 mb-2">Янги Ўзбекистон</label>
-                            <select name="yangi_uzbekiston" id="yangi_uzbekiston" 
+                            <select name="yangi_uzbekiston" id="yangi_uzbekiston"
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition">
                                 <option value="0" {{ old('yangi_uzbekiston', session('lot_data.yangi_uzbekiston', '0')) == '0' ? 'selected' : '' }}>Йўқ</option>
                                 <option value="1" {{ old('yangi_uzbekiston', session('lot_data.yangi_uzbekiston')) == '1' ? 'selected' : '' }}>Ҳа</option>
@@ -290,7 +290,7 @@
 
                         <div>
                             <label class="block text-sm font-bold text-gray-900 mb-2">Сотилган нарх (сўм)</label>
-                            <input type="number" step="0.01" name="sold_price" id="sold_price"
+                            <input type="number" name="sold_price" id="sold_price"
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition"
                                 value="{{ old('sold_price', session('lot_data.sold_price')) }}"
                                 placeholder="267924294.00">
@@ -298,7 +298,7 @@
 
                         <div>
                             <label class="block text-sm font-bold text-gray-900 mb-2">Тўлов тури</label>
-                            <select name="payment_type" id="payment_type" 
+                            <select name="payment_type" id="payment_type"
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition">
                                 <option value="">-- Танланг --</option>
                                 <option value="muddatli" {{ old('payment_type', session('lot_data.payment_type')) == 'muddatli' ? 'selected' : '' }}>Муддатли</option>
@@ -320,7 +320,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-bold text-gray-900 mb-2">Ғолиб тури</label>
-                            <select name="winner_type" id="winner_type" 
+                            <select name="winner_type" id="winner_type"
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition">
                                 <option value="">-- Танланг --</option>
                                 <option value="G`olib" {{ old('winner_type', session('lot_data.winner_type')) == 'G`olib' ? 'selected' : '' }}>G`olib</option>
@@ -350,7 +350,7 @@
 
                         <div>
                             <label class="block text-sm font-bold text-gray-900 mb-2">Аукцион тури</label>
-                            <select name="auction_type" id="auction_type" 
+                            <select name="auction_type" id="auction_type"
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition">
                                 <option value="">-- Танланг --</option>
                                 <option value="ochiq" {{ old('auction_type', session('lot_data.auction_type')) == 'ochiq' ? 'selected' : '' }}>Очиқ</option>
@@ -545,7 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedTumanId = tumanSelect.value;
     const savedMahallaId = mahallaIdInput.value;
     const savedMahallaSearch = mahallaSearch.value;
-    
+
     if (selectedTumanId) {
         // Load mahallas for selected tuman
         fetch(`/mahallas/${selectedTumanId}`)
@@ -554,7 +554,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 mahallas = data;
                 mahallaSearch.disabled = false;
                 mahallaSearch.placeholder = 'Маҳалла номини ёзинг...';
-                
+
                 // If we have saved mahalla data, keep it visible
                 if (savedMahallaId && savedMahallaSearch) {
                     mahallaSearch.value = savedMahallaSearch;
@@ -574,23 +574,23 @@ function saveSection(sectionNumber) {
     const section = document.getElementById(`section-${sectionNumber}`);
     const statusEl = section.querySelector('.section-status');
     const saveBtn = section.querySelector('button[onclick*="saveSection"]');
-    
+
     // Get form data
     const formData = new FormData(document.getElementById('lotForm'));
     formData.append('section_number', sectionNumber);
-    
+
     // Get lot_id if exists (for updates)
     const lotIdInput = document.getElementById('lot_id');
     if (lotIdInput && lotIdInput.value) {
         formData.append('lot_id', lotIdInput.value);
     }
-    
+
     // Show loading state
     if (saveBtn) {
         saveBtn.disabled = true;
         saveBtn.innerHTML = '⏳ Сақланмоқда...';
     }
-    
+
     // Send AJAX request
     fetch('/lots/save-section', {
         method: 'POST',
@@ -607,24 +607,24 @@ function saveSection(sectionNumber) {
             if (data.lot_id && lotIdInput) {
                 lotIdInput.value = data.lot_id;
             }
-            
+
             // Update UI
             statusEl.textContent = '✓ Сақланди';
             statusEl.classList.remove('opacity-75');
             statusEl.classList.add('font-bold');
-            
+
             section.classList.add('section-saved');
             setTimeout(() => section.classList.remove('section-saved'), 500);
-            
+
             // Show success message
             showSuccessMessage(data.message);
-            
+
             // Scroll to next section
             if (sectionNumber < 3) {
                 setTimeout(() => {
-                    document.getElementById(`section-${sectionNumber + 1}`).scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'start' 
+                    document.getElementById(`section-${sectionNumber + 1}`).scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
                     });
                 }, 600);
             }
@@ -648,15 +648,15 @@ function saveSection(sectionNumber) {
 function showSuccessMessage(text) {
     const messageEl = document.getElementById('success-message');
     const textEl = document.getElementById('success-text');
-    
+
     if (messageEl && textEl) {
         textEl.textContent = text;
         messageEl.classList.remove('hidden');
-        
+
         setTimeout(() => {
             messageEl.classList.add('hidden');
         }, 3000);
-        
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
@@ -761,7 +761,7 @@ mahallaSearch.addEventListener('input', function() {
         return;
     }
 
-    const filtered = mahallas.filter(m => 
+    const filtered = mahallas.filter(m =>
         m && m.name && m.name.toLowerCase().includes(searchTerm)
     );
 
@@ -773,7 +773,7 @@ mahallaSearch.addEventListener('input', function() {
                 ${m.name}
             </div>
         `).join('');
-        
+
         document.querySelectorAll('.mahalla-option').forEach(option => {
             option.addEventListener('click', function() {
                 mahallaSearch.value = this.dataset.name;
@@ -811,7 +811,7 @@ cancelMahallaBtn.addEventListener('click', () => {
 
 saveMahallaBtn.addEventListener('click', function() {
     const name = newMahallaName.value.trim();
-    
+
     if (!name) {
         mahallaError.textContent = 'Маҳалла номини киритинг';
         mahallaError.classList.remove('hidden');
@@ -823,7 +823,7 @@ saveMahallaBtn.addEventListener('click', function() {
         mahallaError.classList.remove('hidden');
         return;
     }
-    
+
     saveMahallaBtn.disabled = true;
     saveMahallaBtn.textContent = 'Сақланмоқда...';
     mahallaError.classList.add('hidden');
@@ -845,14 +845,14 @@ saveMahallaBtn.addEventListener('click', function() {
         if (data.success) {
             // Add new mahalla to list
             mahallas.push(data.mahalla);
-            
+
             // Set as selected
             mahallaSearch.value = data.mahalla.name;
             mahallaIdInput.value = data.mahalla.id;
-            
+
             // Close modal
             mahallaModal.classList.add('hidden');
-            
+
             // Show success
             showSuccessMessage('Маҳалла муваффақиятли қўшилди');
         } else {
@@ -883,7 +883,7 @@ document.addEventListener('keydown', (e) => {
 // ====================================
 document.getElementById('lotForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     // Add wizard_step for final submission
     let wizardStepInput = document.querySelector('input[name="wizard_step"]');
     if (!wizardStepInput) {
@@ -893,7 +893,7 @@ document.getElementById('lotForm').addEventListener('submit', function(e) {
         this.appendChild(wizardStepInput);
     }
     wizardStepInput.value = '3'; // Mark as complete
-    
+
     // Submit form normally
     this.submit();
 });
