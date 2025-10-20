@@ -110,6 +110,12 @@
                 <td class="py-3 px-4 text-gray-900 font-semibold">{{ $lot->winner_name ?? '-' }}</td>
             </tr>
 
+                        {{-- Winner Phone --}}
+            <tr class="hover:bg-green-50 transition-colors">
+                <td class="py-3 px-4 text-gray-600 font-medium">Аукцион холати</td>
+                <td class="py-3 px-4 text-gray-900">{{ $lot->auction_type ?? '-' }}</td>
+            </tr>
+
             {{-- Winner Phone --}}
             <tr class="hover:bg-green-50 transition-colors">
                 <td class="py-3 px-4 text-gray-600 font-medium">Телефон рақами</td>
