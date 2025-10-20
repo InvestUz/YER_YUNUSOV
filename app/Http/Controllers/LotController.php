@@ -428,89 +428,89 @@ class LotController extends Controller
     /**
      * Save individual section (partial lot data)
      */
-    public function saveSection(Request $request)
-    {
-        $sectionNumber = (int) $request->input('section_number', 1);
-        $lotId = $request->input('lot_id');
+ public function saveSection(Request $request)
+{
+    $sectionNumber = (int) $request->input('section_number', 1);
+    $lotId = $request->input('lot_id');
 
-        // Validate based on section
-        if ($sectionNumber === 1) {
-            $validated = $request->validate([
-                'lot_number' => 'required|string|unique:lots,lot_number,' . ($lotId ?? 'NULL'),
-                'tuman_id' => 'required|exists:tumans,id',
-                'mahalla_id' => 'nullable|exists:mahallas,id',
-                'address' => 'required|string',
-                'unique_number' => 'required|string',
-                'land_area' => 'required|numeric|min:0',
-                'zone' => 'nullable|string',
-                'master_plan_zone' => 'nullable|string',
-                'yangi_uzbekiston' => 'nullable|boolean',
-            ]);
-
-            $validated['wizard_step'] = 1;
-            $validated['yangi_uzbekiston'] = $request->has('yangi_uzbekiston') ? 1 : 0;
-        } elseif ($sectionNumber === 2) {
-            $validated = $request->validate([
-                'lot_id' => 'required|exists:lots,id',
-                'auction_date' => 'nullable|date',
-                'sold_price' => 'nullable|numeric',
-                'payment_type' => 'nullable|in:muddatli,muddatli_emas',
-                'winner_name' => 'nullable|string',
-                'winner_type' => 'nullable|string',
-                'winner_phone' => 'nullable|string',
-                'basis' => 'nullable|string',
-                'auction_type' => 'nullable|in:ochiq,yopiq',
-            ]);
-
-            $lotId = $validated['lot_id'];
-            unset($validated['lot_id']);
-            $validated['wizard_step'] = 2;
-        } else { // Section 3
-            $validated = $request->validate([
-                'lot_id' => 'required|exists:lots,id',
-                'object_type' => 'nullable|string',
-                'latitude' => 'nullable|string',
-                'longitude' => 'nullable|string',
-                'location_url' => 'nullable|url',
-            ]);
-
-            $lotId = $validated['lot_id'];
-            unset($validated['lot_id']);
-            $validated['wizard_step'] = 3;
-        }
-
-        // Set default values for section 1
-        if ($sectionNumber === 1) {
-            $validated['contract_signed'] = false;
-            $validated['paid_amount'] = 0;
-            $validated['transferred_amount'] = 0;
-            $validated['discount'] = 0;
-        }
-
-        // Create or update lot
-        if ($lotId) {
-            $lot = Lot::findOrFail($lotId);
-            $lot->update($validated);
-        } else {
-            $lot = Lot::create($validated);
-        }
-
-        // Store data in session for form persistence
-        $request->session()->put('lot_data', array_merge(
-            $request->session()->get('lot_data', []),
-            $validated
-        ));
-        $request->session()->put("section_{$sectionNumber}_saved", true);
-        $request->session()->put('lot_id', $lot->id);
-
-        return response()->json([
-            'success' => true,
-            'message' => "Бўлим {$sectionNumber} сақланди",
-            'lot_id' => $lot->id,
-            'section' => $sectionNumber,
-            'redirect_url' => $sectionNumber === 3 ? route('lots.edit', $lot->id) : null
+    // Validate based on section
+    if ($sectionNumber === 1) {
+        $validated = $request->validate([
+            'lot_number' => 'required|string|unique:lots,lot_number,' . ($lotId ?? 'NULL'),
+            'tuman_id' => 'required|exists:tumans,id',
+            'mahalla_id' => 'nullable|exists:mahallas,id',
+            'address' => 'required|string',
+            'unique_number' => 'required|string',
+            'land_area' => 'required|numeric|min:0',
+            'zone' => 'nullable|string',
+            'master_plan_zone' => 'nullable|string',
+            'yangi_uzbekiston' => 'nullable|boolean',
         ]);
+
+        $validated['wizard_step'] = 1;
+        $validated['yangi_uzbekiston'] = $request->has('yangi_uzbekiston') ? 1 : 0;
+    } elseif ($sectionNumber === 2) {
+        $validated = $request->validate([
+            'lot_id' => 'required|exists:lots,id',
+            'auction_date' => 'nullable|date',
+            'sold_price' => 'nullable|numeric',
+            'payment_type' => 'nullable|in:muddatli,muddatli_emas',
+            'winner_name' => 'nullable|string',
+            'winner_type' => 'nullable|string',
+            'winner_phone' => 'nullable|string',
+            'basis' => 'nullable|string',
+            'auction_type' => 'nullable|in:ochiq,yopiq',
+        ]);
+
+        $lotId = $validated['lot_id'];
+        unset($validated['lot_id']);
+        $validated['wizard_step'] = 2;
+    } else { // Section 3
+        $validated = $request->validate([
+            'lot_id' => 'required|exists:lots,id',
+            'object_type' => 'nullable|string',
+            'latitude' => 'nullable|string',
+            'longitude' => 'nullable|string',
+            'location_url' => 'nullable|url',
+        ]);
+
+        $lotId = $validated['lot_id'];
+        unset($validated['lot_id']);
+        $validated['wizard_step'] = 3;
     }
+
+    // Set default values for section 1
+    if ($sectionNumber === 1) {
+        $validated['contract_signed'] = false;
+        $validated['paid_amount'] = 0;
+        $validated['transferred_amount'] = 0;
+        $validated['discount'] = 0;
+    }
+
+    // Create or update lot
+    if ($lotId) {
+        $lot = Lot::findOrFail($lotId);
+        $lot->update($validated);
+    } else {
+        $lot = Lot::create($validated);
+    }
+
+    // Store data in session for form persistence
+    $request->session()->put('lot_data', array_merge(
+        $request->session()->get('lot_data', []),
+        $validated
+    ));
+    $request->session()->put("section_{$sectionNumber}_saved", true);
+    $request->session()->put('lot_id', $lot->id);
+
+    return response()->json([
+        'success' => true,
+        'message' => "Бўлим {$sectionNumber} сақланди",
+        'lot_id' => $lot->id,
+        'section' => $sectionNumber,
+        'redirect_url' => $sectionNumber === 3 ? route('lots.edit', $lot->id) : null
+    ]);
+}
 
     /**
      * Display the specified resource.
@@ -894,87 +894,87 @@ class LotController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Lot $lot)
-    {
-        $user = Auth::user();
+  public function update(Request $request, Lot $lot)
+{
+    $user = Auth::user();
 
-        // Check access
-        if ($user->role === 'district_user' && $lot->tuman_id !== $user->tuman_id) {
-            abort(403, 'Рухсат йўқ');
-        }
-
-        $validated = $request->validate([
-            'lot_number' => 'required|string|max:255|unique:lots,lot_number,' . $lot->id,
-            'tuman_id' => 'required|exists:tumans,id',
-            'mahalla_id' => 'nullable|exists:mahallas,id',
-            'address' => 'required|string',
-            'unique_number' => 'required|string|max:255',
-            'zone' => 'nullable|string|max:255',
-            'latitude' => 'nullable|string|max:255',
-            'longitude' => 'nullable|string|max:255',
-            'location_url' => 'nullable|url',
-            'master_plan_zone' => 'nullable|string|max:255',
-            'yangi_uzbekiston' => 'boolean',
-            'land_area' => 'required|numeric|min:0',
-            'object_type' => 'nullable|string|max:255',
-            'object_type_ru' => 'nullable|string|max:255',
-            'construction_area' => 'nullable|numeric|min:0',
-            'investment_amount' => 'nullable|numeric|min:0',
-            'initial_price' => 'required|numeric|min:0',
-            'auction_date' => 'required|date',
-            'sold_price' => 'required|numeric|min:0',
-            'winner_type' => 'nullable|string|max:255',
-            'winner_name' => 'required|string|max:255',
-            'winner_phone' => 'nullable|string|max:50',
-            'payment_type' => 'required|in:muddatli,muddatli_emas',
-            'basis' => 'nullable|string|max:255',
-            'auction_type' => 'nullable|in:ochiq,yopiq',
-            'lot_status' => 'nullable|string|max:255',
-            'contract_signed' => 'boolean',
-            'contract_date' => 'nullable|date',
-            'contract_number' => 'nullable|string|max:255',
-            'payment_period_months' => 'nullable|integer|min:1|max:60',
-            'initial_payment' => 'nullable|numeric|min:0',
-        ]);
-
-        $validated['contract_signed'] = $request->has('contract_signed');
-        $validated['yangi_uzbekiston'] = $request->has('yangi_uzbekiston');
-
-        $oldPaymentType = $lot->payment_type;
-        $oldContractSigned = $lot->contract_signed;
-
-        $lot->update($validated);
-
-        // Auto-calculate financial fields
-        if ($lot->sold_price) {
-            $lot->autoCalculate();
-            $lot->save();
-        }
-
-        // Create or update payment schedule if needed
-        if ($lot->payment_type === 'muddatli' && $lot->contract_signed && $lot->payment_period_months) {
-            if ($oldPaymentType !== 'muddatli' || !$oldContractSigned) {
-                // Delete old schedules and create new ones
-                $lot->paymentSchedules()->delete();
-                $this->createPaymentSchedule($lot);
-            }
-        }
-
-        // Handle AJAX requests
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Маълумотлар янгиланди'
-            ]);
-        }
-
-        return redirect()->route('lots.show', $lot)
-            ->with('success', 'Лот маълумотлари муваффақиятли янгиланди');
+    // Check access
+    if ($user->role === 'district_user' && $lot->tuman_id !== $user->tuman_id) {
+        abort(403, 'Рухсат йўқ');
     }
 
-    /**
-     * Create payment schedule for installment lots
-     */
+    $validated = $request->validate([
+        'lot_number' => 'required|string|max:255|unique:lots,lot_number,' . $lot->id,
+        'tuman_id' => 'required|exists:tumans,id',
+        'mahalla_id' => 'nullable|exists:mahallas,id',
+        'address' => 'required|string',
+        'unique_number' => 'required|string|max:255',
+        'zone' => 'nullable|string|max:255',
+        'latitude' => 'nullable|string|max:255',
+        'longitude' => 'nullable|string|max:255',
+        'location_url' => 'nullable|url',
+        'master_plan_zone' => 'nullable|string|max:255',
+        'yangi_uzbekiston' => 'boolean',
+        'land_area' => 'required|numeric|min:0',
+        'object_type' => 'nullable|string|max:255',
+        'object_type_ru' => 'nullable|string|max:255',
+        'construction_area' => 'nullable|numeric|min:0',
+        'investment_amount' => 'nullable|numeric|min:0',
+        'initial_price' => 'required|numeric|min:0',
+        'auction_date' => 'required|date',
+        'sold_price' => 'required|numeric|min:0',
+        'winner_type' => 'nullable|string|max:255',
+        'winner_name' => 'required|string|max:255',
+        'winner_phone' => 'nullable|string|max:50',
+        'payment_type' => 'required|in:muddatli,muddatli_emas',
+        'basis' => 'nullable|string|max:255',
+        'auction_type' => 'nullable|in:ochiq,yopiq',
+        'lot_status' => 'nullable|string|max:255',
+        'contract_signed' => 'boolean',
+        'contract_date' => 'nullable|date',
+        'contract_number' => 'nullable|string|max:255',
+        'payment_period_months' => 'nullable|integer|min:1|max:60',
+        'initial_payment' => 'nullable|numeric|min:0',
+    ]);
+
+    $validated['contract_signed'] = $request->has('contract_signed');
+    $validated['yangi_uzbekiston'] = $request->has('yangi_uzbekiston');
+
+    $oldPaymentType = $lot->payment_type;
+    $oldContractSigned = $lot->contract_signed;
+
+    $lot->update($validated);
+
+    // Auto-calculate financial fields
+    if ($lot->sold_price) {
+        $lot->autoCalculate();
+        $lot->save();
+    }
+
+    // Create or update payment schedule if needed
+    if ($lot->payment_type === 'muddatli' && $lot->contract_signed && $lot->payment_period_months) {
+        if ($oldPaymentType !== 'muddatli' || !$oldContractSigned) {
+            // Delete old schedules and create new ones
+            $lot->paymentSchedules()->delete();
+            $this->createPaymentSchedule($lot);
+        }
+    }
+
+    // Handle AJAX requests
+    if ($request->wantsJson()) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Маълумотлар янгиланди'
+        ]);
+    }
+
+    return redirect()->route('lots.show', $lot)
+        ->with('success', 'Лот маълумотлари муваффақиятли янгиланди');
+}
+
+/**
+ * Create payment schedule for installment lots
+ */
 
     /**
      * Remove the specified resource from storage.

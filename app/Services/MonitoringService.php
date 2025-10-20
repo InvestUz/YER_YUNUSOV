@@ -23,22 +23,40 @@ class MonitoringService
             // Apply filters
             $query = $this->applyFilters($query, $filters);
 
-            // One-time payment
-            $oneTimePayment = (clone $query)->oneTimePayment();
-            // Installment payment
-            $installmentPayment = (clone $query)->installmentPayment();
+            // Clone the base query for each calculation
+            $baseQuery = clone $query;
+
+            // One-time payment - include NULL payment types
+            $oneTimePayment = (clone $baseQuery)->where(function ($q) {
+                $q->where('payment_type', 'muddatsiz')
+                    ->orWhereNull('payment_type'); // Include NULL as one-time
+            });
+
+            // Installment payment - only muddatli
+            $installmentPayment = (clone $baseQuery)->where('payment_type', 'muddatli');
+
             // Under contract processing
-            $underContract = (clone $query)->where('contract_signed', false)->where('lot_status', 'sold');
+            $underContract = (clone $baseQuery)
+                ->where('contract_signed', false)
+                ->where('lot_status', 'sold');
+
             // Not accepted property
-            $notAccepted = (clone $query)->where('lot_status', 'pending_acceptance');
+            $notAccepted = (clone $baseQuery)->where('lot_status', 'pending_acceptance');
+
+            // Get totals using the base query (this should capture ALL lots)
+            $totalCount = $baseQuery->count();
+            $totalArea = $baseQuery->sum('land_area');
+            $totalInitialPrice = $baseQuery->sum('initial_price');
+            $totalSoldPrice = $baseQuery->sum('sold_price');
 
             $data[] = [
                 'tuman' => $tuman->name_uz,
+                'tuman_id' => $tuman->id, // Add this for debugging
                 'total' => [
-                    'count' => $query->count(),
-                    'area' => $query->sum('land_area'),
-                    'initial_price' => $query->sum('initial_price') / 1000000000, // млрд
-                    'sold_price' => $query->sum('sold_price') / 1000000000,
+                    'count' => $totalCount,
+                    'area' => $totalArea,
+                    'initial_price' => $totalInitialPrice / 1000000000, // млрд
+                    'sold_price' => $totalSoldPrice / 1000000000,
                 ],
                 'one_time' => [
                     'count' => $oneTimePayment->count(),
@@ -283,11 +301,17 @@ class MonitoringService
     private function applyFilters($query, $filters)
     {
         if (!empty($filters['date_from'])) {
-            $query->where('auction_date', '>=', $filters['date_from']);
+            $query->where(function ($q) use ($filters) {
+                $q->where('auction_date', '>=', $filters['date_from'])
+                    ->orWhereNull('auction_date'); // Include NULL dates
+            });
         }
 
         if (!empty($filters['date_to'])) {
-            $query->where('auction_date', '<=', $filters['date_to']);
+            $query->where(function ($q) use ($filters) {
+                $q->where('auction_date', '<=', $filters['date_to'])
+                    ->orWhereNull('auction_date'); // Include NULL dates
+            });
         }
 
         if (!empty($filters['subject_type'])) {
@@ -302,13 +326,12 @@ class MonitoringService
             $query->where('master_plan_zone', $filters['master_plan_zone']);
         }
 
-        if (isset($filters['yangi_uzbekiston'])) {
+        if (isset($filters['yangi_uzbekiston']) && $filters['yangi_uzbekiston'] !== '') {
             $query->where('yangi_uzbekiston', $filters['yangi_uzbekiston']);
         }
 
         return $query;
     }
-
     private function calculateFuturePayments($tumanId, $filters)
     {
         $years = [2025, 2026, 2027];

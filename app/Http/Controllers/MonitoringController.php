@@ -28,17 +28,47 @@ class MonitoringController extends Controller
         return view('monitoring.index');
     }
 
-    public function report1(Request $request)
-    {
-        $filters = $this->getFilters($request);
-        $data = $this->monitoringService->getReport1($filters);
-
-        if ($request->ajax()) {
-            return response()->json($data);
-        }
-
-        return view('monitoring.report1', compact('data', 'filters'));
+  public function report1(Request $request)
+{
+    $filters = $this->getFilters($request);
+    $data = $this->monitoringService->getReport1($filters);
+    
+    // Direct count comparison
+    $totalInDb = \App\Models\Lot::count();
+    $totalWithFilters = \App\Models\Lot::where('auction_date', '>=', $filters['date_from'])
+        ->where('auction_date', '<=', $filters['date_to'])
+        ->count();
+    
+    \Log::info('Report1 Debug', [
+        'total_lots_in_database' => $totalInDb,
+        'total_with_date_filters' => $totalWithFilters,
+        'lots_excluded_by_filters' => $totalInDb - $totalWithFilters,
+        'total_in_report' => $data['totals']['total']['count'],
+        'filters' => $filters
+    ]);
+    
+    // Find lots outside the date range
+    $lotsOutsideDateRange = \App\Models\Lot::where(function($q) use ($filters) {
+        $q->where('auction_date', '<', $filters['date_from'])
+          ->orWhere('auction_date', '>', $filters['date_to'])
+          ->orWhereNull('auction_date');
+    })->get(['id', 'lot_number', 'auction_date', 'tuman_id']);
+    
+    if ($lotsOutsideDateRange->count() > 0) {
+        \Log::info('Lots Outside Date Range', [
+            'count' => $lotsOutsideDateRange->count(),
+            'lots' => $lotsOutsideDateRange->toArray()
+        ]);
     }
+    
+    dd([
+        'database_total' => $totalInDb,
+        'with_filters' => $totalWithFilters,
+        'report_total' => $data['totals']['total']['count'],
+        'outside_date_range' => $lotsOutsideDateRange->count(),
+        'totals' => $data['totals']
+    ]);
+}
 
     // Add this method to your MonitoringController class
 

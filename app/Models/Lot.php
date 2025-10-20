@@ -77,7 +77,7 @@ class Lot extends Model
     const DISCOUNT_CUTOFF_DATE = '2024-09-10';
     const DISCOUNT_PERCENTAGE = 20;
 
-    
+
     public function tuman()
     {
         return $this->belongsTo(Tuman::class);
@@ -371,9 +371,11 @@ class Lot extends Model
 
     public function scopeOneTimePayment($query)
     {
-        return $query->where('payment_type', 'muddatsiz');
+        return $query->where(function ($q) {
+            $q->where('payment_type', 'muddatsiz')
+                ->orWhereNull('payment_type'); // Include NULL as one-time payment
+        });
     }
-
     public function views()
     {
         return $this->hasMany(LotView::class);

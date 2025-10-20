@@ -427,7 +427,7 @@ class ExcelDataSeeder extends Seeder
     
     $value = strtolower(trim($value));
 
-    // Check for "муддатли эмас" or "muddatsiz" (one-time payment)
+    // Check for "муддатли эмас" or "muddatsiz" (one-time payment)`
     if (strpos($value, 'муддатли эмас') !== false || 
         strpos($value, 'muddatsiz') !== false ||
         strpos($value, 'бир йўла') !== false ||
