@@ -222,8 +222,7 @@
                                 <option value="">-- Танланг --</option>
                                 <option value="G`olib" {{ old('winner_type') == 'G`olib' ? 'selected' : '' }}>G`olib</option>
                                 <option value="Salohiyatli g`olib" {{ old('winner_type') == 'Salohiyatli g`olib' ? 'selected' : '' }}>Salohiyatli g`olib</option>
-                                <option value="Yuridik shaxs" {{ old('winner_type') == 'Yuridik shaxs' ? 'selected' : '' }}>Yuridik shaxs</option>
-                                <option value="Jismoniy shaxs" {{ old('winner_type') == 'Jismoniy shaxs' ? 'selected' : '' }}>Jismoniy shaxs</option>
+
                             </select>
                         </div>
 
