@@ -205,14 +205,15 @@
                                     </span>
                                 </td>
 
+
                                 {{-- Planned Amount --}}
                                 <td class="px-4 py-3 border text-right font-medium text-gray-700">
-                                    {{ number_format($schedule->planned_amount, 0, '.', ' ') }}
+                                    {{ number_format($schedule->planned_amount, 2, '.', ' ') }}
                                 </td>
 
                                 {{-- Actual Amount --}}
                                 <td class="px-4 py-3 border text-right font-semibold {{ $schedule->actual_amount > 0 ? 'text-green-700 bg-green-100' : 'text-gray-500' }}">
-                                    {{ number_format($schedule->actual_amount, 0, '.', ' ') }}
+                                    {{ number_format($schedule->actual_amount, 2, '.', ' ') }}
                                 </td>
 
                                 {{-- Difference --}}
