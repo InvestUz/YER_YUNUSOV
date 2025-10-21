@@ -302,7 +302,7 @@
                     <th rowspan="3" class="sticky-num">Т/р</th>
                     <th rowspan="3" class="sticky-district">Ҳудудлар</th>
                     <th colspan="4" class="group-header section-divider">Нархини бўлиб тўлаш шарти билан сотилган</th>
-                    <th colspan="8" class="group-header section-divider">шундан, {{ $filters['current_date'] ?? date('d.m.Y') }} ҳолатига</th>
+                    <th colspan="8" class="group-header section-divider">шундан</th>
                     <th colspan="5" class="group-header">шундан, гр.ортда қолганлар</th>
                 </tr>
 
