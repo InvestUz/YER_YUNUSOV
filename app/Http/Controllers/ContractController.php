@@ -440,7 +440,7 @@ class ContractController extends Controller
         }
 
         $validated = $request->validate([
-            'contract_number' => 'required|string|max:255|unique:contracts,contract_number,' . $contract->id,
+            'contract_number' => 'required|string' . $contract->id,
             'contract_date' => 'required|date',
             'contract_amount' => 'required|numeric|min:0',
             'buyer_name' => 'required|string|max:255',

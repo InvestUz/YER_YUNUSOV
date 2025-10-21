@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('contracts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('lot_id')->constrained('lots')->onDelete('cascade');
-            $table->string('contract_number')->unique();
+            $table->string('contract_number');
             $table->date('contract_date');
             $table->decimal('contract_amount', 20, 2);
             $table->decimal('initial_paid_amount', 20, 2)->default(0);

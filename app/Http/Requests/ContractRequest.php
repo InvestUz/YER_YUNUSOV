@@ -17,7 +17,7 @@ class ContractRequest extends FormRequest
 
         return [
             'lot_id' => 'required|exists:lots,id',
-            'contract_number' => 'required|string|unique:contracts,contract_number,' . $contractId,
+            'contract_number' => 'required|string' . $contractId,
             'contract_date' => 'required|date',
             'payment_type' => 'required|in:muddatli,muddatsiz',
             'contract_amount' => 'required|numeric|min:0',
