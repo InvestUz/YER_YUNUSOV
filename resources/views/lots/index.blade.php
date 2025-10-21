@@ -178,7 +178,35 @@
                                 <span class="text-gray-500">-</span>
                                 @endif
                             </td>
-                            <td class="py-2.5 px-3 text-center border-r border-gray-300 text-gray-500">-</td>
+{{-- winner type --}}
+  <td class="py-2.5 px-3 border-r border-gray-300">
+        @if(isset($totalStats['winner_types']) && count($totalStats['winner_types']) > 0)
+            <div class="flex flex-col gap-0.5 text-xs">
+                @foreach($totalStats['winner_types'] as $type => $count)
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-gray-700 capitalize">
+                            @switch($type)
+                                @case('yuridik')
+                                    Юридик:
+                                    @break
+                                @case('jismoniy')
+                                    Жисмоний:
+                                    @break
+                                @case('xorijiy')
+                                    Хорижий:
+                                    @break
+                                @default
+                                    {{ ucfirst($type) }}:
+                            @endswitch
+                        </span>
+                        <span class="font-semibold text-gray-900">{{ $count }}</span>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <span class="text-gray-500 text-xs">Маълумот йўқ</span>
+        @endif
+    </td>
                             <td class="py-2.5 px-3 text-center border-r border-gray-300 text-gray-500">-</td>
                             <td class="py-2.5 px-3 text-center text-gray-500">-</td>
                         </tr>
@@ -210,7 +238,7 @@
                                 @endif
                             </td>
                             <td class="py-2.5 px-3 text-right border-r border-gray-200 text-gray-700 font-medium">
-                                {{ number_format($lot->land_area, 4) }} 
+                                {{ number_format($lot->land_area, 4) }}
                             </td>
                             <td class="py-2.5 px-3 text-right border-r border-gray-200 text-gray-700">
                                 {{ number_format($lot->initial_price / 1000000, 1) }}

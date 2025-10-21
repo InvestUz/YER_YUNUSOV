@@ -233,6 +233,19 @@ class LotController extends Controller
             'total_area' => $totalStatsQuery->sum('land_area'),
             'total_initial_price' => $totalStatsQuery->sum('initial_price'),
             'total_sold_price' => $totalStatsQuery->sum('sold_price'),
+
+            'winner_types' => $totalStatsQuery
+                        ->selectRaw('winner_type, COUNT(*) as count')
+                        ->whereNotNull('winner_type')
+                        ->where('winner_type', '!=', '')
+                        ->groupBy('winner_type')
+                        ->pluck('count', 'winner_type')
+                        ->toArray(),
+
+                    // Alternative: Get counts for specific winner types
+                    'yuridik_count' => $totalStatsQuery->clone()->where('winner_type', 'yuridik')->count(),
+                    'jismoniy_count' => $totalStatsQuery->clone()->where('winner_type', 'jismoniy')->count(),
+                    'xorijiy_count' => $totalStatsQuery->clone()->where('winner_type', 'xorijiy')->count(),
         ];
 
         // ===== SORTING =====
