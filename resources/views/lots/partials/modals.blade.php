@@ -310,6 +310,69 @@ document.getElementById('clearPaymentModal')?.addEventListener('click', function
 });
 </script>
 
+{{-- ADD PAYMENT SCHEDULE MODAL --}}
+<div id="addScheduleModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div class="px-6 py-4 bg-blue-600 rounded-t-lg flex items-center justify-between">
+            <h3 class="text-lg font-bold text-white">График қатори қўшиш</h3>
+            <button type="button" onclick="closeScheduleModal()" class="text-white hover:text-gray-200">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <form action="{{ route('contracts.add-schedule-item', $lot->contract) }}" method="POST" id="addScheduleForm">
+            @csrf
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-900 mb-2">
+                        Режалаштирилган сана <span class="text-red-600">*</span>
+                    </label>
+                    <input type="date"
+                           name="planned_date"
+                           required
+                           class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-900 mb-2">
+                        Режалаштирилган сумма (сўм) <span class="text-red-600">*</span>
+                    </label>
+                    <input type="number"
+                           name="planned_amount"
+                           step="0.01"
+                           min="0"
+                           required
+                           placeholder="Мисол: 50000000"
+                           class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600">
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p class="text-xs text-blue-800 flex items-start gap-2">
+                        <svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                        <span>График қатори қўшилгандан кейин, факт тўловни киритиш мумкин бўлади.</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+                <button type="button"
+                        onclick="closeScheduleModal()"
+                        class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg font-bold transition">
+                    Бекор қилиш
+                </button>
+                <button type="submit"
+                        class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition">
+                    Қўшиш
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 {{-- MODAL: PAYMENT RECORDING --}}
 @if($lot->contract)
 <div id="paymentModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 animate-fadeIn">
