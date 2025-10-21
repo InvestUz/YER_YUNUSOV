@@ -894,6 +894,9 @@ class LotController extends Controller
     /**
      * Update the specified resource in storage.
      */
+    /**
+     * Update the specified resource in storage.
+     */
     public function update(Request $request, Lot $lot)
     {
         $user = Auth::user();
@@ -914,31 +917,24 @@ class LotController extends Controller
             'longitude' => 'nullable|string|max:255',
             'location_url' => 'nullable|url',
             'master_plan_zone' => 'nullable|string|max:255',
-            'yangi_uzbekiston' => 'boolean',
+            'yangi_uzbekiston' => 'nullable|boolean',
             'land_area' => 'required|numeric|min:0',
             'object_type' => 'nullable|string|max:255',
             'object_type_ru' => 'nullable|string|max:255',
-            'construction_area' => 'nullable|numeric|min:0',
-            'investment_amount' => 'nullable|numeric|min:0',
-            'initial_price' => 'required|numeric|min:0',
-            'auction_date' => 'required|date',
-            'sold_price' => 'required|numeric|min:0',
+            'auction_date' => 'nullable|date',
+            'sold_price' => 'nullable|numeric|min:0',
             'winner_type' => 'nullable|string|max:255',
-            'winner_name' => 'required|string|max:255',
+            'winner_name' => 'nullable|string|max:255',
+            'huquqiy_subyekt' => 'nullable|string|max:255',
             'winner_phone' => 'nullable|string|max:50',
-            'payment_type' => 'required|in:muddatli,muddatli_emas',
             'basis' => 'nullable|string|max:255',
-            'auction_type' => 'nullable|in:ochiq,yopiq',
+            'auction_type' => 'nullable|in:ochiq,yopiq,savdo,auction',
             'lot_status' => 'nullable|string|max:255',
-            'contract_signed' => 'boolean',
-            'contract_date' => 'nullable|date',
-            'contract_number' => 'nullable|string|max:255',
-            'payment_period_months' => 'nullable|integer|min:1|max:60',
-            'initial_payment' => 'nullable|numeric|min:0',
+
         ]);
 
         $validated['contract_signed'] = $request->has('contract_signed');
-        $validated['yangi_uzbekiston'] = $request->has('yangi_uzbekiston');
+        $validated['yangi_uzbekiston'] = $request->has('yangi_uzbekiston') ? 1 : 0;
 
         $oldPaymentType = $lot->payment_type;
         $oldContractSigned = $lot->contract_signed;
@@ -946,7 +942,7 @@ class LotController extends Controller
         $lot->update($validated);
 
         // Auto-calculate financial fields
-        if ($lot->sold_price) {
+        if ($lot->sold_price && $lot->sold_price > 0) {
             $lot->autoCalculate();
             $lot->save();
         }
