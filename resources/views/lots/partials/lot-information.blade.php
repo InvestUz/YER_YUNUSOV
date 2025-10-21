@@ -82,7 +82,7 @@
 
             {{-- Initial Price (Highlighted) --}}
             <tr class="bg-blue-50 hover:bg-blue-100 transition-colors">
-                <td class="py-3 px-4 text-gray-700 font-bold">Бошланғич нархи</td>
+                <td class="py-3 px-4 text-gray-700 font-bold">Ғолиб аукционга тўлаган сумма</td>
                 <td class="py-3 px-4 text-blue-700 font-bold text-base">
                     {{ $lot->initial_price ? number_format($lot->initial_price, 0, '.', ' ') . ' UZS' : '-' }}
                 </td>
@@ -190,6 +190,7 @@
         </form>
     </td>
 </tr>
+
 
             {{-- Payment Type --}}
             <tr class="hover:bg-green-50 transition-colors">
