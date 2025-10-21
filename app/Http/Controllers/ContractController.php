@@ -98,7 +98,6 @@ class ContractController extends Controller
                 'note' => 'nullable|string',
                 'initial_paid_amount' => 'nullable|numeric|min:0',
                 'initial_payment_date' => 'nullable|date',
-                'initial_price' => 'nullable',
             ]);
 
             // Additional validation: initial payment can't exceed contract amount
@@ -450,7 +449,6 @@ class ContractController extends Controller
             'payment_type' => 'required|in:muddatli,muddatsiz',
             'status' => 'required|in:active,completed,cancelled',
             'note' => 'nullable|string|max:1000',
-            'initial_price' => 'nullable',
             'initial_paid_amount' => 'nullable|numeric|min:0',
             'initial_payment_date' => 'nullable|date',
         ]);
