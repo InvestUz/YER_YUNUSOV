@@ -235,17 +235,17 @@ class LotController extends Controller
             'total_sold_price' => $totalStatsQuery->sum('sold_price'),
 
             'winner_types' => $totalStatsQuery
-                        ->selectRaw('winner_type, COUNT(*) as count')
-                        ->whereNotNull('winner_type')
-                        ->where('winner_type', '!=', '')
-                        ->groupBy('winner_type')
-                        ->pluck('count', 'winner_type')
-                        ->toArray(),
+                ->selectRaw('winner_type, COUNT(*) as count')
+                ->whereNotNull('winner_type')
+                ->where('winner_type', '!=', '')
+                ->groupBy('winner_type')
+                ->pluck('count', 'winner_type')
+                ->toArray(),
 
-                    // Alternative: Get counts for specific winner types
-                    'yuridik_count' => $totalStatsQuery->clone()->where('winner_type', 'yuridik')->count(),
-                    'jismoniy_count' => $totalStatsQuery->clone()->where('winner_type', 'jismoniy')->count(),
-                    'xorijiy_count' => $totalStatsQuery->clone()->where('winner_type', 'xorijiy')->count(),
+            // Alternative: Get counts for specific winner types
+            'yuridik_count' => $totalStatsQuery->clone()->where('winner_type', 'yuridik')->count(),
+            'jismoniy_count' => $totalStatsQuery->clone()->where('winner_type', 'jismoniy')->count(),
+            'xorijiy_count' => $totalStatsQuery->clone()->where('winner_type', 'xorijiy')->count(),
         ];
 
         // ===== SORTING =====
@@ -377,41 +377,53 @@ class LotController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+    /**
+     * Store a newly created resource in storage.
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'lot_number' => 'required|string|unique:lots,lot_number',
             'tuman_id' => 'required|exists:tumans,id',
             'mahalla_id' => 'nullable|exists:mahallas,id',
-            'address' => 'nullable|string',
+            'address' => 'required|string',
             'unique_number' => 'required|string',
-            'land_area' => 'required|string',
+            'land_area' => 'required|numeric|min:0',
             'zone' => 'nullable|string',
             'master_plan_zone' => 'nullable|string',
-            'yangi_uzbekiston' => 'boolean',
+            'yangi_uzbekiston' => 'nullable|boolean',
             'auction_date' => 'nullable|date',
-            'sold_price' => 'nullable|string',
+            'sold_price' => 'nullable|numeric|min:0',
+            'initial_price' => 'nullable|numeric|min:0',
             'winner_name' => 'nullable|string',
             'winner_type' => 'nullable|string',
             'huquqiy_subyekt' => 'nullable|string',
             'winner_phone' => 'nullable|string',
             'basis' => 'nullable|string',
-            'auction_type' => 'nullable|in:ochiq,yopiq',
+            'auction_type' => 'nullable|in:ochiq,yopiq,savdo,auction',
             'object_type' => 'nullable|string',
             'latitude' => 'nullable|string',
             'longitude' => 'nullable|string',
             'location_url' => 'nullable|url',
+            'payment_type' => 'nullable|in:muddatli,muddatli_emas,muddatsiz',
         ]);
 
+        // Convert boolean
         $validated['yangi_uzbekiston'] = $request->has('yangi_uzbekiston') ? 1 : 0;
+
+        // Set default values
         $validated['contract_signed'] = false;
         $validated['paid_amount'] = 0;
         $validated['transferred_amount'] = 0;
         $validated['discount'] = 0;
+        $validated['auction_fee'] = 0;
+        $validated['auction_expenses'] = 0;
 
+        // Create the lot
         $lot = Lot::create($validated);
 
-        if ($lot->sold_price) {
+        // Auto-calculate financial fields if sold_price exists
+        if ($lot->sold_price && $lot->sold_price > 0) {
             $lot->autoCalculate();
             $lot->save();
         }
