@@ -100,7 +100,7 @@
             <tr class="bg-green-50 hover:bg-green-100 transition-colors">
                 <td class="py-3 px-4 text-gray-700 font-bold">Сотилган нархи</td>
                 <td class="py-3 px-4 text-green-700 font-bold text-base">
-                    {{ $lot->sold_price ? number_format($lot->sold_price, 0, '.', ' ') . ' UZS' : '-' }}
+                    {{ $lot->sold_price ? number_format($lot->sold_price, 2, '.', ' ') . ' UZS' : '-' }}
                 </td>
             </tr>
 
