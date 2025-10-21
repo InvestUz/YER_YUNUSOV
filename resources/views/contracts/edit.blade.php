@@ -112,6 +112,15 @@
                             value="{{ old('initial_price', $contract->initial_price) }}">
                     </div>
 
+                    <div>
+                        <label class="block text-sm font-bold mb-2 text-gray-900">
+                            Ғолиб аукционга тўлаган сумма <span class="text-red-600">*</span>
+                        </label>
+                        <input type="text" name="initial_paid_amount" required
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition"
+                            value="{{ old('initial_paid_amount', $contract->initial_paid_amount) }}">
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-bold mb-2 text-gray-900">Харидор телефони</label>
