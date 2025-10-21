@@ -86,7 +86,7 @@
 
                     <div>
                         <label class="block text-sm font-bold mb-2 text-gray-900">
-                            Шартнома суммаси (сўм) <span class="text-red-600">*</span>
+                            Сотилган суммаси (сўм) <span class="text-red-600">*</span>
                         </label>
                         <input type="number" step="0.01" name="contract_amount" required
                             class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition"

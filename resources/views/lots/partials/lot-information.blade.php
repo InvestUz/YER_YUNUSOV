@@ -244,7 +244,7 @@
                     </td>
                     <td class="py-3 px-4">
                         <div class="text-purple-700 font-bold text-base">
-                            {{ number_format($lot->contract->initial_paid_amount, 0, '.', ' ') }} UZS
+                    {{ $lot->contract->initial_paid_amount ? number_format($lot->contract->initial_paid_amount, 0, '.', ' ') . ' UZS' : '-' }}
                         </div>
                         @if ($lot->contract->initial_payment_date)
                             <div class="text-sm text-purple-600 mt-1">
