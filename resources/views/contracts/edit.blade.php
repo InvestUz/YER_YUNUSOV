@@ -102,6 +102,16 @@
                             value="{{ old('buyer_name', $contract->buyer_name) }}">
                     </div>
 
+
+                    <div>
+                        <label class="block text-sm font-bold mb-2 text-gray-900">
+                            Харидор аввал туланаг сумма <span class="text-red-600">*</span>
+                        </label>
+                        <input type="text" name="initial_price" required
+                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 font-medium transition"
+                            value="{{ old('initial_price', $contract->initial_price) }}">
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-bold mb-2 text-gray-900">Харидор телефони</label>
