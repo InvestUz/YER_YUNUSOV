@@ -526,7 +526,6 @@ class LotController extends Controller
         if ($user->role === 'district_user' && $lot->tuman_id !== $user->tuman_id) {
             abort(403, 'Рухсат йўқ');
         }
-
         $validated = $request->validate([
             'lot_status' => 'required|string|max:255',
         ]);
@@ -534,6 +533,7 @@ class LotController extends Controller
         $lot->update([
             'lot_status' => $validated['lot_status']
         ]);
+
 
         return redirect()->back()
             ->with('success', 'Лот холати муваффақиятли янгиланди');

@@ -39,7 +39,9 @@ class Lot extends Model
         'discount',
         'payment_type',
         'auction_fee',
-        'auction_expenses'
+        'auction_expenses',
+        'lot_status',
+
     ];
 
     protected $casts = [
