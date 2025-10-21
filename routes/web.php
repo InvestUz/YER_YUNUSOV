@@ -57,6 +57,16 @@ Route::middleware('auth')->group(function () {
         ->name('additional-agreements.destroy');
 
     // Payment recording
+    Route::prefix('payment-schedules')->name('payment-schedules.')->group(function () {
+        Route::put('/{schedule}', [PaymentScheduleController::class, 'update'])
+            ->name('update');
+
+        Route::delete('/{schedule}', [PaymentScheduleController::class, 'destroy'])
+            ->name('destroy');
+
+        Route::post('/{schedule}/clear-payment', [PaymentScheduleController::class, 'clearPayment'])
+            ->name('clear-payment');
+    });
     Route::post('/payment-schedules/{schedule}/record-payment', [ContractController::class, 'recordPayment'])
         ->name('payment-schedules.record-payment');
     Route::put('/payment-schedules/{schedule}', [PaymentScheduleController::class, 'update'])
