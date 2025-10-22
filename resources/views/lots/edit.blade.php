@@ -301,12 +301,7 @@
                                     <option value="yopiq"
                                         {{ old('auction_type', $lot->auction_type) == 'yopiq' ? 'selected' : '' }}>Ёпиқ
                                     </option>
-                                    <option value="savdo"
-                                        {{ old('auction_type', $lot->auction_type) == 'savdo' ? 'selected' : '' }}>Савдо
-                                    </option>
-                                    <option value="auction"
-                                        {{ old('auction_type', $lot->auction_type) == 'auction' ? 'selected' : '' }}>
-                                        Аукцион</option>
+
                                 </select>
                             </div>
                         </div>
