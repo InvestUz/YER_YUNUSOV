@@ -231,6 +231,14 @@
                                     value="{{ old('sold_price') }}" placeholder="267924294.00">
                             </div>
 
+                            <div>
+                                <label class="block text-sm font-bold text-gray-900 mb-2">Бошлангич нарх (сўм)</label>
+                                <input type="text" name="initial_price" id="initial_price"
+                                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-green-600 font-medium transition"
+                                    value="{{ old('initial_price') }}" placeholder="267924294.00">
+                            </div>
+
+
 
                         </div>
 

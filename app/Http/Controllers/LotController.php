@@ -923,6 +923,7 @@ class LotController extends Controller
             'object_type_ru' => 'nullable|string|max:255',
             'auction_date' => 'nullable|date',
             'sold_price' => 'nullable|numeric|min:0',
+            'initial_price' => 'nullable|numeric|min:0',
             'winner_type' => 'nullable|string|max:255',
             'winner_name' => 'nullable|string|max:255',
             'huquqiy_subyekt' => 'nullable|string|max:255',
