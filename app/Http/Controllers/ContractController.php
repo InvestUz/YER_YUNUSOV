@@ -439,7 +439,7 @@ class ContractController extends Controller
                 ->with('error', 'Тўлов графиги ёки тақсимоти бор шартномани таҳрирлаб бўлмайди');
         }
         $validated = $request->validate([
-            'contract_number' => 'required|string|max:255|unique:contracts,contract_number,' . $contract->id,
+            'contract_number' => 'required|string,contract_number,' . $contract->id,
             'contract_date' => 'required|date',
             'contract_amount' => 'required|numeric|min:0',
             'buyer_name' => 'required|string|max:255',
