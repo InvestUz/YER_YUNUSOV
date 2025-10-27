@@ -439,7 +439,7 @@ class ContractController extends Controller
                 ->with('error', 'Тўлов графиги ёки тақсимоти бор шартномани таҳрирлаб бўлмайди');
         }
         $validated = $request->validate([
-            'contract_number' => 'required|string,contract_number,' . $contract->id,
+            'contract_number' => 'required|string|max:255',
             'contract_date' => 'required|date',
             'contract_amount' => 'required|numeric|min:0',
             'buyer_name' => 'required|string|max:255',
@@ -594,71 +594,70 @@ class ContractController extends Controller
             return back()->with('error', 'Хатолик: ' . $e->getMessage());
         }
     }
-     public function rollback(Contract $contract)
-{
-    $user = Auth::user();
+    public function rollback(Contract $contract)
+    {
+        $user = Auth::user();
 
-    // Only admin can rollback
-    if ($user->role !== 'admin') {
-        abort(403, 'Рухсат йўқ');
+        // Only admin can rollback
+        if ($user->role !== 'admin') {
+            abort(403, 'Рухсат йўқ');
+        }
+
+        // Check if contract has distributions
+        if ($contract->distributions()->count() > 0) {
+            return redirect()->route('lots.show', $contract->lot_id)
+                ->with('error', 'Аввал тақсимотни ўчиринг! Тақсимот мавжуд бўлганда шартномани бекор қилиб бўлмайди.');
+        }
+
+        DB::beginTransaction();
+        try {
+            $lot = $contract->lot;
+
+            // Delete all payment schedules
+            $contract->paymentSchedules()->delete();
+
+            // Delete all additional agreements
+            $contract->additionalAgreements()->delete();
+
+            // Delete the contract completely
+            $contract->delete();
+
+            // Reset lot fields
+            $lot->payment_type = null;
+            $lot->paid_amount = 0;
+            $lot->transferred_amount = 0;
+            $lot->discount = 0;
+            $lot->auction_fee = 0;
+            $lot->auction_expenses = 0;
+            $lot->contract_signed = false;
+            $lot->contract_date = null;
+            $lot->contract_number = null;
+            $lot->save();
+
+            // Recalculate lot
+            $lot->autoCalculate();
+            $lot->save();
+
+            DB::commit();
+
+            Log::info('Contract rolled back and deleted', [
+                'contract_id' => $contract->id,
+                'lot_id' => $lot->id,
+                'rolled_back_by' => $user->id
+            ]);
+
+            return redirect()->route('lots.show', $contract->lot_id)
+                ->with('success', 'Шартнома тўлиқ ўчирилди. Энди янги шартнома яратишингиз мумкин.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Contract rollback error', [
+                'contract_id' => $contract->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->route('lots.show', $contract->lot_id)
+                ->with('error', 'Хатолик юз берди: ' . $e->getMessage());
+        }
     }
-
-    // Check if contract has distributions
-    if ($contract->distributions()->count() > 0) {
-        return redirect()->route('lots.show', $contract->lot_id)
-            ->with('error', 'Аввал тақсимотни ўчиринг! Тақсимот мавжуд бўлганда шартномани бекор қилиб бўлмайди.');
-    }
-
-    DB::beginTransaction();
-    try {
-        $lot = $contract->lot;
-
-        // Delete all payment schedules
-        $contract->paymentSchedules()->delete();
-
-        // Delete all additional agreements
-        $contract->additionalAgreements()->delete();
-
-        // Delete the contract completely
-        $contract->delete();
-
-        // Reset lot fields
-        $lot->payment_type = null;
-        $lot->paid_amount = 0;
-        $lot->transferred_amount = 0;
-        $lot->discount = 0;
-        $lot->auction_fee = 0;
-        $lot->auction_expenses = 0;
-        $lot->contract_signed = false;
-        $lot->contract_date = null;
-        $lot->contract_number = null;
-        $lot->save();
-
-        // Recalculate lot
-        $lot->autoCalculate();
-        $lot->save();
-
-        DB::commit();
-
-        Log::info('Contract rolled back and deleted', [
-            'contract_id' => $contract->id,
-            'lot_id' => $lot->id,
-            'rolled_back_by' => $user->id
-        ]);
-
-        return redirect()->route('lots.show', $contract->lot_id)
-            ->with('success', 'Шартнома тўлиқ ўчирилди. Энди янги шартнома яратишингиз мумкин.');
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-
-        Log::error('Contract rollback error', [
-            'contract_id' => $contract->id,
-            'error' => $e->getMessage()
-        ]);
-
-        return redirect()->route('lots.show', $contract->lot_id)
-            ->with('error', 'Хатолик юз берди: ' . $e->getMessage());
-    }
-}
 }
