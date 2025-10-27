@@ -80,11 +80,11 @@
                 <td class="py-3 px-4 text-gray-900">{{ $lot->lot_number ?? '-' }}</td>
             </tr>
 
-    {{-- Initial Price (Highlighted) --}}
+            {{-- Initial Price (Highlighted) --}}
             <tr class="bg-blue-50 hover:bg-blue-100 transition-colors">
                 <td class="py-3 px-4 text-gray-700 font-bold">Бошлангич сумма</td>
                 <td class="py-3 px-4 text-blue-700 font-bold text-base">
-{{ $lot->initial_price ? number_format($lot->initial_price, 2, '.', ' ') . ' UZS' : '-' }}
+                    {{ $lot->initial_price ? number_format($lot->initial_price, 2, '.', ' ') . ' UZS' : '-' }}
                 </td>
             </tr>
 
@@ -93,7 +93,7 @@
             <tr class="bg-blue-50 hover:bg-blue-100 transition-colors">
                 <td class="py-3 px-4 text-gray-700 font-bold">Ғолиб аукционга тўлаган сумма</td>
                 <td class="py-3 px-4 text-blue-700 font-bold text-base">
-{{ $lot->contract?->initial_paid_amount ? number_format($lot->contract->initial_paid_amount, 2, '.', ' ') . ' UZS' : '-' }}
+                    {{ $lot->contract?->initial_paid_amount ? number_format($lot->contract->initial_paid_amount, 2, '.', ' ') . ' UZS' : '-' }}
                 </td>
             </tr>
 
@@ -119,7 +119,7 @@
                 <td class="py-3 px-4 text-gray-900 font-semibold">{{ $lot->winner_name ?? '-' }}</td>
             </tr>
 
-                        {{-- Winner Phone --}}
+            {{-- Winner Phone --}}
             <tr class="hover:bg-green-50 transition-colors">
                 <td class="py-3 px-4 text-gray-600 font-medium">Аукцион тури</td>
                 <td class="py-3 px-4 text-gray-900">{{ $lot->auction_type ?? '-' }}</td>
@@ -132,73 +132,74 @@
             </tr>
 
             {{-- Contract Status --}}
-    {{-- Contract Status with Form --}}
-<tr class="hover:bg-green-50 transition-colors">
-    <td class="py-3 px-4 text-gray-600 font-medium">Лот холати</td>
-    <td class="py-3 px-4">
-        <form action="{{ route('lots.updateStatus', $lot) }}" method="POST" id="statusForm">
-            @csrf
-            <div class="flex items-center gap-3">
-                <select name="lot_status" id="lot_status"
-                    class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 text-sm">
-                    <option value="">Танланг</option>
-                    <option value="Аукцион/Танлов якунланди"
-                        {{ $lot->lot_status == 'Аукцион/Танлов якунланди' ? 'selected' : '' }}>
-                        Аукцион/Танлов якунланди
-                    </option>
-                    <option value="Ғолиб мол мулк қийматини тўлади"
-                        {{ $lot->lot_status == 'Ғолиб мол мулк қийматини тўлади' ? 'selected' : '' }}>
-                        Ғолиб мол мулк қийматини тўлади
-                    </option>
-                    <option value="Савдо/танлов натижаларини расмийлаштириш"
-                        {{ $lot->lot_status == 'Савдо/танлов натижаларини расмийлаштириш' ? 'selected' : '' }}>
-                        Савдо/танлов натижаларини расмийлаштириш
-                    </option>
-                    <option value="Ғолиб шартнома имзолашга розилик билдирди"
-                        {{ $lot->lot_status == 'Ғолиб шартнома имзолашга розилик билдирди' ? 'selected' : '' }}>
-                        Ғолиб шартнома имзолашга розилик билдирди
-                    </option>
-                    <option value="Иштирокчи розилигини кутиш жараёнида"
-                        {{ $lot->lot_status == 'Иштирокчи розилигини кутиш жараёнида' ? 'selected' : '' }}>
-                        Иштирокчи розилигини кутиш жараёнида
-                    </option>
-                    <option value="Буюртмачи розилигини кутиш жараёнида"
-                        {{ $lot->lot_status == 'Буюртмачи розилигини кутиш жараёнида' ? 'selected' : '' }}>
-                        Буюртмачи розилигини кутиш жараёнида
-                    </option>
-                    <option value="Иштирокчи ва Буюртмачи келишуви ёки Суд қарорини кутиш жараёнида"
-                        {{ $lot->lot_status == 'Иштирокчи ва Буюртмачи келишуви ёки Суд қарорини кутиш жараёнида' ? 'selected' : '' }}>
-                        Иштирокчи ва Буюртмачи келишуви ёки Суд қарорини кутиш жараёнида
-                    </option>
-                    <option value="Вактинча тухтатилди"
-                        {{ $lot->lot_status == 'Вактинча тухтатилди' ? 'selected' : '' }}>
-                        Вактинча тухтатилди
-                    </option>
-                    <option value="Низоли"
-                        {{ $lot->lot_status == 'Низоли' ? 'selected' : '' }}>
-                        Низоли
-                    </option>
-                    <option value="Захирадаги ғолибга таклиф"
-                        {{ $lot->lot_status == 'Захирадаги ғолибга таклиф' ? 'selected' : '' }}>
-                        Захирадаги ғолибга таклиф
-                    </option>
-                    <option value="Лот якунланди"
-                        {{ $lot->lot_status == 'Лот якунланди' ? 'selected' : '' }}>
-                        Лот якунланди
-                    </option>
-                </select>
+            {{-- Contract Status with Form --}}
+            <tr class="hover:bg-green-50 transition-colors">
+                <td class="py-3 px-4 text-gray-600 font-medium">Лот холати</td>
+                <td class="py-3 px-4">
+                    <form action="{{ route('lots.updateStatus', $lot) }}" method="POST" id="statusForm">
+                        @csrf
+                        <div class="flex items-center gap-3">
+                            <select name="lot_status" id="lot_status"
+                                class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 text-sm">
+                                <option value="">Танланг</option>
+                                <option value="Аукцион/Танлов якунланди"
+                                    {{ $lot->lot_status == 'Аукцион/Танлов якунланди' ? 'selected' : '' }}>
+                                    Аукцион/Танлов якунланди
+                                </option>
+                                <option value="Ғолиб мол мулк қийматини тўлади"
+                                    {{ $lot->lot_status == 'Ғолиб мол мулк қийматини тўлади' ? 'selected' : '' }}>
+                                    Ғолиб мол мулк қийматини тўлади
+                                </option>
+                                <option value="Савдо/танлов натижаларини расмийлаштириш"
+                                    {{ $lot->lot_status == 'Савдо/танлов натижаларини расмийлаштириш' ? 'selected' : '' }}>
+                                    Савдо/танлов натижаларини расмийлаштириш
+                                </option>
+                                <option value="Ғолиб шартнома имзолашга розилик билдирди"
+                                    {{ $lot->lot_status == 'Ғолиб шартнома имзолашга розилик билдирди' ? 'selected' : '' }}>
+                                    Ғолиб шартнома имзолашга розилик билдирди
+                                </option>
+                                <option value="Иштирокчи розилигини кутиш жараёнида"
+                                    {{ $lot->lot_status == 'Иштирокчи розилигини кутиш жараёнида' ? 'selected' : '' }}>
+                                    Иштирокчи розилигини кутиш жараёнида
+                                </option>
+                                <option value="Буюртмачи розилигини кутиш жараёнида"
+                                    {{ $lot->lot_status == 'Буюртмачи розилигини кутиш жараёнида' ? 'selected' : '' }}>
+                                    Буюртмачи розилигини кутиш жараёнида
+                                </option>
+                                <option value="Иштирокчи ва Буюртмачи келишуви ёки Суд қарорини кутиш жараёнида"
+                                    {{ $lot->lot_status == 'Иштирокчи ва Буюртмачи келишуви ёки Суд қарорини кутиш жараёнида' ? 'selected' : '' }}>
+                                    Иштирокчи ва Буюртмачи келишуви ёки Суд қарорини кутиш жараёнида
+                                </option>
+                                <option value="Вактинча тухтатилди"
+                                    {{ $lot->lot_status == 'Вактинча тухтатилди' ? 'selected' : '' }}>
+                                    Вактинча тухтатилди
+                                </option>
+                                <option value="Низоли" {{ $lot->lot_status == 'Низоли' ? 'selected' : '' }}>
+                                    Низоли
+                                </option>
+                                <option value="Захирадаги ғолибга таклиф"
+                                    {{ $lot->lot_status == 'Захирадаги ғолибга таклиф' ? 'selected' : '' }}>
+                                    Захирадаги ғолибга таклиф
+                                </option>
+                                <option value="Лот якунланди"
+                                    {{ $lot->lot_status == 'Лот якунланди' ? 'selected' : '' }}>
+                                    Лот якунланди
+                                </option>
+                            </select>
 
-                <button type="submit"
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                    <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                    </svg>
-                    Сақлаш
-                </button>
-            </div>
-        </form>
-    </td>
-</tr>
+                            <button type="submit"
+                                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7" />
+                                </svg>
+                                Сақлаш
+                            </button>
+                        </div>
+                    </form>
+                </td>
+            </tr>
 
 
             {{-- Payment Type --}}
@@ -253,7 +254,7 @@
                     </td>
                     <td class="py-3 px-4">
                         <div class="text-purple-700 font-bold text-base">
-{{ $lot->contract?->initial_paid_amount ? number_format($lot->contract->initial_paid_amount, 0, '.', ' ') . ' UZS' : '-' }}
+                            {{ $lot->contract?->initial_paid_amount ? number_format($lot->contract->initial_paid_amount, 0, '.', ' ') . ' UZS' : '-' }}
                         </div>
                         @if ($lot->contract->initial_payment_date)
                             <div class="text-sm text-purple-600 mt-1">

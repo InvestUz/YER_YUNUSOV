@@ -1,4 +1,5 @@
 {{-- contract-card.blade.php --}}
+{{-- @dump($lot->contract) --}}
 @if ($lot->contract)
     {{-- EXISTING CONTRACT DISPLAY --}}
     <div class="bg-white rounded border border-gray-300 overflow-hidden mb-4">
@@ -167,7 +168,7 @@
                         <option value="cancelled">Бекор қилинган</option>
                     </select>
                     <textarea name="note" rows="2" class="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Изоҳ"></textarea>
-                    
+
                     <div class="border-t pt-3">
                         <p class="text-sm font-medium text-gray-700 mb-2">Аввал тўланған (опционал)</p>
                         <input type="number" step="0.01" name="initial_paid_amount" value="0"
@@ -182,7 +183,7 @@
                     <input type="number" step="0.01" name="actual_paid_amount" id="actualPaidAmount" value="{{ $lot->sold_price }}"
                         class="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Факт тўланган сумма"
                         oninput="validateMuddatsizAmount()">
-                    
+
                     @if ($lot->auction_date && $lot->auction_date->gt(\Carbon\Carbon::parse('2024-09-10')))
                         <div class="bg-yellow-50 border border-yellow-200 rounded p-3">
                             <p class="text-sm font-semibold text-yellow-800 mb-2">Чегирма қўлланади (20%)</p>
@@ -204,7 +205,7 @@
                             </div>
                         </div>
                     @endif
-                    
+
                     <input type="date" name="actual_payment_date" value="{{ now()->format('Y-m-d') }}"
                         class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
                     <input type="text" name="reference_number" class="w-full border border-gray-300 rounded px-3 py-2 text-sm"
@@ -237,7 +238,7 @@
             <div class="bg-red-50 border border-red-300 rounded p-4 mb-4">
                 <p class="font-bold text-red-900 mb-2">ДИҚҚАТ!</p>
                 <p class="text-sm text-red-800 mb-3">Шартнома тўлиқ ўчирилади:</p>
-                
+
                 <ul class="text-sm text-gray-700 space-y-1 mb-3">
                     <li>✗ Шартнома тўлиқ ўчирилади</li>
                     <li>✗ Барча тўлов графиги ўчирилади</li>
@@ -340,7 +341,7 @@ function validateMuddatsizAmount() {
     if (!actualPaidInput) return;
 
     const actualPaid = parseFloat(actualPaidInput.value) || 0;
-    
+
     @if ($lot->auction_date && $lot->auction_date->gt(\Carbon\Carbon::parse('2024-09-10')))
         const discount = actualPaid * 0.20;
         const distributable = actualPaid - discount;
