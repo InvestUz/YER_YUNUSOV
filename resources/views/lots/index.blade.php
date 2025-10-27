@@ -125,6 +125,18 @@
         </div>
         @endif
 
+<form method="GET" action="{{ route('lots.index') }}" class="flex items-center gap-2 mb-4">
+    <input type="text"
+           name="search"
+           value="{{ request('search') }}"
+           placeholder="Қидириш (лот рақами, ғолиб, манзил ва ҳ.к.)"
+           class="border border-gray-300 rounded-xl px-4 py-2 w-64 focus:ring-2 focus:ring-green-400 focus:outline-none">
+    <button type="submit"
+            class="bg-green-600 text-white px-4 py-2 rounded-xl hover:bg-green-700 transition">
+        Қидириш
+    </button>
+</form>
+
         {{-- Minimal Professional Government Table --}}
         <div class="bg-white rounded-lg border border-gray-300 overflow-hidden shadow">
             <div class="overflow-x-auto">

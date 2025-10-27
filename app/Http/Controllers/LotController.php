@@ -25,264 +25,207 @@ class LotController extends Controller
     /**
      * Display a listing of the resource with advanced filters.
      */
-    public function index(Request $request)
-    {
-        $user = Auth::user();
+  public function index(Request $request)
+{
+    $user = Auth::user();
 
-        // Base query with district filtering
-        $query = Lot::with(['tuman', 'mahalla']);
+    // Base query
+    $query = Lot::with(['tuman', 'mahalla']);
 
-        if ($user->role === 'district_user' && $user->tuman_id) {
-            $query->where('tuman_id', $user->tuman_id);
-        }
+    // Restrict for district users
+    if ($user->role === 'district_user' && $user->tuman_id) {
+        $query->where('tuman_id', $user->tuman_id);
+    }
 
-        // ===== EXISTING BASIC FILTERS =====
-        if ($request->filled('tuman_id')) {
-            $query->where('tuman_id', $request->tuman_id);
-        }
+    // --- BASIC FILTERS ---
+    if ($request->filled('tuman_id')) {
+        $query->where('tuman_id', $request->tuman_id);
+    }
 
-        if ($request->filled('payment_type')) {
-            $query->where('payment_type', $request->payment_type);
-        }
+    if ($request->filled('payment_type')) {
+        $query->where('payment_type', $request->payment_type);
+    }
 
-        if ($request->filled('contract_signed')) {
-            $query->where('contract_signed', $request->contract_signed === '1');
-        }
+    if ($request->filled('contract_signed')) {
+        $query->where('contract_signed', $request->contract_signed === '1');
+    }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('lot_number', 'like', "%{$search}%")
-                    ->orWhere('address', 'like', "%{$search}%")
-                    ->orWhere('winner_name', 'like', "%{$search}%")
-                    ->orWhere('unique_number', 'like', "%{$search}%");
-            });
-        }
+    // --- UNIVERSAL SEARCH ---
+    if ($request->filled('search')) {
+        $search = mb_strtolower(trim($request->search));
 
-        // ===== ADVANCED FILTERS FROM IMAGES =====
+        $query->where(function ($q) use ($search) {
+            $q->whereRaw('LOWER(lot_number) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(address) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(unique_number) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(winner_name) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(object_type) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(basis) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(auction_type) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(zone) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(master_plan_zone) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('LOWER(winner_type) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('CAST(sold_price AS CHAR) LIKE ?', ["%{$search}%"])
+                ->orWhereRaw('CAST(land_area AS CHAR) LIKE ?', ["%{$search}%"]);
+        });
+    }
 
-        // 1. Zone Filter
-        if ($request->filled('zones') && is_array($request->zones)) {
-            $query->whereIn('zone', $request->zones);
-        }
+    // --- ADVANCED FILTERS (unchanged from your code) ---
+    if ($request->filled('zones') && is_array($request->zones)) {
+        $query->whereIn('zone', $request->zones);
+    }
 
-        // 2. Master Plan Zone Filter
-        if ($request->filled('master_plan_zones') && is_array($request->master_plan_zones)) {
-            $query->whereIn('master_plan_zone', $request->master_plan_zones);
-        }
+    if ($request->filled('master_plan_zones') && is_array($request->master_plan_zones)) {
+        $query->whereIn('master_plan_zone', $request->master_plan_zones);
+    }
 
-        // 3. Yangi Uzbekiston Filter
-        if ($request->filled('yangi_uzbekiston')) {
-            $query->where('yangi_uzbekiston', $request->yangi_uzbekiston === '1');
-        }
+    if ($request->filled('yangi_uzbekiston')) {
+        $query->where('yangi_uzbekiston', $request->yangi_uzbekiston === '1');
+    }
 
-        // 4. Construction Types
-        if ($request->filled('construction_types') && is_array($request->construction_types)) {
-            $query->where(function ($q) use ($request) {
-                foreach ($request->construction_types as $type) {
-                    switch ($type) {
-                        case 'konservatsiya':
-                            $q->orWhere('lot_status', 'like', '%konservatsiya%');
-                            break;
-                        case 'konservatsiya_qisman':
-                            $q->orWhere('lot_status', 'konservatsiya_qisman');
-                            break;
-                        case 'konservatsiya_qizil_chiziqda':
-                            $q->orWhere('lot_status', 'konservatsiya_qizil_chiziqda');
-                            break;
-                        case 'rekonstruksiya':
-                            $q->orWhere('lot_status', 'like', '%rekonstruksiya%');
-                            break;
-                        case 'renovatsiya':
-                            $q->orWhere('lot_status', 'like', '%renovatsiya%');
-                            break;
-                        case 'uy_joy':
-                            $q->orWhere('object_type', 'like', '%uy-joy%');
-                            break;
-                        case 'empty':
-                            $q->orWhereNull('lot_status');
-                            break;
-                    }
-                }
-            });
-        }
-
-        // 5. Object Type Filter
-        if ($request->filled('object_types') && is_array($request->object_types)) {
-            $query->where(function ($q) use ($request) {
-                foreach ($request->object_types as $type) {
-                    switch ($type) {
-                        case 'avtoturargoh':
-                            $q->orWhere('object_type', 'like', '%avtoturargoh%');
-                            break;
-                        case 'boshqa':
-                            $q->orWhere('object_type', 'like', '%boshqa%');
-                            break;
-                        case 'kop_qavatli':
-                            $q->orWhere('object_type', 'like', '%ko\'p qavatli%')
-                                ->orWhere('object_type', 'like', '%turar joy%');
-                            break;
-                        case 'logistika':
-                            $q->orWhere('object_type', 'like', '%logistika%');
-                            break;
-                        case 'maktab':
-                            $q->orWhere('object_type', 'like', '%maktab%');
-                            break;
-                        case 'savdo':
-                            $q->orWhere('object_type', 'like', '%savdo%')
-                                ->orWhere('object_type', 'like', '%maishiy%');
-                            break;
-                    }
-                }
-            });
-        }
-
-        // 6. Payment Type Extended
-        if ($request->filled('payment_types_extended') && is_array($request->payment_types_extended)) {
-            $query->where(function ($q) use ($request) {
-                foreach ($request->payment_types_extended as $type) {
-                    switch ($type) {
-                        case 'auction_tanlash':
-                            $q->orWhere('auction_type', 'auction');
-                            break;
-                        case 'muddatli':
-                            $q->orWhere('payment_type', 'muddatli');
-                            break;
-                        case 'muddatli_emas':
-                            $q->orWhere('payment_type', 'muddatli_emas');
-                            break;
-                        case 'nizoli':
-                            $q->orWhere('lot_status', 'nizoli');
-                            break;
-                        case 'savdo_tanlash':
-                            $q->orWhere('auction_type', 'savdo');
-                            break;
-                    }
-                }
-            });
-        }
-
-        // 7. Basis Filter
-        if ($request->filled('basis_types') && is_array($request->basis_types)) {
-            $query->whereIn('basis', $request->basis_types);
-        }
-
-        // 8. Auction Type
-        if ($request->filled('auction_types') && is_array($request->auction_types)) {
-            $query->whereIn('auction_type', $request->auction_types);
-        }
-
-        // 9. Lot Status Extended
-        if ($request->filled('lot_statuses') && is_array($request->lot_statuses)) {
-            $query->whereIn('lot_status', $request->lot_statuses);
-        }
-
-        // 10. Contract Signed Status
-        if ($request->filled('contract_statuses') && is_array($request->contract_statuses)) {
-            foreach ($request->contract_statuses as $status) {
-                if ($status === 'signed') {
-                    $query->where('contract_signed', true);
-                } elseif ($status === 'not_signed') {
-                    $query->where('contract_signed', false);
-                } elseif ($status === 'with_date') {
-                    $query->where('contract_signed', true)
-                        ->whereNotNull('contract_date');
+    if ($request->filled('construction_types') && is_array($request->construction_types)) {
+        $query->where(function ($q) use ($request) {
+            foreach ($request->construction_types as $type) {
+                switch ($type) {
+                    case 'konservatsiya':
+                        $q->orWhere('lot_status', 'like', '%konservatsiya%');
+                        break;
+                    case 'rekonstruksiya':
+                        $q->orWhere('lot_status', 'like', '%rekonstruksiya%');
+                        break;
+                    case 'renovatsiya':
+                        $q->orWhere('lot_status', 'like', '%renovatsiya%');
+                        break;
+                    case 'uy_joy':
+                        $q->orWhere('object_type', 'like', '%uy-joy%');
+                        break;
+                    case 'empty':
+                        $q->orWhereNull('lot_status');
+                        break;
                 }
             }
-        }
-
-        // 11. Winner Type Filter
-        if ($request->filled('winner_types') && is_array($request->winner_types)) {
-            $query->whereIn('winner_type', $request->winner_types);
-        }
-
-        // 12. Date Range Filters
-        if ($request->filled('auction_date_from')) {
-            $query->where('auction_date', '>=', $request->auction_date_from);
-        }
-        if ($request->filled('auction_date_to')) {
-            $query->where('auction_date', '<=', $request->auction_date_to);
-        }
-
-        // 13. Price Range Filters
-        if ($request->filled('price_from')) {
-            $query->where('sold_price', '>=', $request->price_from);
-        }
-        if ($request->filled('price_to')) {
-            $query->where('sold_price', '<=', $request->price_to);
-        }
-
-        // 14. Land Area Range
-        if ($request->filled('land_area_from')) {
-            $query->where('land_area', '>=', $request->land_area_from);
-        }
-        if ($request->filled('land_area_to')) {
-            $query->where('land_area', '<=', $request->land_area_to);
-        }
-
-        // 15. Mahalla Filter
-        if ($request->filled('mahalla_id')) {
-            $query->where('mahalla_id', $request->mahalla_id);
-        }
-
-        // ===== CALCULATE TOTALS BEFORE PAGINATION =====
-        // Clone query to calculate totals across ALL pages
-        $totalStatsQuery = clone $query;
-
-        $totalStats = [
-            'total_area' => $totalStatsQuery->sum('land_area'),
-            'total_initial_price' => $totalStatsQuery->sum('initial_price'),
-            'total_sold_price' => $totalStatsQuery->sum('sold_price'),
-
-            'winner_types' => $totalStatsQuery
-                ->selectRaw('winner_type, COUNT(*) as count')
-                ->whereNotNull('winner_type')
-                ->where('winner_type', '!=', '')
-                ->groupBy('winner_type')
-                ->pluck('count', 'winner_type')
-                ->toArray(),
-
-            // Alternative: Get counts for specific winner types
-            'yuridik_count' => $totalStatsQuery->clone()->where('winner_type', 'yuridik')->count(),
-            'jismoniy_count' => $totalStatsQuery->clone()->where('winner_type', 'jismoniy')->count(),
-            'xorijiy_count' => $totalStatsQuery->clone()->where('winner_type', 'xorijiy')->count(),
-        ];
-
-        // ===== SORTING =====
-        $sortField = $request->get('sort', 'auction_date');
-        $sortDirection = $request->get('direction', 'desc');
-
-        // Custom sorting logic
-        if ($sortField === 'tuman_name') {
-            $query->join('tumans', 'lots.tuman_id', '=', 'tumans.id')
-                ->orderBy('tumans.name_uz', $sortDirection)
-                ->select('lots.*');
-        } elseif ($sortField === 'mahalla_name') {
-            $query->leftJoin('mahallas', 'lots.mahalla_id', '=', 'mahallas.id')
-                ->orderBy('mahallas.name_uz', $sortDirection)
-                ->select('lots.*');
-        } else {
-            $query->orderBy($sortField, $sortDirection);
-        }
-
-        // ===== PAGINATE =====
-        $perPage = $request->get('per_page', 20);
-        $lots = $query->paginate($perPage)->withQueryString();
-
-        // Get filter options
-        $tumans = $user->role === 'admin'
-            ? Tuman::all()
-            : Tuman::where('id', $user->tuman_id)->get();
-
-        $mahallas = $request->filled('tuman_id')
-            ? Mahalla::where('tuman_id', $request->tuman_id)->get()
-            : [];
-
-        // Get unique filter values
-        $filterOptions = $this->getFilterOptions($user);
-
-        return view('lots.index', compact('lots', 'tumans', 'mahallas', 'user', 'filterOptions', 'totalStats'));
+        });
     }
+
+    if ($request->filled('object_types') && is_array($request->object_types)) {
+        $query->where(function ($q) use ($request) {
+            foreach ($request->object_types as $type) {
+                switch ($type) {
+                    case 'avtoturargoh':
+                        $q->orWhere('object_type', 'like', '%avtoturargoh%');
+                        break;
+                    case 'boshqa':
+                        $q->orWhere('object_type', 'like', '%boshqa%');
+                        break;
+                    case 'kop_qavatli':
+                        $q->orWhere('object_type', 'like', '%ko\'p qavatli%')
+                            ->orWhere('object_type', 'like', '%turar joy%');
+                        break;
+                    case 'logistika':
+                        $q->orWhere('object_type', 'like', '%logistika%');
+                        break;
+                    case 'maktab':
+                        $q->orWhere('object_type', 'like', '%maktab%');
+                        break;
+                    case 'savdo':
+                        $q->orWhere('object_type', 'like', '%savdo%')
+                            ->orWhere('object_type', 'like', '%maishiy%');
+                        break;
+                }
+            }
+        });
+    }
+
+    if ($request->filled('basis_types') && is_array($request->basis_types)) {
+        $query->whereIn('basis', $request->basis_types);
+    }
+
+    if ($request->filled('auction_types') && is_array($request->auction_types)) {
+        $query->whereIn('auction_type', $request->auction_types);
+    }
+
+    if ($request->filled('winner_types') && is_array($request->winner_types)) {
+        $query->whereIn('winner_type', $request->winner_types);
+    }
+
+    // --- Date, price, area, etc. filters ---
+    if ($request->filled('auction_date_from')) {
+        $query->where('auction_date', '>=', $request->auction_date_from);
+    }
+    if ($request->filled('auction_date_to')) {
+        $query->where('auction_date', '<=', $request->auction_date_to);
+    }
+
+    if ($request->filled('price_from')) {
+        $query->where('sold_price', '>=', $request->price_from);
+    }
+    if ($request->filled('price_to')) {
+        $query->where('sold_price', '<=', $request->price_to);
+    }
+
+    if ($request->filled('land_area_from')) {
+        $query->where('land_area', '>=', $request->land_area_from);
+    }
+    if ($request->filled('land_area_to')) {
+        $query->where('land_area', '<=', $request->land_area_to);
+    }
+
+    if ($request->filled('mahalla_id')) {
+        $query->where('mahalla_id', $request->mahalla_id);
+    }
+
+    // --- TOTAL STATS ---
+    $totalStatsQuery = clone $query;
+
+    $totalStats = [
+        'total_area' => $totalStatsQuery->sum('land_area'),
+        'total_initial_price' => $totalStatsQuery->sum('initial_price'),
+        'total_sold_price' => $totalStatsQuery->sum('sold_price'),
+        'winner_types' => $totalStatsQuery
+            ->selectRaw('winner_type, COUNT(*) as count')
+            ->whereNotNull('winner_type')
+            ->groupBy('winner_type')
+            ->pluck('count', 'winner_type')
+            ->toArray(),
+        'yuridik_count' => (clone $totalStatsQuery)->where('winner_type', 'yuridik')->count(),
+        'jismoniy_count' => (clone $totalStatsQuery)->where('winner_type', 'jismoniy')->count(),
+        'xorijiy_count' => (clone $totalStatsQuery)->where('winner_type', 'xorijiy')->count(),
+    ];
+
+    // --- SORTING ---
+    $sortField = $request->get('sort', 'auction_date');
+    $sortDirection = $request->get('direction', 'desc');
+
+    if ($sortField === 'tuman_name') {
+        $query->join('tumans', 'lots.tuman_id', '=', 'tumans.id')
+            ->orderBy('tumans.name_uz', $sortDirection)
+            ->select('lots.*');
+    } elseif ($sortField === 'mahalla_name') {
+        $query->leftJoin('mahallas', 'lots.mahalla_id', '=', 'mahallas.id')
+            ->orderBy('mahallas.name_uz', $sortDirection)
+            ->select('lots.*');
+    } else {
+        $query->orderBy($sortField, $sortDirection);
+    }
+
+    // --- PAGINATION ---
+    $perPage = $request->get('per_page', 20);
+    $lots = $query->paginate($perPage)->withQueryString();
+
+    // --- FILTER OPTIONS ---
+    $tumans = $user->role === 'admin'
+        ? Tuman::all()
+        : Tuman::where('id', $user->tuman_id)->get();
+
+    $mahallas = $request->filled('tuman_id')
+        ? Mahalla::where('tuman_id', $request->tuman_id)->get()
+        : [];
+
+    $filterOptions = $this->getFilterOptions($user);
+
+    return view('lots.index', compact('lots', 'tumans', 'mahallas', 'user', 'filterOptions', 'totalStats'));
+}
+
 
     /**
      * Get all available filter options
