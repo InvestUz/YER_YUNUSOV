@@ -119,6 +119,20 @@
                 <td class="py-3 px-4 text-gray-900 font-semibold">{{ $lot->winner_name ?? '-' }}</td>
             </tr>
 
+            {{-- Winner type --}}
+            @php
+                $winnerName = $lot->winner_name ?? '';
+                $isYuridik = Str::contains(Str::lower($winnerName), ['mas‘uliyati cheklangan jamiyati', 'mchj']);
+                $winnerType = $isYuridik ? 'Юридик шахс' : 'Жисмоний шахс';
+            @endphp
+
+            <tr class="hover:bg-green-50 transition-colors">
+                <td class="py-3 px-4 text-gray-600 font-medium">Субъект тури</td>
+                <td class="py-3 px-4 text-gray-900 font-semibold">{{ $winnerType }}</td>
+            </tr>
+
+
+
             {{-- Winner Phone --}}
             <tr class="hover:bg-green-50 transition-colors">
                 <td class="py-3 px-4 text-gray-600 font-medium">Аукцион тури</td>
